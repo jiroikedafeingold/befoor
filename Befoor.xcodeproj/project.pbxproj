@@ -1,0 +1,979 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 70;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		132FDC8E2F8C8ED600D167AB /* TrackedAlarmModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC8D2F8C8ED600D167AB /* TrackedAlarmModel.swift */; };
+		132FDC902F8C8F2500D167AB /* Person.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC8F2F8C8F2500D167AB /* Person.swift */; };
+		132FDC922F8C8F2700D167AB /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC912F8C8F2700D167AB /* Note.swift */; };
+		132FDC942F8C8F2800D167AB /* FollowUp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC932F8C8F2800D167AB /* FollowUp.swift */; };
+		132FDC962F8C8F2900D167AB /* LongTermNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC952F8C8F2900D167AB /* LongTermNote.swift */; };
+		132FDC982F8C8F2A00D167AB /* DetectionKeyword.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC972F8C8F2A00D167AB /* DetectionKeyword.swift */; };
+		132FDC9A2F8C8F2C00D167AB /* CalendarSyncRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC992F8C8F2C00D167AB /* CalendarSyncRecord.swift */; };
+		132FDC9C2F8C8F2D00D167AB /* Reminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC9B2F8C8F2D00D167AB /* Reminder.swift */; };
+		132FDC9E2F8C8F3C00D167AB /* NavigationNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC9D2F8C8F3C00D167AB /* NavigationNotification.swift */; };
+		132FDCA02F8C8FD600D167AB /* SyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC9F2F8C8FD600D167AB /* SyncCoordinator.swift */; };
+		132FDCA32F8C901300D167AB /* PeopleTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDCA22F8C901300D167AB /* PeopleTabView.swift */; };
+		132FDCA52F8C901400D167AB /* PeopleListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDCA42F8C901400D167AB /* PeopleListView.swift */; };
+		132FDCA72F8C901600D167AB /* PersonRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDCA62F8C901600D167AB /* PersonRowView.swift */; };
+		132FDCA92F8C901700D167AB /* PersonDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDCA82F8C901700D167AB /* PersonDetailView.swift */; };
+		132FDCAB2F8C904700D167AB /* AddNoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDCAA2F8C904700D167AB /* AddNoteView.swift */; };
+		132FDCAD2F8C904800D167AB /* EditNoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDCAC2F8C904800D167AB /* EditNoteView.swift */; };
+		132FDCAF2F8C904A00D167AB /* NoteRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDCAE2F8C904A00D167AB /* NoteRowView.swift */; };
+		132FDCB12F8C904B00D167AB /* AddFollowUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDCB02F8C904B00D167AB /* AddFollowUpView.swift */; };
+		132FDCB32F8C904D00D167AB /* FollowUpRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDCB22F8C904D00D167AB /* FollowUpRowView.swift */; };
+		132FDCB52F8C904E00D167AB /* AddLongTermNoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDCB42F8C904E00D167AB /* AddLongTermNoteView.swift */; };
+		132FDCB72F8C905000D167AB /* LongTermNoteRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDCB62F8C905000D167AB /* LongTermNoteRowView.swift */; };
+		132FDCB92F8C905100D167AB /* AddReminderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDCB82F8C905100D167AB /* AddReminderView.swift */; };
+		132FDCBB2F8C905300D167AB /* ReminderRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDCBA2F8C905300D167AB /* ReminderRowView.swift */; };
+		132FDCBD2F8C905400D167AB /* PreMeetingReminderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDCBC2F8C905400D167AB /* PreMeetingReminderView.swift */; };
+		13A7469B2FA183C300071DA6 /* AddGlobalNoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A7469A2FA183C300071DA6 /* AddGlobalNoteView.swift */; };
+		13A746BD2FA284B000071DA6 /* BeforeWatch App Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 13A746B32FA284AF00071DA6 /* BeforeWatch App Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		13A746CA2FA2858400071DA6 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000005 /* AppSettings.swift */; };
+		13A746CB2FA2858B00071DA6 /* DetectionKeyword.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC972F8C8F2A00D167AB /* DetectionKeyword.swift */; };
+		13A746CC2FA2858B00071DA6 /* FollowUp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC932F8C8F2800D167AB /* FollowUp.swift */; };
+		13A746CD2FA2858B00071DA6 /* CalendarSyncRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC992F8C8F2C00D167AB /* CalendarSyncRecord.swift */; };
+		13A746CE2FA2858B00071DA6 /* LongTermNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC952F8C8F2900D167AB /* LongTermNote.swift */; };
+		13A746CF2FA2858B00071DA6 /* TrackedAlarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000006 /* TrackedAlarm.swift */; };
+		13A746D02FA2858B00071DA6 /* NavigationNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC9D2F8C8F3C00D167AB /* NavigationNotification.swift */; };
+		13A746D12FA2858B00071DA6 /* TrackedAlarmModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC8D2F8C8ED600D167AB /* TrackedAlarmModel.swift */; };
+		13A746D22FA2858B00071DA6 /* Reminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC9B2F8C8F2D00D167AB /* Reminder.swift */; };
+		13A746D32FA2858B00071DA6 /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC912F8C8F2700D167AB /* Note.swift */; };
+		13A746D42FA2858B00071DA6 /* Person.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC8F2F8C8F2500D167AB /* Person.swift */; };
+		13A746E12FA28D6100071DA6 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 13A746E02FA28D6100071DA6 /* WidgetKit.framework */; };
+		13A746E32FA28D6100071DA6 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 13A746E22FA28D6100071DA6 /* SwiftUI.framework */; };
+		13A746F22FA28D6200071DA6 /* BeforeWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 13A746DE2FA28D6100071DA6 /* BeforeWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		13A746F82FA28DA000071DA6 /* LongTermNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC952F8C8F2900D167AB /* LongTermNote.swift */; };
+		13A746F92FA28DA000071DA6 /* FollowUp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC932F8C8F2800D167AB /* FollowUp.swift */; };
+		13A746FA2FA28DA000071DA6 /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC912F8C8F2700D167AB /* Note.swift */; };
+		13A746FB2FA28DA000071DA6 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000005 /* AppSettings.swift */; };
+		13A746FC2FA28DA000071DA6 /* DetectionKeyword.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC972F8C8F2A00D167AB /* DetectionKeyword.swift */; };
+		13A746FD2FA28DA000071DA6 /* TrackedAlarmModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC8D2F8C8ED600D167AB /* TrackedAlarmModel.swift */; };
+		13A746FE2FA28DA000071DA6 /* Reminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC9B2F8C8F2D00D167AB /* Reminder.swift */; };
+		13A746FF2FA28DA000071DA6 /* Person.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC8F2F8C8F2500D167AB /* Person.swift */; };
+		13A747002FA28DA000071DA6 /* NavigationNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC9D2F8C8F3C00D167AB /* NavigationNotification.swift */; };
+		13A747012FA28DA000071DA6 /* CalendarSyncRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC992F8C8F2C00D167AB /* CalendarSyncRecord.swift */; };
+		13A747022FA28DA000071DA6 /* TrackedAlarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000006 /* TrackedAlarm.swift */; };
+		BB0000000000000000000001 /* BefoorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000001 /* BefoorApp.swift */; };
+		BB0000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000002 /* ContentView.swift */; };
+		BB0000000000000000000003 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000003 /* SettingsView.swift */; };
+		BB0000000000000000000004 /* CalendarPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000004 /* CalendarPickerView.swift */; };
+		BB0000000000000000000005 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000005 /* AppSettings.swift */; };
+		BB0000000000000000000006 /* TrackedAlarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000006 /* TrackedAlarm.swift */; };
+		BB0000000000000000000007 /* CalendarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000007 /* CalendarService.swift */; };
+		BB0000000000000000000008 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000008 /* NotificationService.swift */; };
+		BB0000000000000000000009 /* AlarmScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000009 /* AlarmScheduler.swift */; };
+		BB000000000000000000000A /* SoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000D /* SoundPlayer.swift */; };
+		BB000000000000000000000B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000A /* Assets.xcassets */; };
+		BB000000000000000000000C /* pebble.caf in Resources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000E /* pebble.caf */; };
+		BB000000000000000000000D /* brush.caf in Resources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000F /* brush.caf */; };
+		BB000000000000000000000E /* shaman.caf in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000010 /* shaman.caf */; };
+		BB000000000000000000000F /* zen_cute.caf in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000011 /* zen_cute.caf */; };
+		BB0000000000000000000010 /* gozaimasu.caf in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000012 /* gozaimasu.caf */; };
+		BB0000000000000000000011 /* jfk.caf in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000013 /* jfk.caf */; };
+		BB0000000000000000000012 /* narita.caf in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000014 /* narita.caf */; };
+		BB0000000000000000000013 /* access_granted.caf in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000015 /* access_granted.caf */; };
+		BB0000000000000000000014 /* positive_id.caf in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000016 /* positive_id.caf */; };
+		BB0000000000000000000015 /* open_channel.caf in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000017 /* open_channel.caf */; };
+		BB0000000000000000000016 /* notification_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000019 /* notification_icon.png */; };
+		BB0000000000000000000017 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000001A /* HelpView.swift */; };
+		BB0000000000000000000019 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000001C /* OnboardingView.swift */; };
+		BB000000000000000000001A /* BackgroundAudioKeepAlive.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000001D /* BackgroundAudioKeepAlive.swift */; };
+		BB000000000000000000001B /* AlarmPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000001E /* AlarmPlayer.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		13A746BB2FA284B000071DA6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 07263FAD2DC7F8E500C0B8C2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 13A746B22FA284AF00071DA6;
+			remoteInfo = "BeforeWatch App Watch App";
+		};
+		13A746F02FA28D6200071DA6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 07263FAD2DC7F8E500C0B8C2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 13A746DD2FA28D6100071DA6;
+			remoteInfo = BeforeWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		13A746AE2FA2843300071DA6 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				13A746BD2FA284B000071DA6 /* BeforeWatch App Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		13A746F72FA28D6200071DA6 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				13A746F22FA28D6200071DA6 /* BeforeWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		132FDC8D2F8C8ED600D167AB /* TrackedAlarmModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackedAlarmModel.swift; sourceTree = "<group>"; };
+		132FDC8F2F8C8F2500D167AB /* Person.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Person.swift; sourceTree = "<group>"; };
+		132FDC912F8C8F2700D167AB /* Note.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.swift; sourceTree = "<group>"; };
+		132FDC932F8C8F2800D167AB /* FollowUp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowUp.swift; sourceTree = "<group>"; };
+		132FDC952F8C8F2900D167AB /* LongTermNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LongTermNote.swift; sourceTree = "<group>"; };
+		132FDC972F8C8F2A00D167AB /* DetectionKeyword.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetectionKeyword.swift; sourceTree = "<group>"; };
+		132FDC992F8C8F2C00D167AB /* CalendarSyncRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSyncRecord.swift; sourceTree = "<group>"; };
+		132FDC9B2F8C8F2D00D167AB /* Reminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reminder.swift; sourceTree = "<group>"; };
+		132FDC9D2F8C8F3C00D167AB /* NavigationNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationNotification.swift; sourceTree = "<group>"; };
+		132FDC9F2F8C8FD600D167AB /* SyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCoordinator.swift; sourceTree = "<group>"; };
+		132FDCA22F8C901300D167AB /* PeopleTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleTabView.swift; sourceTree = "<group>"; };
+		132FDCA42F8C901400D167AB /* PeopleListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleListView.swift; sourceTree = "<group>"; };
+		132FDCA62F8C901600D167AB /* PersonRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonRowView.swift; sourceTree = "<group>"; };
+		132FDCA82F8C901700D167AB /* PersonDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonDetailView.swift; sourceTree = "<group>"; };
+		132FDCAA2F8C904700D167AB /* AddNoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddNoteView.swift; sourceTree = "<group>"; };
+		132FDCAC2F8C904800D167AB /* EditNoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditNoteView.swift; sourceTree = "<group>"; };
+		132FDCAE2F8C904A00D167AB /* NoteRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteRowView.swift; sourceTree = "<group>"; };
+		132FDCB02F8C904B00D167AB /* AddFollowUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFollowUpView.swift; sourceTree = "<group>"; };
+		132FDCB22F8C904D00D167AB /* FollowUpRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FollowUpRowView.swift; sourceTree = "<group>"; };
+		132FDCB42F8C904E00D167AB /* AddLongTermNoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddLongTermNoteView.swift; sourceTree = "<group>"; };
+		132FDCB62F8C905000D167AB /* LongTermNoteRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LongTermNoteRowView.swift; sourceTree = "<group>"; };
+		132FDCB82F8C905100D167AB /* AddReminderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddReminderView.swift; sourceTree = "<group>"; };
+		132FDCBA2F8C905300D167AB /* ReminderRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderRowView.swift; sourceTree = "<group>"; };
+		132FDCBC2F8C905400D167AB /* PreMeetingReminderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreMeetingReminderView.swift; sourceTree = "<group>"; };
+		13A7469A2FA183C300071DA6 /* AddGlobalNoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddGlobalNoteView.swift; sourceTree = "<group>"; };
+		13A746B32FA284AF00071DA6 /* BeforeWatch App Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "BeforeWatch App Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		13A746D82FA28D2B00071DA6 /* BefoorWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BefoorWidget.swift; sourceTree = "<group>"; };
+		13A746D92FA28D3000071DA6 /* BefoorWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BefoorWidget.entitlements; sourceTree = "<group>"; };
+		13A746DE2FA28D6100071DA6 /* BeforeWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BeforeWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		13A746E02FA28D6100071DA6 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		13A746E22FA28D6100071DA6 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		13A747032FA28DB900071DA6 /* BeforeWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BeforeWidgetExtension.entitlements; sourceTree = "<group>"; };
+		AA0000000000000000000001 /* BefoorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BefoorApp.swift; sourceTree = "<group>"; };
+		AA0000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000003 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000004 /* CalendarPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarPickerView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000005 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		AA0000000000000000000006 /* TrackedAlarm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackedAlarm.swift; sourceTree = "<group>"; };
+		AA0000000000000000000007 /* CalendarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarService.swift; sourceTree = "<group>"; };
+		AA0000000000000000000008 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		AA0000000000000000000009 /* AlarmScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmScheduler.swift; sourceTree = "<group>"; };
+		AA000000000000000000000A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AA000000000000000000000B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA000000000000000000000C /* Befoor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Befoor.entitlements; sourceTree = "<group>"; };
+		AA000000000000000000000D /* SoundPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundPlayer.swift; sourceTree = "<group>"; };
+		AA000000000000000000000E /* pebble.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = pebble.caf; sourceTree = "<group>"; };
+		AA000000000000000000000F /* brush.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = brush.caf; sourceTree = "<group>"; };
+		AA0000000000000000000010 /* shaman.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = shaman.caf; sourceTree = "<group>"; };
+		AA0000000000000000000011 /* zen_cute.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = zen_cute.caf; sourceTree = "<group>"; };
+		AA0000000000000000000012 /* gozaimasu.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = gozaimasu.caf; sourceTree = "<group>"; };
+		AA0000000000000000000013 /* jfk.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = jfk.caf; sourceTree = "<group>"; };
+		AA0000000000000000000014 /* narita.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = narita.caf; sourceTree = "<group>"; };
+		AA0000000000000000000015 /* access_granted.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = access_granted.caf; sourceTree = "<group>"; };
+		AA0000000000000000000016 /* positive_id.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = positive_id.caf; sourceTree = "<group>"; };
+		AA0000000000000000000017 /* open_channel.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = open_channel.caf; sourceTree = "<group>"; };
+		AA0000000000000000000018 /* Befoor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Befoor.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA0000000000000000000019 /* notification_icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = notification_icon.png; sourceTree = "<group>"; };
+		AA000000000000000000001A /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
+		AA000000000000000000001C /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		AA000000000000000000001D /* BackgroundAudioKeepAlive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundAudioKeepAlive.swift; sourceTree = "<group>"; };
+		AA000000000000000000001E /* AlarmPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmPlayer.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		13A746F32FA28D6200071DA6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 13A746DD2FA28D6100071DA6 /* BeforeWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		13A746A12FA2843100071DA6 /* BeforeWatch App Watch App */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "BeforeWatch App Watch App"; sourceTree = "<group>"; };
+		13A746B42FA284AF00071DA6 /* BeforeWatch App Watch App */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "BeforeWatch App Watch App"; sourceTree = "<group>"; };
+		13A746E42FA28D6100071DA6 /* BeforeWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (13A746F32FA28D6200071DA6 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = BeforeWidget; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		13A746B02FA284AF00071DA6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		13A746DB2FA28D6100071DA6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				13A746E32FA28D6100071DA6 /* SwiftUI.framework in Frameworks */,
+				13A746E12FA28D6100071DA6 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DD0000000000000000000003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		132FDCA12F8C8FE100D167AB /* People */ = {
+			isa = PBXGroup;
+			children = (
+				132FDCA22F8C901300D167AB /* PeopleTabView.swift */,
+				132FDCA42F8C901400D167AB /* PeopleListView.swift */,
+				132FDCA62F8C901600D167AB /* PersonRowView.swift */,
+				132FDCA82F8C901700D167AB /* PersonDetailView.swift */,
+				132FDCAA2F8C904700D167AB /* AddNoteView.swift */,
+				132FDCAC2F8C904800D167AB /* EditNoteView.swift */,
+				132FDCAE2F8C904A00D167AB /* NoteRowView.swift */,
+				132FDCB02F8C904B00D167AB /* AddFollowUpView.swift */,
+				132FDCB22F8C904D00D167AB /* FollowUpRowView.swift */,
+				132FDCB42F8C904E00D167AB /* AddLongTermNoteView.swift */,
+				132FDCB62F8C905000D167AB /* LongTermNoteRowView.swift */,
+				132FDCB82F8C905100D167AB /* AddReminderView.swift */,
+				132FDCBA2F8C905300D167AB /* ReminderRowView.swift */,
+				132FDCBC2F8C905400D167AB /* PreMeetingReminderView.swift */,
+				13A7469A2FA183C300071DA6 /* AddGlobalNoteView.swift */,
+			);
+			path = People;
+			sourceTree = "<group>";
+		};
+		13A746D72FA28D1D00071DA6 /* BefoorWidget */ = {
+			isa = PBXGroup;
+			children = (
+				13A746D82FA28D2B00071DA6 /* BefoorWidget.swift */,
+				13A746D92FA28D3000071DA6 /* BefoorWidget.entitlements */,
+			);
+			path = BefoorWidget;
+			sourceTree = "<group>";
+		};
+		13A746DF2FA28D6100071DA6 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				13A746E02FA28D6100071DA6 /* WidgetKit.framework */,
+				13A746E22FA28D6100071DA6 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		CC0000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				13A747032FA28DB900071DA6 /* BeforeWidgetExtension.entitlements */,
+				CC0000000000000000000002 /* Befoor */,
+				13A746A12FA2843100071DA6 /* BeforeWatch App Watch App */,
+				13A746B42FA284AF00071DA6 /* BeforeWatch App Watch App */,
+				13A746E42FA28D6100071DA6 /* BeforeWidget */,
+				13A746DF2FA28D6100071DA6 /* Frameworks */,
+				CC0000000000000000000007 /* Products */,
+				13A746D72FA28D1D00071DA6 /* BefoorWidget */,
+			);
+			sourceTree = "<group>";
+		};
+		CC0000000000000000000002 /* Befoor */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000001 /* BefoorApp.swift */,
+				AA000000000000000000000A /* Assets.xcassets */,
+				AA000000000000000000000B /* Info.plist */,
+				AA000000000000000000000C /* Befoor.entitlements */,
+				AA0000000000000000000019 /* notification_icon.png */,
+				CC0000000000000000000003 /* Views */,
+				CC0000000000000000000004 /* Models */,
+				CC0000000000000000000005 /* Services */,
+				CC0000000000000000000006 /* Sounds */,
+			);
+			path = Befoor;
+			sourceTree = "<group>";
+		};
+		CC0000000000000000000003 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000002 /* ContentView.swift */,
+				AA0000000000000000000003 /* SettingsView.swift */,
+				AA000000000000000000001A /* HelpView.swift */,
+				AA000000000000000000001C /* OnboardingView.swift */,
+				AA0000000000000000000004 /* CalendarPickerView.swift */,
+				132FDCA12F8C8FE100D167AB /* People */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		CC0000000000000000000004 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000005 /* AppSettings.swift */,
+				AA0000000000000000000006 /* TrackedAlarm.swift */,
+				132FDC8D2F8C8ED600D167AB /* TrackedAlarmModel.swift */,
+				132FDC8F2F8C8F2500D167AB /* Person.swift */,
+				132FDC912F8C8F2700D167AB /* Note.swift */,
+				132FDC932F8C8F2800D167AB /* FollowUp.swift */,
+				132FDC952F8C8F2900D167AB /* LongTermNote.swift */,
+				132FDC972F8C8F2A00D167AB /* DetectionKeyword.swift */,
+				132FDC992F8C8F2C00D167AB /* CalendarSyncRecord.swift */,
+				132FDC9B2F8C8F2D00D167AB /* Reminder.swift */,
+				132FDC9D2F8C8F3C00D167AB /* NavigationNotification.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		CC0000000000000000000005 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000007 /* CalendarService.swift */,
+				AA0000000000000000000008 /* NotificationService.swift */,
+				AA0000000000000000000009 /* AlarmScheduler.swift */,
+				AA000000000000000000000D /* SoundPlayer.swift */,
+				AA000000000000000000001D /* BackgroundAudioKeepAlive.swift */,
+				AA000000000000000000001E /* AlarmPlayer.swift */,
+				132FDC9F2F8C8FD600D167AB /* SyncCoordinator.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		CC0000000000000000000006 /* Sounds */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000000000000E /* pebble.caf */,
+				AA000000000000000000000F /* brush.caf */,
+				AA0000000000000000000010 /* shaman.caf */,
+				AA0000000000000000000011 /* zen_cute.caf */,
+				AA0000000000000000000012 /* gozaimasu.caf */,
+				AA0000000000000000000013 /* jfk.caf */,
+				AA0000000000000000000014 /* narita.caf */,
+				AA0000000000000000000015 /* access_granted.caf */,
+				AA0000000000000000000016 /* positive_id.caf */,
+				AA0000000000000000000017 /* open_channel.caf */,
+			);
+			path = Sounds;
+			sourceTree = "<group>";
+		};
+		CC0000000000000000000007 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000018 /* Befoor.app */,
+				13A746B32FA284AF00071DA6 /* BeforeWatch App Watch App.app */,
+				13A746DE2FA28D6100071DA6 /* BeforeWidgetExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		13A746B22FA284AF00071DA6 /* BeforeWatch App Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 13A746BE2FA284B000071DA6 /* Build configuration list for PBXNativeTarget "BeforeWatch App Watch App" */;
+			buildPhases = (
+				13A746AF2FA284AF00071DA6 /* Sources */,
+				13A746B02FA284AF00071DA6 /* Frameworks */,
+				13A746B12FA284AF00071DA6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				13A746B42FA284AF00071DA6 /* BeforeWatch App Watch App */,
+			);
+			name = "BeforeWatch App Watch App";
+			packageProductDependencies = (
+			);
+			productName = "BeforeWatch App Watch App";
+			productReference = 13A746B32FA284AF00071DA6 /* BeforeWatch App Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+		13A746DD2FA28D6100071DA6 /* BeforeWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 13A746F42FA28D6200071DA6 /* Build configuration list for PBXNativeTarget "BeforeWidgetExtension" */;
+			buildPhases = (
+				13A746DA2FA28D6100071DA6 /* Sources */,
+				13A746DB2FA28D6100071DA6 /* Frameworks */,
+				13A746DC2FA28D6100071DA6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				13A746E42FA28D6100071DA6 /* BeforeWidget */,
+			);
+			name = BeforeWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = BeforeWidgetExtension;
+			productReference = 13A746DE2FA28D6100071DA6 /* BeforeWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		FF0000000000000000000001 /* Befoor */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EE0000000000000000000006 /* Build configuration list for PBXNativeTarget "Befoor" */;
+			buildPhases = (
+				DD0000000000000000000001 /* Sources */,
+				DD0000000000000000000002 /* Resources */,
+				DD0000000000000000000003 /* Frameworks */,
+				13A746AE2FA2843300071DA6 /* Embed Watch Content */,
+				13A746F72FA28D6200071DA6 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				13A746BC2FA284B000071DA6 /* PBXTargetDependency */,
+				13A746F12FA28D6200071DA6 /* PBXTargetDependency */,
+			);
+			name = Befoor;
+			productName = Befoor;
+			productReference = AA0000000000000000000018 /* Befoor.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		07263FAD2DC7F8E500C0B8C2 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2640;
+				LastUpgradeCheck = 2630;
+				TargetAttributes = {
+					13A746B22FA284AF00071DA6 = {
+						CreatedOnToolsVersion = 26.4.1;
+					};
+					13A746DD2FA28D6100071DA6 = {
+						CreatedOnToolsVersion = 26.4.1;
+					};
+					FF0000000000000000000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = EE0000000000000000000005 /* Build configuration list for PBXProject "Befoor" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = CC0000000000000000000001;
+			productRefGroup = CC0000000000000000000007 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FF0000000000000000000001 /* Befoor */,
+				13A746B22FA284AF00071DA6 /* BeforeWatch App Watch App */,
+				13A746DD2FA28D6100071DA6 /* BeforeWidgetExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		13A746B12FA284AF00071DA6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		13A746DC2FA28D6100071DA6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DD0000000000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BB000000000000000000000B /* Assets.xcassets in Resources */,
+				BB000000000000000000000C /* pebble.caf in Resources */,
+				BB000000000000000000000D /* brush.caf in Resources */,
+				BB000000000000000000000E /* shaman.caf in Resources */,
+				BB000000000000000000000F /* zen_cute.caf in Resources */,
+				BB0000000000000000000010 /* gozaimasu.caf in Resources */,
+				BB0000000000000000000011 /* jfk.caf in Resources */,
+				BB0000000000000000000012 /* narita.caf in Resources */,
+				BB0000000000000000000013 /* access_granted.caf in Resources */,
+				BB0000000000000000000014 /* positive_id.caf in Resources */,
+				BB0000000000000000000015 /* open_channel.caf in Resources */,
+				BB0000000000000000000016 /* notification_icon.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		13A746AF2FA284AF00071DA6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				13A746CA2FA2858400071DA6 /* AppSettings.swift in Sources */,
+				13A746CB2FA2858B00071DA6 /* DetectionKeyword.swift in Sources */,
+				13A746CC2FA2858B00071DA6 /* FollowUp.swift in Sources */,
+				13A746CD2FA2858B00071DA6 /* CalendarSyncRecord.swift in Sources */,
+				13A746CE2FA2858B00071DA6 /* LongTermNote.swift in Sources */,
+				13A746CF2FA2858B00071DA6 /* TrackedAlarm.swift in Sources */,
+				13A746D02FA2858B00071DA6 /* NavigationNotification.swift in Sources */,
+				13A746D12FA2858B00071DA6 /* TrackedAlarmModel.swift in Sources */,
+				13A746D22FA2858B00071DA6 /* Reminder.swift in Sources */,
+				13A746D32FA2858B00071DA6 /* Note.swift in Sources */,
+				13A746D42FA2858B00071DA6 /* Person.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		13A746DA2FA28D6100071DA6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				13A746F82FA28DA000071DA6 /* LongTermNote.swift in Sources */,
+				13A746F92FA28DA000071DA6 /* FollowUp.swift in Sources */,
+				13A746FA2FA28DA000071DA6 /* Note.swift in Sources */,
+				13A746FB2FA28DA000071DA6 /* AppSettings.swift in Sources */,
+				13A746FC2FA28DA000071DA6 /* DetectionKeyword.swift in Sources */,
+				13A746FD2FA28DA000071DA6 /* TrackedAlarmModel.swift in Sources */,
+				13A746FE2FA28DA000071DA6 /* Reminder.swift in Sources */,
+				13A746FF2FA28DA000071DA6 /* Person.swift in Sources */,
+				13A747002FA28DA000071DA6 /* NavigationNotification.swift in Sources */,
+				13A747012FA28DA000071DA6 /* CalendarSyncRecord.swift in Sources */,
+				13A747022FA28DA000071DA6 /* TrackedAlarm.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DD0000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				132FDCB52F8C904E00D167AB /* AddLongTermNoteView.swift in Sources */,
+				BB0000000000000000000001 /* BefoorApp.swift in Sources */,
+				132FDCB92F8C905100D167AB /* AddReminderView.swift in Sources */,
+				132FDCAB2F8C904700D167AB /* AddNoteView.swift in Sources */,
+				132FDC982F8C8F2A00D167AB /* DetectionKeyword.swift in Sources */,
+				132FDCBB2F8C905300D167AB /* ReminderRowView.swift in Sources */,
+				132FDCB32F8C904D00D167AB /* FollowUpRowView.swift in Sources */,
+				132FDCA32F8C901300D167AB /* PeopleTabView.swift in Sources */,
+				132FDC9A2F8C8F2C00D167AB /* CalendarSyncRecord.swift in Sources */,
+				132FDC962F8C8F2900D167AB /* LongTermNote.swift in Sources */,
+				BB0000000000000000000002 /* ContentView.swift in Sources */,
+				BB0000000000000000000003 /* SettingsView.swift in Sources */,
+				132FDCA52F8C901400D167AB /* PeopleListView.swift in Sources */,
+				BB0000000000000000000017 /* HelpView.swift in Sources */,
+				132FDCB72F8C905000D167AB /* LongTermNoteRowView.swift in Sources */,
+				132FDC922F8C8F2700D167AB /* Note.swift in Sources */,
+				132FDC942F8C8F2800D167AB /* FollowUp.swift in Sources */,
+				132FDCB12F8C904B00D167AB /* AddFollowUpView.swift in Sources */,
+				132FDCA02F8C8FD600D167AB /* SyncCoordinator.swift in Sources */,
+				BB0000000000000000000019 /* OnboardingView.swift in Sources */,
+				BB0000000000000000000004 /* CalendarPickerView.swift in Sources */,
+				132FDCAF2F8C904A00D167AB /* NoteRowView.swift in Sources */,
+				132FDCBD2F8C905400D167AB /* PreMeetingReminderView.swift in Sources */,
+				BB0000000000000000000005 /* AppSettings.swift in Sources */,
+				BB0000000000000000000006 /* TrackedAlarm.swift in Sources */,
+				132FDC9C2F8C8F2D00D167AB /* Reminder.swift in Sources */,
+				132FDC9E2F8C8F3C00D167AB /* NavigationNotification.swift in Sources */,
+				BB0000000000000000000007 /* CalendarService.swift in Sources */,
+				BB0000000000000000000008 /* NotificationService.swift in Sources */,
+				BB0000000000000000000009 /* AlarmScheduler.swift in Sources */,
+				BB000000000000000000000A /* SoundPlayer.swift in Sources */,
+				BB000000000000000000001A /* BackgroundAudioKeepAlive.swift in Sources */,
+				BB000000000000000000001B /* AlarmPlayer.swift in Sources */,
+				132FDC902F8C8F2500D167AB /* Person.swift in Sources */,
+				13A7469B2FA183C300071DA6 /* AddGlobalNoteView.swift in Sources */,
+				132FDCA72F8C901600D167AB /* PersonRowView.swift in Sources */,
+				132FDCA92F8C901700D167AB /* PersonDetailView.swift in Sources */,
+				132FDCAD2F8C904800D167AB /* EditNoteView.swift in Sources */,
+				132FDC8E2F8C8ED600D167AB /* TrackedAlarmModel.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		13A746BC2FA284B000071DA6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 13A746B22FA284AF00071DA6 /* BeforeWatch App Watch App */;
+			targetProxy = 13A746BB2FA284B000071DA6 /* PBXContainerItemProxy */;
+		};
+		13A746F12FA28D6200071DA6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 13A746DD2FA28D6100071DA6 /* BeforeWidgetExtension */;
+			targetProxy = 13A746F02FA28D6200071DA6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		13A746BF2FA284B000071DA6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "BeforeWatch App Watch App/BeforeWatch App Watch App.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "BeforeWatch App";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.befoor.app;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.befoor.app.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.4;
+			};
+			name = Debug;
+		};
+		13A746C02FA284B000071DA6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "BeforeWatch App Watch App/BeforeWatch App Watch App.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "BeforeWatch App";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.befoor.app;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.befoor.app.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.4;
+			};
+			name = Release;
+		};
+		13A746F52FA28D6200071DA6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = BeforeWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BeforeWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BeforeWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.befoor.app.BeforeWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		13A746F62FA28D6200071DA6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = BeforeWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BeforeWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BeforeWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.befoor.app.BeforeWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		EE0000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_CYCLE = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = TJ8LYQ4D36;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		EE0000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_CYCLE = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = TJ8LYQ4D36;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		EE0000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Befoor/Befoor.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Befoor/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.befoor.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		EE0000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Befoor/Befoor.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Befoor/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.befoor.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		13A746BE2FA284B000071DA6 /* Build configuration list for PBXNativeTarget "BeforeWatch App Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				13A746BF2FA284B000071DA6 /* Debug */,
+				13A746C02FA284B000071DA6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		13A746F42FA28D6200071DA6 /* Build configuration list for PBXNativeTarget "BeforeWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				13A746F52FA28D6200071DA6 /* Debug */,
+				13A746F62FA28D6200071DA6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EE0000000000000000000005 /* Build configuration list for PBXProject "Befoor" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE0000000000000000000001 /* Debug */,
+				EE0000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EE0000000000000000000006 /* Build configuration list for PBXNativeTarget "Befoor" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE0000000000000000000003 /* Debug */,
+				EE0000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 07263FAD2DC7F8E500C0B8C2 /* Project object */;
+}

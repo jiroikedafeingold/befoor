@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "self:">
+   </FileRef>
+   <Group
+      location = "group:BefoorWatch Watch App"
+      name = "BefoorWatch Watch App">
+      <FileRef
+         location = "group:BefoorWatchApp.swift">
+      </FileRef>
+      <FileRef
+         location = "group:WatchContentView.swift">
+      </FileRef>
+      <FileRef
+         location = "group:WatchAlarmsView.swift">
+      </FileRef>
+      <FileRef
+         location = "group:WatchPeopleListView.swift">
+      </FileRef>
+      <FileRef
+         location = "group:WatchPersonDetailView.swift">
+      </FileRef>
+      <FileRef
+         location = "group:BefoorWatch.entitlements">
+      </FileRef>
+   </Group>
+</Workspace>

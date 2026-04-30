@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#3730a3"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="16" flood-color="#1e1b4b" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <!-- iOS-style squircle background -->
+  <rect width="1024" height="1024" rx="230" fill="url(#bg)"/>
+
+  <!-- Left alarm bell (drawn before clock so clock face covers the bottom) -->
+  <circle cx="383" cy="248" r="72" fill="white" opacity="0.96"/>
+
+  <!-- Right alarm bell -->
+  <circle cx="641" cy="248" r="72" fill="white" opacity="0.96"/>
+
+  <!-- Main clock face -->
+  <circle cx="512" cy="544" r="300" fill="white" filter="url(#shadow)"/>
+
+  <!-- Face inner ring -->
+  <circle cx="512" cy="544" r="266" fill="none" stroke="#e0e7ff" stroke-width="10"/>
+
+  <!-- Hour tick marks at 12, 3, 6, 9 -->
+  <line x1="512" y1="292" x2="512" y2="334" stroke="#4f46e5" stroke-width="20" stroke-linecap="round"/>
+  <line x1="764" y1="544" x2="722" y2="544" stroke="#4f46e5" stroke-width="20" stroke-linecap="round"/>
+  <line x1="512" y1="796" x2="512" y2="754" stroke="#4f46e5" stroke-width="20" stroke-linecap="round"/>
+  <line x1="260" y1="544" x2="302" y2="544" stroke="#4f46e5" stroke-width="20" stroke-linecap="round"/>
+
+  <!-- Hour hand — pointing to 10 o'clock
+       angle = -60° from 12: sin(-60°)=−0.866, cos(-60°)=0.5
+       length 168 → tip at (512−146, 544−84) = (366, 460) -->
+  <line x1="512" y1="544" x2="366" y2="460" stroke="#1e1b4b" stroke-width="36" stroke-linecap="round"/>
+
+  <!-- Minute hand — pointing to 2 o'clock
+       angle = +60° from 12: sin(60°)=0.866, cos(60°)=0.5
+       length 222 → tip at (512+192, 544−111) = (704, 433) -->
+  <line x1="512" y1="544" x2="704" y2="433" stroke="#4f46e5" stroke-width="24" stroke-linecap="round"/>
+
+  <!-- Center pivot -->
+  <circle cx="512" cy="544" r="26" fill="#1e1b4b"/>
+  <circle cx="512" cy="544" r="11" fill="white"/>
+
+  <!-- Bell inner accent dots (visible in the arc above the clock face) -->
+  <circle cx="383" cy="220" r="18" fill="#818cf8"/>
+  <circle cx="641" cy="220" r="18" fill="#818cf8"/>
+
+  <!-- Feet / stands at the base -->
+  <line x1="468" y1="834" x2="428" y2="882" stroke="white" stroke-width="26" stroke-linecap="round" opacity="0.88"/>
+  <line x1="556" y1="834" x2="596" y2="882" stroke="white" stroke-width="26" stroke-linecap="round" opacity="0.88"/>
+</svg>

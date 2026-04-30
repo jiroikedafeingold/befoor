@@ -1,0 +1,32 @@
+import SwiftUI
+import SwiftData
+
+@main
+struct BeforeWatch_App_Watch_AppApp: App {
+    let modelContainer: ModelContainer
+
+    init() {
+        let types: [any PersistentModel.Type] = [
+            Person.self, Note.self, FollowUp.self, LongTermNote.self,
+            Reminder.self, DetectionKeyword.self,
+            TrackedAlarmModel.self, CalendarSyncRecord.self,
+        ]
+
+        do {
+            let config = ModelConfiguration(
+                cloudKitDatabase: .private("iCloud.com.jirofeingold.Befoor")
+            )
+            modelContainer = try ModelContainer(for: Schema(types), configurations: config)
+        } catch {
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            modelContainer = try! ModelContainer(for: Schema(types), configurations: config)
+        }
+    }
+
+    var body: some Scene {
+        WindowGroup {
+            WatchContentView()
+        }
+        .modelContainer(modelContainer)
+    }
+}

@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/jirofeingold/**)",
+      "Bash(find /Users/jirofeingold/Projects -name *.m4r -o -name *.caf -o -name *.aiff -o -name *.mp3)",
+      "Bash(sort echo:*)",
+      "Bash(sips -g pixelWidth -g pixelHeight \"/Users/jirofeingold/Desktop/AppIcon.png\" \"/Users/jirofeingold/Desktop/icon.png\" \"/Users/jirofeingold/Downloads/AppIcons/appstore.png\")",
+      "Bash(APP=\"/Users/jirofeingold/Library/Developer/Xcode/DerivedData/Befoor-fthukqpholyuhdcqgxashckrypqb/Build/Products/Debug-iphoneos/Befoor.app\" __NEW_LINE_e3e8a469753ba751__ echo \"=== Codesign check ===\" codesign -dvvv \"$APP\")",
+      "Read(//Users/jirofeingold/Projects/Befoor/**)",
+      "Bash(plutil -p -)",
+      "Bash(APP=/Users/jirofeingold/Library/Developer/Xcode/DerivedData/Befoor-fthukqpholyuhdcqgxashckrypqb/Build/Products/Debug-iphoneos/Befoor.app __NEW_LINE_97540627ba96980b__ echo '=== Provisioned devices ===' security cms -D -i $APP/embedded.mobileprovision)",
+      "Bash(grep -v \"^$\")",
+      "Bash(xcrun xctrace:*)",
+      "Bash(system_profiler SPUSBDataType)",
+      "Bash(python3 -c \"import cairosvg\")",
+      "Bash(qlmanage -t -s 1024 -o /Users/jirofeingold/Projects/Befoor/website/ /Users/jirofeingold/Projects/Befoor/website/icon.svg)",
+      "Bash(ls /Users/jirofeingold/Projects/Befoor/website/*.png)",
+      "Bash(sips -g pixelWidth -g pixelHeight /Users/jirofeingold/Projects/Befoor/website/icon.svg.png)"
+    ],
+    "additionalDirectories": [
+      "/Users/jirofeingold/Projects/Befoor/Befoor",
+      "/Users/jirofeingold/Library/Developer/Xcode/DerivedData"
+    ]
+  }
+}

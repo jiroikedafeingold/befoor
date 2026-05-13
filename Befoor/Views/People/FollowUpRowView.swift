@@ -3,6 +3,7 @@ import SwiftUI
 struct FollowUpRowView: View {
     let followUp: FollowUp
     let onToggle: () -> Void
+    @State private var showEdit = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -37,7 +38,12 @@ struct FollowUpRowView: View {
                     }
                 }
             }
+            .contentShape(Rectangle())
+            .onTapGesture { showEdit = true }
         }
         .padding(.vertical, 2)
+        .sheet(isPresented: $showEdit) {
+            EditFollowUpView(followUp: followUp)
+        }
     }
 }

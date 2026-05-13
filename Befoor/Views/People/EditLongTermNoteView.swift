@@ -1,39 +1,25 @@
 import SwiftUI
 
-struct EditNoteView: View {
-    @Bindable var note: Note
+struct EditLongTermNoteView: View {
+    @Bindable var note: LongTermNote
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @State private var text: String
-    @State private var meetingDate: Date
 
-    init(note: Note) {
+    init(note: LongTermNote) {
         self.note = note
         _text = State(initialValue: note.text)
-        _meetingDate = State(initialValue: note.meetingDate)
     }
-
-    @State private var showDeleteConfirmation = false
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("Meeting Date") {
-                    DatePicker("Date", selection: $meetingDate, displayedComponents: .date)
-                }
-
                 Section("Note") {
                     TextEditor(text: $text)
                         .frame(minHeight: 120)
                 }
-
-                Section {
-                    Button("Delete Note", role: .destructive) {
-                        showDeleteConfirmation = true
-                    }
-                }
             }
-            .navigationTitle("Edit Note")
+            .navigationTitle("Edit Long-term Note")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -44,19 +30,11 @@ struct EditNoteView: View {
                         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
                         guard !trimmed.isEmpty else { return }
                         note.text = trimmed
-                        note.meetingDate = meetingDate
                         note.lastModified = Date()
                         try? modelContext.save()
                         dismiss()
                     }
                     .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
-            .confirmationDialog("Delete this note?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
-                Button("Delete", role: .destructive) {
-                    modelContext.delete(note)
-                    try? modelContext.save()
-                    dismiss()
                 }
             }
         }

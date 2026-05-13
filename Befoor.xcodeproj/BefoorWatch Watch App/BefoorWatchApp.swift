@@ -9,7 +9,6 @@ struct BefoorWatchApp: App {
         let types: [any PersistentModel.Type] = [
             Person.self, Note.self, FollowUp.self, LongTermNote.self,
             Reminder.self, DetectionKeyword.self,
-            TrackedAlarmModel.self, CalendarSyncRecord.self,
         ]
 
         do {

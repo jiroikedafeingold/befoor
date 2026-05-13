@@ -17,26 +17,23 @@ struct TrackedAlarm: Codable, Identifiable {
 
 // MARK: - TrackedAlarmsStore
 
-/// Persists the mapping of eventIdentifier → TrackedAlarmModel using SwiftData.
+/// In-memory store for tracked alarms. Writes a JSON snapshot to the app group
+/// container so the widget can read it. No SwiftData involvement for local storage.
+///
+/// The main device saves an AlarmListSnapshot to SwiftData/CloudKit after each sync.
+/// Secondary devices load from that snapshot when a remote change is detected.
 @MainActor
 final class TrackedAlarmsStore: ObservableObject {
     static let shared = TrackedAlarmsStore()
 
-    @Published private(set) var alarms: [String: TrackedAlarmModel] = [:]   // keyed by eventIdentifier
+    @Published private(set) var alarms: [String: TrackedAlarmModel] = [:]
 
-    private var modelContext: ModelContext?
+    private static let snapshotFileName = "tracked_alarms.json"
     private let legacyKey = "bf_trackedAlarms"
 
-    private init() {}
-
-    // MARK: Configuration
-
-    /// Call once from ContentView's .task to inject the SwiftData context.
-    func configure(with context: ModelContext) {
-        guard modelContext == nil else { return }
-        modelContext = context
-        migrateFromUserDefaults()
-        load()
+    private init() {
+        loadSnapshot()
+        cleanupLegacyDefaults()
     }
 
     // MARK: Public API
@@ -46,78 +43,82 @@ final class TrackedAlarmsStore: ObservableObject {
     }
 
     func upsert(_ alarm: TrackedAlarmModel) {
-        if let existing = alarms[alarm.eventIdentifier] {
-            existing.notificationIdentifier = alarm.notificationIdentifier
-            existing.eventStartDate = alarm.eventStartDate
-            existing.eventTitle = alarm.eventTitle
-            existing.calendarIdentifier = alarm.calendarIdentifier
-        } else {
-            modelContext?.insert(alarm)
-            alarms[alarm.eventIdentifier] = alarm
-        }
-        save()
+        alarms[alarm.eventIdentifier] = alarm
     }
 
     func remove(eventIdentifier: String) {
-        if let existing = alarms.removeValue(forKey: eventIdentifier) {
-            modelContext?.delete(existing)
-            save()
-        }
+        alarms.removeValue(forKey: eventIdentifier)
     }
 
     func removeAll() {
-        for alarm in alarms.values {
-            modelContext?.delete(alarm)
-        }
         alarms.removeAll()
-        save()
     }
 
-    /// Remove alarms whose event start dates are in the past (cleanup)
+    /// Replace the entire alarm set from decoded models (used by secondary devices).
+    func replaceAlarms(with models: [TrackedAlarmModel]) {
+        alarms = Dictionary(models.map { ($0.eventIdentifier, $0) },
+                            uniquingKeysWith: { _, latest in latest })
+        saveSnapshot()
+    }
+
     func prunePast() {
         let now = Date()
         let stale = alarms.filter { $0.value.eventStartDate < now }
-        for (key, model) in stale {
+        for key in stale.keys {
             alarms.removeValue(forKey: key)
-            modelContext?.delete(model)
-        }
-        if !stale.isEmpty { save() }
-    }
-
-    // MARK: Persistence
-
-    private func save() {
-        try? modelContext?.save()
-    }
-
-    private func load() {
-        guard let context = modelContext else { return }
-        let descriptor = FetchDescriptor<TrackedAlarmModel>()
-        if let results = try? context.fetch(descriptor) {
-            alarms = Dictionary(results.map { ($0.eventIdentifier, $0) }, uniquingKeysWith: { _, latest in latest })
         }
     }
 
-    // MARK: Migration
+    /// Write the current alarms to a shared JSON file for the widget.
+    func saveSnapshot() {
+        guard let url = Self.snapshotURL else { return }
+        let values = Array(alarms.values)
+        try? JSONEncoder().encode(values).write(to: url, options: .atomic)
+    }
 
-    /// One-time migration from UserDefaults → SwiftData.
-    private func migrateFromUserDefaults() {
-        guard let context = modelContext,
-              let data = UserDefaults.standard.data(forKey: legacyKey),
-              let legacy = try? JSONDecoder().decode([String: TrackedAlarm].self, from: data)
-        else { return }
-
-        for (_, alarm) in legacy {
-            let model = TrackedAlarmModel(
-                eventIdentifier: alarm.eventIdentifier,
-                notificationIdentifier: alarm.notificationIdentifier,
-                eventStartDate: alarm.eventStartDate,
-                eventTitle: alarm.eventTitle,
-                calendarIdentifier: alarm.calendarIdentifier
-            )
-            context.insert(model)
+    /// Save the current alarm list to the CloudKit-synced AlarmListSnapshot model.
+    func publishToCloudKit(context: ModelContext) {
+        let descriptor = FetchDescriptor<AlarmListSnapshot>()
+        let snapshot: AlarmListSnapshot
+        if let existing = try? context.fetch(descriptor).first {
+            snapshot = existing
+        } else {
+            snapshot = AlarmListSnapshot()
+            context.insert(snapshot)
         }
+        let values = Array(alarms.values)
+        snapshot.alarmsJSON = (try? JSONEncoder().encode(values)) ?? Data()
+        snapshot.lastUpdated = Date()
         try? context.save()
+    }
+
+    /// Load the alarm list from the CloudKit-synced AlarmListSnapshot model.
+    func loadFromCloudKit(context: ModelContext) {
+        let descriptor = FetchDescriptor<AlarmListSnapshot>()
+        guard let snapshot = try? context.fetch(descriptor).first,
+              let models = try? JSONDecoder().decode([TrackedAlarmModel].self, from: snapshot.alarmsJSON) else { return }
+        alarms = Dictionary(models.map { ($0.eventIdentifier, $0) },
+                            uniquingKeysWith: { _, latest in latest })
+        saveSnapshot()
+    }
+
+    // MARK: Private
+
+    private func loadSnapshot() {
+        guard let url = Self.snapshotURL,
+              let data = try? Data(contentsOf: url),
+              let models = try? JSONDecoder().decode([TrackedAlarmModel].self, from: data) else { return }
+        alarms = Dictionary(models.map { ($0.eventIdentifier, $0) },
+                            uniquingKeysWith: { _, latest in latest })
+    }
+
+    private func cleanupLegacyDefaults() {
         UserDefaults.standard.removeObject(forKey: legacyKey)
+    }
+
+    static var snapshotURL: URL? {
+        FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: "group.com.befoor.app")?
+            .appendingPathComponent(snapshotFileName)
     }
 }

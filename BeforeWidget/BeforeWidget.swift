@@ -1,6 +1,5 @@
 import WidgetKit
 import SwiftUI
-import SwiftData
 
 // MARK: - Data
 
@@ -18,8 +17,6 @@ struct AlarmEntry: TimelineEntry {
 // MARK: - Provider
 
 struct AlarmTimelineProvider: TimelineProvider {
-    let modelContainer: ModelContainer
-
     func placeholder(in context: Context) -> AlarmEntry {
         AlarmEntry(date: .now, alarms: [
             UpcomingAlarm(id: "placeholder", title: "Meeting", startDate: Date().addingTimeInterval(3600))
@@ -44,29 +41,39 @@ struct AlarmTimelineProvider: TimelineProvider {
     }
 
     private func fetchEntry() -> AlarmEntry {
-        let context = ModelContext(modelContainer)
         let now = Date()
         let cutoff = now.addingTimeInterval(7200)
 
-        let descriptor = FetchDescriptor<TrackedAlarmModel>(
-            predicate: #Predicate<TrackedAlarmModel> { alarm in
-                alarm.eventStartDate >= now && alarm.eventStartDate <= cutoff
-            },
-            sortBy: [SortDescriptor(\.eventStartDate)]
-        )
-
-        let models = (try? context.fetch(descriptor)) ?? []
+        guard let url = FileManager.default
+                .containerURL(forSecurityApplicationGroupIdentifier: "group.com.befoor.app")?
+                .appendingPathComponent("tracked_alarms.json"),
+              let data = try? Data(contentsOf: url),
+              let models = try? JSONDecoder().decode([WidgetAlarmModel].self, from: data) else {
+            return AlarmEntry(date: now, alarms: [])
+        }
 
         var seen = Set<String>()
         var alarms: [UpcomingAlarm] = []
-        for model in models {
-            if seen.insert(model.eventIdentifier).inserted {
-                alarms.append(UpcomingAlarm(id: model.eventIdentifier, title: model.eventTitle, startDate: model.eventStartDate))
+        for model in models.sorted(by: { $0.eventStartDate < $1.eventStartDate }) {
+            guard model.eventStartDate >= now && model.eventStartDate <= cutoff else { continue }
+            if seen.insert(model.eventTitle).inserted {
+                alarms.append(UpcomingAlarm(
+                    id: model.eventIdentifier,
+                    title: model.eventTitle,
+                    startDate: model.eventStartDate
+                ))
             }
         }
 
         return AlarmEntry(date: now, alarms: alarms)
     }
+}
+
+/// Mirrors the main app's TrackedAlarmModel for JSON decoding.
+private struct WidgetAlarmModel: Codable {
+    let eventIdentifier: String
+    let eventTitle: String
+    let eventStartDate: Date
 }
 
 // MARK: - Views
@@ -169,31 +176,11 @@ struct BeforeWidgetEntryView: View {
 
 struct BeforeWidget: Widget {
     let kind = "BefoorUpcomingAlarms"
-    private let modelContainer: ModelContainer
-
-    init() {
-        let types: [any PersistentModel.Type] = [
-            Person.self, Note.self, FollowUp.self, LongTermNote.self,
-            Reminder.self, DetectionKeyword.self,
-            TrackedAlarmModel.self, CalendarSyncRecord.self,
-        ]
-
-        do {
-            let config = ModelConfiguration(
-                groupContainer: .identifier("group.com.befoor.app"),
-                cloudKitDatabase: .private("iCloud.com.jirofeingold.Befoor")
-            )
-            modelContainer = try ModelContainer(for: Schema(types), configurations: config)
-        } catch {
-            let config = ModelConfiguration(isStoredInMemoryOnly: true)
-            modelContainer = try! ModelContainer(for: Schema(types), configurations: config)
-        }
-    }
 
     var body: some WidgetConfiguration {
         StaticConfiguration(
             kind: kind,
-            provider: AlarmTimelineProvider(modelContainer: modelContainer)
+            provider: AlarmTimelineProvider()
         ) { entry in
             BeforeWidgetEntryView(entry: entry)
                 .containerBackground(for: .widget) {

@@ -9,10 +9,45 @@ struct PersonDetailView: View {
            sort: \Note.meetingDate, order: .reverse)
     private var globalNotes: [Note]
 
+    @Query private var allNotes: [Note]
+    @Query private var allFollowUps: [FollowUp]
+    @Query private var allLongTermNotes: [LongTermNote]
+    @Query private var allReminders: [Reminder]
+
     @State private var showAddNote = false
     @State private var showAddFollowUp = false
     @State private var showAddLongTermNote = false
     @State private var showAddReminder = false
+    @State private var completedExpanded = false
+
+    private func belongsToPerson(_ personID: UUID?, _ relationship: Person?) -> Bool {
+        personID == person.id || relationship?.id == person.id
+    }
+
+    private var activeFollowUps: [FollowUp] {
+        allFollowUps.filter { belongsToPerson($0.personID, $0.person) && !$0.isCompleted }
+            .sorted { ($0.dueDate ?? .distantFuture) < ($1.dueDate ?? .distantFuture) }
+    }
+
+    private var completedFollowUps: [FollowUp] {
+        allFollowUps.filter { belongsToPerson($0.personID, $0.person) && $0.isCompleted }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    private var sortedNotes: [Note] {
+        allNotes.filter { belongsToPerson($0.personID, $0.person) && !$0.isGlobal }
+            .sorted { $0.meetingDate > $1.meetingDate }
+    }
+
+    private var sortedLongTermNotes: [LongTermNote] {
+        allLongTermNotes.filter { belongsToPerson($0.personID, $0.person) }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    private var activeReminders: [Reminder] {
+        allReminders.filter { belongsToPerson($0.personID, $0.person) && !$0.isCompleted }
+            .sorted { $0.fireDate < $1.fireDate }
+    }
 
     var body: some View {
         List {
@@ -27,7 +62,7 @@ struct PersonDetailView: View {
                             .foregroundStyle(.secondary)
                     }
                     if let lastMeeting = person.lastMeetingDate {
-                        Text("Last meeting: \(lastMeeting, format: .dateTime.month().day().year())")
+                        Text("Next meeting: \(lastMeeting, format: .dateTime.month().day().year())")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -36,11 +71,6 @@ struct PersonDetailView: View {
 
             // MARK: Follow-ups
             Section {
-                let activeFollowUps = (person.followUps ?? []).filter { !$0.isCompleted }
-                    .sorted { ($0.dueDate ?? .distantFuture) < ($1.dueDate ?? .distantFuture) }
-                let completedFollowUps = (person.followUps ?? []).filter(\.isCompleted)
-                    .sorted { $0.createdAt > $1.createdAt }
-
                 if activeFollowUps.isEmpty && completedFollowUps.isEmpty {
                     Text("No follow-ups yet")
                         .font(.footnote)
@@ -52,13 +82,25 @@ struct PersonDetailView: View {
                         toggleFollowUp(followUp)
                     }
                 }
+                .onDelete { offsets in
+                    for offset in offsets {
+                        modelContext.delete(activeFollowUps[offset])
+                    }
+                    try? modelContext.save()
+                }
 
                 if !completedFollowUps.isEmpty {
-                    DisclosureGroup("Completed (\(completedFollowUps.count))") {
+                    DisclosureGroup("Completed (\(completedFollowUps.count))", isExpanded: $completedExpanded) {
                         ForEach(completedFollowUps) { followUp in
                             FollowUpRowView(followUp: followUp) {
                                 toggleFollowUp(followUp)
                             }
+                        }
+                        .onDelete { offsets in
+                            for offset in offsets {
+                                modelContext.delete(completedFollowUps[offset])
+                            }
+                            try? modelContext.save()
                         }
                     }
                 }
@@ -74,7 +116,6 @@ struct PersonDetailView: View {
 
             // MARK: Notes
             Section {
-                let sortedNotes = (person.notes ?? []).sorted { $0.meetingDate > $1.meetingDate }
                 if sortedNotes.isEmpty {
                     Text("No notes yet")
                         .font(.footnote)
@@ -106,6 +147,12 @@ struct PersonDetailView: View {
                     ForEach(globalNotes) { note in
                         NoteRowView(note: note, showGlobalBadge: true)
                     }
+                    .onDelete { offsets in
+                        for offset in offsets {
+                            modelContext.delete(globalNotes[offset])
+                        }
+                        try? modelContext.save()
+                    }
                 } header: {
                     Text("Notes for Everyone")
                 }
@@ -113,7 +160,6 @@ struct PersonDetailView: View {
 
             // MARK: Long-term Notes
             Section {
-                let sortedLongTermNotes = (person.longTermNotes ?? []).sorted { $0.createdAt > $1.createdAt }
                 if sortedLongTermNotes.isEmpty {
                     Text("No long-term notes yet")
                         .font(.footnote)
@@ -141,10 +187,6 @@ struct PersonDetailView: View {
 
             // MARK: Reminders
             Section {
-                let activeReminders = (person.reminders ?? [])
-                    .filter { !$0.isCompleted }
-                    .sorted { $0.fireDate < $1.fireDate }
-
                 if activeReminders.isEmpty {
                     Text("No active reminders")
                         .font(.footnote)
@@ -181,7 +223,6 @@ struct PersonDetailView: View {
                     .onChange(of: person.isPinned) {
                         try? modelContext.save()
                     }
-
             }
         }
         .navigationTitle(person.name)
@@ -202,6 +243,7 @@ struct PersonDetailView: View {
 
     private func toggleFollowUp(_ followUp: FollowUp) {
         followUp.isCompleted.toggle()
+        followUp.lastModified = Date()
 
         // If recurring and just completed, create the next occurrence
         if followUp.isCompleted, followUp.isRecurring, let interval = followUp.recurrenceIntervalDays {

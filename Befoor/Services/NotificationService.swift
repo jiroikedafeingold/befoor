@@ -140,7 +140,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         fireDate: Date,
         eventStartDate: Date,
         sound: BefoorSound,
-        personName: String? = nil
+        personName: String? = nil,
+        followUps: [String]? = nil,
+        notes: [String]? = nil
     ) async -> String {
         // Build time labels for each ring based on minutes until the event starts.
         let r1Date = fireDate.addingTimeInterval(120)
@@ -191,7 +193,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
                 threadID:       identifier,
                 date:           ring.date,
                 sound:          sound,
-                personName:     personName
+                personName:     personName,
+                followUps:      followUps,
+                notes:          notes
             )
         }
 
@@ -586,15 +590,30 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         threadID: String,
         date: Date,
         sound: BefoorSound,
-        personName: String? = nil
+        personName: String? = nil,
+        followUps: [String]? = nil,
+        notes: [String]? = nil
     ) async {
         let content = UNMutableNotificationContent()
         content.title              = title
         content.subtitle           = subtitle
         if let personName {
-            content.body           = "👤 1:1 with \(personName)  ·  📅 \(calendarName)"
+            var bodyParts = ["1:1 with \(personName)  ·  \(calendarName)"]
+            if let followUps, !followUps.isEmpty {
+                bodyParts.append("Follow-ups:")
+                for item in followUps {
+                    bodyParts.append("• \(item)")
+                }
+            }
+            if let notes, !notes.isEmpty {
+                bodyParts.append("Notes:")
+                for item in notes {
+                    bodyParts.append("• \(item)")
+                }
+            }
+            content.body = bodyParts.joined(separator: "\n")
         } else {
-            content.body           = "📅  \(calendarName)"
+            content.body           = calendarName
         }
         content.threadIdentifier   = threadID
         content.summaryArgument    = title

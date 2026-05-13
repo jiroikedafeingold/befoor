@@ -10,6 +10,9 @@ final class Person {
     var lastMeetingDate: Date?
     var createdAt: Date = Date()
     var isPinned: Bool = false
+    /// The device that last authoritatively set lastMeetingDate.
+    /// Other devices defer to this value via CloudKit rather than overwriting it.
+    var meetingDateDeviceID: String = ""
 
     @Relationship(deleteRule: .cascade, inverse: \Note.person)
     var notes: [Note]?

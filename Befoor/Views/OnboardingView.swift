@@ -4,30 +4,43 @@ import SwiftUI
 
 struct OnboardingView: View {
     @ObservedObject private var settings = AppSettings.shared
-    @State private var page = 0
+    @State private var pageIndex = 0
     @State private var calendarGranted = false
     @State private var contactsGranted = false
     @State private var notifGranted    = false
+    @State private var roleChosen      = false
 
-    private let totalPages = 7
+    private enum Page: Hashable {
+        case welcome, howItWorks, people, deviceRole
+        case calendarPermission, contactsPermission
+        case notificationPermission, allSet
+    }
+
+    private var pages: [Page] {
+        var p: [Page] = [.welcome, .howItWorks, .people, .deviceRole]
+        if settings.isMainDevice {
+            p.append(contentsOf: [.calendarPermission, .contactsPermission])
+        }
+        p.append(contentsOf: [.notificationPermission, .allSet])
+        return p
+    }
+
+    private var currentPage: Page {
+        pages[min(pageIndex, pages.count - 1)]
+    }
 
     var body: some View {
-        TabView(selection: $page) {
-            WelcomePage()               .tag(0)
-            HowItWorksPage()            .tag(1)
-            PeoplePage()                .tag(2)
-            CalendarPermissionPage(granted: $calendarGranted)  .tag(3)
-            ContactsPermissionPage(granted: $contactsGranted)  .tag(4)
-            NotificationPermissionPage(granted: $notifGranted) .tag(5)
-            AllSetPage(onFinish: finish) .tag(6)
+        TabView(selection: $pageIndex) {
+            ForEach(Array(pages.enumerated()), id: \.offset) { index, page in
+                pageView(for: page).tag(index)
+            }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .animation(.easeInOut, value: page)
+        .animation(.easeInOut, value: pageIndex)
         .ignoresSafeArea(edges: .top)
         .safeAreaInset(edge: .bottom) {
-            // Button above dots so they never overlap
             VStack(spacing: 16) {
-                if page < totalPages - 1 {
+                if currentPage != .allSet {
                     Button(action: advance) {
                         Text(primaryButtonTitle)
                             .font(.body.weight(.semibold))
@@ -41,7 +54,7 @@ struct OnboardingView: View {
                     .animation(.easeInOut(duration: 0.2), value: buttonEnabled)
                 }
 
-                PageDots(current: page, total: totalPages)
+                PageDots(current: pageIndex, total: pages.count)
             }
             .frame(maxWidth: 600)
             .padding(.horizontal, 32)
@@ -59,39 +72,57 @@ struct OnboardingView: View {
 
     // MARK: Helpers
 
-    private var primaryButtonTitle: String {
+    @ViewBuilder
+    private func pageView(for page: Page) -> some View {
         switch page {
-        case 3: return calendarGranted ? "Next"       : "Continue"
-        case 4: return contactsGranted ? "Next"       : "Continue"
-        case 5: return notifGranted    ? "Next"       : "Continue"
-        default: return page == 0      ? "Get Started" : "Next"
+        case .welcome:                WelcomePage()
+        case .howItWorks:             HowItWorksPage()
+        case .people:                 PeoplePage()
+        case .deviceRole:             DeviceRolePage(roleChosen: $roleChosen)
+        case .calendarPermission:     CalendarPermissionPage(granted: $calendarGranted)
+        case .contactsPermission:     ContactsPermissionPage(granted: $contactsGranted)
+        case .notificationPermission: NotificationPermissionPage(granted: $notifGranted)
+        case .allSet:                 AllSetPage(onFinish: finish)
+        }
+    }
+
+    private var primaryButtonTitle: String {
+        switch currentPage {
+        case .welcome:                return "Get Started"
+        case .deviceRole:             return roleChosen ? "Next" : "Choose a Role"
+        case .calendarPermission:     return calendarGranted ? "Next" : "Continue"
+        case .contactsPermission:     return contactsGranted ? "Next" : "Continue"
+        case .notificationPermission: return notifGranted ? "Next" : "Continue"
+        default:                      return "Next"
         }
     }
 
     private var buttonEnabled: Bool {
-        switch page {
-        case 3: return calendarGranted
-        case 4: return true  // Contacts is optional — user can skip
-        case 5: return notifGranted
-        default: return true
+        switch currentPage {
+        case .deviceRole:             return roleChosen
+        case .calendarPermission:     return calendarGranted
+        case .contactsPermission:     return true
+        case .notificationPermission: return notifGranted
+        default:                      return true
         }
     }
 
     private func advance() {
-        // For the contacts page, request access if not yet granted, then advance
-        if page == 4, !contactsGranted {
+        if currentPage == .contactsPermission, !contactsGranted {
             Task {
                 contactsGranted = await CalendarService.shared.requestContactsAccess()
-                withAnimation { page = min(page + 1, totalPages - 1) }
+                withAnimation { pageIndex = min(pageIndex + 1, pages.count - 1) }
             }
             return
         }
-        withAnimation { page = min(page + 1, totalPages - 1) }
+        withAnimation { pageIndex = min(pageIndex + 1, pages.count - 1) }
     }
 
     private func finish() {
         settings.hasCompletedOnboarding = true
-        Task { await AlarmScheduler.shared.sync() }
+        if settings.isMainDevice {
+            Task { await AlarmScheduler.shared.sync() }
+        }
     }
 }
 
@@ -311,7 +342,117 @@ private struct PeoplePage: View {
     }
 }
 
-// MARK: - Page 4: Calendar Permission
+// MARK: - Page 4: Device Role
+
+private struct DeviceRolePage: View {
+    @Binding var roleChosen: Bool
+    @ObservedObject private var settings = AppSettings.shared
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                ZStack {
+                    LinearGradient(
+                        colors: [Color.cyan.opacity(0.12), Color.clear],
+                        startPoint: .top, endPoint: .bottom
+                    )
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 300)
+
+                    VStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.cyan.opacity(0.15))
+                                .frame(width: 120, height: 120)
+                            Image(systemName: "iphone.and.ipad")
+                                .font(.system(size: 48, weight: .medium))
+                                .foregroundStyle(Color.cyan)
+                        }
+                        .padding(.top, 60)
+
+                        Text("Device Role")
+                            .font(.title.bold())
+                    }
+                }
+
+                VStack(spacing: 16) {
+                    Text("Is this your primary device?")
+                        .font(.headline)
+
+                    Text("Your primary device syncs with your calendar to detect 1:1 meetings and create people. Other devices receive that data via iCloud and let you add notes and follow-ups.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+
+                    VStack(spacing: 12) {
+                        Button {
+                            settings.claimAsMainDevice()
+                            roleChosen = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "star.fill")
+                                    .font(.title3)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Primary Device")
+                                        .font(.body.weight(.semibold))
+                                    Text("Syncs calendar & detects 1:1s")
+                                        .font(.caption)
+                                        .foregroundStyle(.white.opacity(0.8))
+                                }
+                                Spacer()
+                                if settings.isMainDevice {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.title3)
+                                }
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(settings.isMainDevice ? Color.indigo : Color.indigo.opacity(0.7))
+                            .foregroundStyle(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                        }
+
+                        Button {
+                            roleChosen = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "icloud.and.arrow.down")
+                                    .font(.title3)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Secondary Device")
+                                        .font(.body.weight(.semibold))
+                                    Text("Reads from iCloud, adds notes")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if roleChosen && !settings.isMainDevice {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.title3)
+                                        .foregroundStyle(.green)
+                                }
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color(uiColor: .secondarySystemBackground))
+                            .foregroundStyle(.primary)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                        }
+                    }
+                    .padding(.top, 8)
+                }
+                .padding(.horizontal, 32)
+                .frame(maxWidth: 600)
+                .padding(.top, 28)
+
+                Spacer(minLength: 140)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+}
+
+// MARK: - Page 5: Calendar Permission
 
 private struct CalendarPermissionPage: View {
     @Binding var granted: Bool
@@ -338,7 +479,7 @@ private struct CalendarPermissionPage: View {
     }
 }
 
-// MARK: - Page 5: Contacts Permission (optional)
+// MARK: - Page 6: Contacts Permission (optional)
 
 private struct ContactsPermissionPage: View {
     @Binding var granted: Bool
@@ -365,7 +506,7 @@ private struct ContactsPermissionPage: View {
     }
 }
 
-// MARK: - Page 6: Notification Permission
+// MARK: - Page 7: Notification Permission
 
 private struct NotificationPermissionPage: View {
     @Binding var granted: Bool
@@ -392,7 +533,7 @@ private struct NotificationPermissionPage: View {
     }
 }
 
-// MARK: - Page 7: All Set
+// MARK: - Page 8: All Set
 
 private struct AllSetPage: View {
     let onFinish: () -> Void

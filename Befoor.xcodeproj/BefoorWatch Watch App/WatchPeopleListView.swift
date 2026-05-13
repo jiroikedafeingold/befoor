@@ -2,14 +2,29 @@ import SwiftUI
 import SwiftData
 
 struct WatchPeopleListView: View {
-    @Query(sort: \Person.name) private var people: [Person]
+    @Query(sort: \Person.lastMeetingDate, order: .forward) private var people: [Person]
+
+    private var sortedPeople: [Person] {
+        people.sorted { a, b in
+            switch (a.lastMeetingDate, b.lastMeetingDate) {
+            case let (dateA?, dateB?):
+                return dateA < dateB
+            case (nil, _?):
+                return false
+            case (_?, nil):
+                return true
+            case (nil, nil):
+                return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
+            }
+        }
+    }
 
     private var pinnedPeople: [Person] {
-        people.filter(\.isPinned)
+        sortedPeople.filter(\.isPinned)
     }
 
     private var unpinnedPeople: [Person] {
-        people.filter { !$0.isPinned }
+        sortedPeople.filter { !$0.isPinned }
     }
 
     var body: some View {

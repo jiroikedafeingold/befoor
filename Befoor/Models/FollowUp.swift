@@ -11,6 +11,8 @@ final class FollowUp {
     var isRecurring: Bool = false
     /// Recurrence interval in days (e.g. 7 for weekly, 14 for biweekly)
     var recurrenceIntervalDays: Int?
+    var lastModified: Date = Date()
+    var personID: UUID?
     var person: Person?
 
     init(
@@ -28,6 +30,7 @@ final class FollowUp {
         self.createdAt = Date()
         self.isRecurring = isRecurring
         self.recurrenceIntervalDays = recurrenceIntervalDays
+        self.personID = person?.id
         self.person = person
     }
 }

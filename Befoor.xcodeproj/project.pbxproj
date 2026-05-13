@@ -58,6 +58,9 @@
 		13A747002FA28DA000071DA6 /* NavigationNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC9D2F8C8F3C00D167AB /* NavigationNotification.swift */; };
 		13A747012FA28DA000071DA6 /* CalendarSyncRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132FDC992F8C8F2C00D167AB /* CalendarSyncRecord.swift */; };
 		13A747022FA28DA000071DA6 /* TrackedAlarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000006 /* TrackedAlarm.swift */; };
+		13A7472D2FA52ECA00071DA6 /* EditFollowUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A7472C2FA52ECA00071DA6 /* EditFollowUpView.swift */; };
+		13A7472F2FA52ED000071DA6 /* EditLongTermNoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A7472E2FA52ED000071DA6 /* EditLongTermNoteView.swift */; };
+		13A747312FA52EDA00071DA6 /* EditReminderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A747302FA52ED900071DA6 /* EditReminderView.swift */; };
 		BB0000000000000000000001 /* BefoorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000001 /* BefoorApp.swift */; };
 		BB0000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000002 /* ContentView.swift */; };
 		BB0000000000000000000003 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000003 /* SettingsView.swift */; };
@@ -161,6 +164,9 @@
 		13A746E02FA28D6100071DA6 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		13A746E22FA28D6100071DA6 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		13A747032FA28DB900071DA6 /* BeforeWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BeforeWidgetExtension.entitlements; sourceTree = "<group>"; };
+		13A7472C2FA52ECA00071DA6 /* EditFollowUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditFollowUpView.swift; sourceTree = "<group>"; };
+		13A7472E2FA52ED000071DA6 /* EditLongTermNoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditLongTermNoteView.swift; sourceTree = "<group>"; };
+		13A747302FA52ED900071DA6 /* EditReminderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditReminderView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000001 /* BefoorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BefoorApp.swift; sourceTree = "<group>"; };
 		AA0000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000003 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -253,6 +259,9 @@
 				132FDCBA2F8C905300D167AB /* ReminderRowView.swift */,
 				132FDCBC2F8C905400D167AB /* PreMeetingReminderView.swift */,
 				13A7469A2FA183C300071DA6 /* AddGlobalNoteView.swift */,
+				13A7472C2FA52ECA00071DA6 /* EditFollowUpView.swift */,
+				13A7472E2FA52ED000071DA6 /* EditLongTermNoteView.swift */,
+				13A747302FA52ED900071DA6 /* EditReminderView.swift */,
 			);
 			path = People;
 			sourceTree = "<group>";
@@ -581,15 +590,18 @@
 				132FDC922F8C8F2700D167AB /* Note.swift in Sources */,
 				132FDC942F8C8F2800D167AB /* FollowUp.swift in Sources */,
 				132FDCB12F8C904B00D167AB /* AddFollowUpView.swift in Sources */,
+				13A7472D2FA52ECA00071DA6 /* EditFollowUpView.swift in Sources */,
 				132FDCA02F8C8FD600D167AB /* SyncCoordinator.swift in Sources */,
 				BB0000000000000000000019 /* OnboardingView.swift in Sources */,
 				BB0000000000000000000004 /* CalendarPickerView.swift in Sources */,
 				132FDCAF2F8C904A00D167AB /* NoteRowView.swift in Sources */,
 				132FDCBD2F8C905400D167AB /* PreMeetingReminderView.swift in Sources */,
+				13A747312FA52EDA00071DA6 /* EditReminderView.swift in Sources */,
 				BB0000000000000000000005 /* AppSettings.swift in Sources */,
 				BB0000000000000000000006 /* TrackedAlarm.swift in Sources */,
 				132FDC9C2F8C8F2D00D167AB /* Reminder.swift in Sources */,
 				132FDC9E2F8C8F3C00D167AB /* NavigationNotification.swift in Sources */,
+				13A7472F2FA52ED000071DA6 /* EditLongTermNoteView.swift in Sources */,
 				BB0000000000000000000007 /* CalendarService.swift in Sources */,
 				BB0000000000000000000008 /* NotificationService.swift in Sources */,
 				BB0000000000000000000009 /* AlarmScheduler.swift in Sources */,
@@ -629,10 +641,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "BeforeWatch App Watch App/BeforeWatch App Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "BeforeWatch App";
+				INFOPLIST_KEY_CFBundleDisplayName = Befoor;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.befoor.app;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -640,7 +652,7 @@
 					"@executable_path/Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.befoor.app.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -652,7 +664,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 26.4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.6;
 			};
 			name = Debug;
 		};
@@ -664,10 +676,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "BeforeWatch App Watch App/BeforeWatch App Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "BeforeWatch App";
+				INFOPLIST_KEY_CFBundleDisplayName = Befoor;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.befoor.app;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -675,7 +687,7 @@
 					"@executable_path/Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.6;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.befoor.app.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -688,7 +700,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 26.4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.6;
 			};
 			name = Release;
 		};
@@ -700,19 +712,19 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = BeforeWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 8;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BeforeWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = BeforeWidget;
+				INFOPLIST_KEY_CFBundleDisplayName = BefoorWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.befoor.app.BeforeWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -733,19 +745,19 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = BeforeWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 8;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BeforeWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = BeforeWidget;
+				INFOPLIST_KEY_CFBundleDisplayName = BefoorWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.6;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.befoor.app.BeforeWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -887,16 +899,17 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Befoor/Befoor.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Befoor/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Befoor;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.befoor.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -914,16 +927,17 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Befoor/Befoor.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Befoor/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Befoor;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.befoor.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

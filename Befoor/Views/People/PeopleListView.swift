@@ -3,7 +3,6 @@ import SwiftData
 
 struct PeopleListView: View {
     let syncCoordinator: SyncCoordinator
-    @Binding var navigationPath: NavigationPath
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Person.lastMeetingDate, order: .forward) private var people: [Person]
     @Query(filter: #Predicate<Note> { $0.isGlobal == true },
@@ -13,12 +12,16 @@ struct PeopleListView: View {
     @State private var showAddPerson = false
     @State private var showAddGlobalNote = false
 
-    /// People sorted by soonest upcoming meeting first, then by name for those without a date.
+    /// All people sorted by soonest upcoming meeting first, then alphabetically.
+    /// Past dates are treated the same as no date for sorting.
     private var sortedPeople: [Person] {
-        people.sorted { a, b in
-            switch (a.lastMeetingDate, b.lastMeetingDate) {
-            case let (dateA?, dateB?):
-                return dateA < dateB
+        let now = Date()
+        return people.sorted { a, b in
+            let dateA = a.lastMeetingDate.flatMap { $0 > now ? $0 : nil }
+            let dateB = b.lastMeetingDate.flatMap { $0 > now ? $0 : nil }
+            switch (dateA, dateB) {
+            case let (dA?, dB?):
+                return dA < dB
             case (nil, _?):
                 return false
             case (_?, nil):
@@ -46,7 +49,9 @@ struct PeopleListView: View {
 
     var body: some View {
         Group {
-            if people.isEmpty {
+            if syncCoordinator.isSyncing && people.isEmpty {
+                syncingState
+            } else if people.isEmpty {
                 emptyState
             } else {
                 peopleList
@@ -61,7 +66,7 @@ struct PeopleListView: View {
                         .tint(.indigo)
                 } else {
                     Button {
-                        Task { await syncCoordinator.performFullSync() }
+                        Task { await syncCoordinator.performFullSync(force: true) }
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }
@@ -76,7 +81,7 @@ struct PeopleListView: View {
             }
         }
         .refreshable {
-            await syncCoordinator.performFullSync()
+            await syncCoordinator.performFullSync(force: true)
         }
         .alert("Add Person", isPresented: $showAddPerson) {
             AddPersonAlert(modelContext: modelContext)
@@ -84,6 +89,22 @@ struct PeopleListView: View {
         .sheet(isPresented: $showAddGlobalNote) {
             AddGlobalNoteView()
         }
+    }
+
+    private var syncingState: some View {
+        VStack(spacing: 20) {
+            ProgressView()
+                .scaleEffect(1.5)
+                .tint(.indigo)
+
+            Text("Syncing people…")
+                .font(.title3.weight(.semibold))
+
+            Text("Looking for 1:1 meetings in your calendar.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var emptyState: some View {
@@ -102,7 +123,7 @@ struct PeopleListView: View {
                 .padding(.horizontal)
 
             Button("Sync Calendar") {
-                Task { await syncCoordinator.performFullSync() }
+                Task { await syncCoordinator.performFullSync(force: true) }
             }
             .buttonStyle(.borderedProminent)
             .tint(.indigo)
@@ -142,59 +163,38 @@ struct PeopleListView: View {
             if !pinnedPeople.isEmpty {
                 Section("Pinned") {
                     ForEach(pinnedPeople) { person in
-                        Button {
-                            navigationPath.append(person.persistentModelID)
-                        } label: {
-                            PersonRowView(person: person)
-                        }
-                        .buttonStyle(.plain)
-                        .swipeActions(edge: .leading) {
-                            Button {
-                                person.isPinned.toggle()
-                                try? modelContext.save()
-                            } label: {
-                                Label("Unpin", systemImage: "pin.slash")
-                            }
-                            .tint(.orange)
-                        }
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                modelContext.delete(person)
-                                try? modelContext.save()
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
+                        personRow(person, pinAction: "Unpin", pinImage: "pin.slash")
                     }
                 }
             }
 
             Section(pinnedPeople.isEmpty ? "People" : "Others") {
                 ForEach(unpinnedPeople) { person in
-                    Button {
-                        navigationPath.append(person.persistentModelID)
-                    } label: {
-                        PersonRowView(person: person)
-                    }
-                    .buttonStyle(.plain)
-                    .swipeActions(edge: .leading) {
-                        Button {
-                            person.isPinned.toggle()
-                            try? modelContext.save()
-                        } label: {
-                            Label("Pin", systemImage: "pin")
-                        }
-                        .tint(.orange)
-                    }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        Button(role: .destructive) {
-                            modelContext.delete(person)
-                            try? modelContext.save()
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    }
+                    personRow(person, pinAction: "Pin", pinImage: "pin")
                 }
+            }
+        }
+    }
+
+    private func personRow(_ person: Person, pinAction: String, pinImage: String) -> some View {
+        NavigationLink(value: person.persistentModelID) {
+            PersonRowView(person: person)
+        }
+        .swipeActions(edge: .leading) {
+            Button {
+                person.isPinned.toggle()
+                try? modelContext.save()
+            } label: {
+                Label(pinAction, systemImage: pinImage)
+            }
+            .tint(.orange)
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                modelContext.delete(person)
+                try? modelContext.save()
+            } label: {
+                Label("Delete", systemImage: "trash")
             }
         }
     }

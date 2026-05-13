@@ -27,6 +27,8 @@ final class AlarmScheduler: ObservableObject {
     /// Set from ContentView so we can query Person records during sync.
     var modelContext: ModelContext?
 
+    private static let throttleInterval: TimeInterval = 30
+
     private init() {
         calendar.onStoreChanged = { [weak self] in
             Task { await self?.sync() }
@@ -36,12 +38,24 @@ final class AlarmScheduler: ObservableObject {
     // MARK: - Public API
 
     /// Full sync: clears all pending notifications, then reschedules from scratch.
+    /// On secondary devices, loads the alarm list from CloudKit instead of
+    /// scanning the calendar.
     func sync() async {
         guard settings.isEnabled else {
             await cancelAll()
             return
         }
+
+        if !settings.isMainDevice {
+            return
+        }
+
         guard calendar.isAuthorized else { return }
+
+        if let last = lastSyncDate,
+           Date().timeIntervalSince(last) < Self.throttleInterval {
+            return
+        }
 
         syncInProgress = true
         defer { syncInProgress = false }
@@ -75,7 +89,7 @@ final class AlarmScheduler: ObservableObject {
             let calName = event.calendar?.title ?? "Calendar"
 
             // Check if this event has an associated 1:1 person
-            let personName = lookUpPersonName(for: event)
+            let personInfo = lookUpPersonInfo(for: event)
 
             await notifications.scheduleAlarm(
                 identifier:     notifID,
@@ -84,7 +98,9 @@ final class AlarmScheduler: ObservableObject {
                 fireDate:       fireDate,
                 eventStartDate: event.startDate,
                 sound:          settings.selectedSound,
-                personName:     personName
+                personName:     personInfo?.name,
+                followUps:      personInfo?.followUps,
+                notes:          personInfo?.notes
             )
 
             store.upsert(TrackedAlarmModel(
@@ -125,6 +141,10 @@ final class AlarmScheduler: ObservableObject {
         AlarmPlayer.shared.setSchedule(playerEntries)
 
         store.prunePast()
+        store.saveSnapshot()
+        if let context = modelContext {
+            store.publishToCloudKit(context: context)
+        }
         scheduledCount = store.alarms.count
         lastSyncDate   = Date()
         WidgetCenter.shared.reloadAllTimelines()
@@ -134,6 +154,7 @@ final class AlarmScheduler: ObservableObject {
     func cancelAll() async {
         notifications.cancelAll()
         store.removeAll()
+        store.saveSnapshot()
         AlarmPlayer.shared.setSchedule([])
         scheduledCount = 0
     }
@@ -173,33 +194,75 @@ final class AlarmScheduler: ObservableObject {
 
     // MARK: - 1:1 Person Lookup
 
+    struct PersonInfo {
+        let name: String
+        let followUps: [String]
+        let notes: [String]
+    }
+
     /// Check if a calendar event corresponds to a synced 1:1 person.
-    /// Looks up CalendarSyncRecord by event identifier, then finds the Person by name.
-    private func lookUpPersonName(for event: EKEvent) -> String? {
+    /// Returns the person's name, active follow-ups, and relevant notes.
+    private func lookUpPersonInfo(for event: EKEvent) -> PersonInfo? {
         guard let context = modelContext else { return nil }
 
         let eventID = event.eventIdentifier ?? ""
         guard !eventID.isEmpty else { return nil }
 
-        // Check if SyncCoordinator has recorded this event as a 1:1
-        let syncDescriptor = FetchDescriptor<CalendarSyncRecord>(
-            predicate: #Predicate { $0.eventIdentifier == eventID }
-        )
-        guard let record = try? context.fetch(syncDescriptor).first,
-              let personName = record.personName, !personName.isEmpty else {
+        guard let personName = SyncRecordStore.shared.personName(forEventIdentifier: eventID),
+              !personName.isEmpty else {
             return nil
         }
 
-        // Verify the Person exists
         let nameQuery = personName
         let personDescriptor = FetchDescriptor<Person>(
             predicate: #Predicate { $0.name == nameQuery }
         )
-        if (try? context.fetchCount(personDescriptor)) ?? 0 > 0 {
-            return personName
+        guard let person = try? context.fetch(personDescriptor).first else {
+            return nil
         }
 
-        return nil
+        let activeFollowUps = (person.followUps ?? [])
+            .filter { !$0.isCompleted }
+            .sorted { ($0.dueDate ?? .distantFuture) < ($1.dueDate ?? .distantFuture) }
+            .prefix(3)
+            .map(\.text)
+
+        let truncate: (String) -> String = { text in
+            text.count > 80 ? String(text.prefix(77)) + "…" : text
+        }
+
+        var noteTexts: [String] = []
+
+        let longTermNotes = (person.longTermNotes ?? [])
+            .sorted { $0.createdAt > $1.createdAt }
+            .prefix(2)
+        for note in longTermNotes {
+            noteTexts.append(truncate(note.text))
+        }
+
+        let globalDescriptor = FetchDescriptor<Note>(
+            predicate: #Predicate<Note> { $0.isGlobal == true },
+            sortBy: [SortDescriptor(\Note.meetingDate, order: .reverse)]
+        )
+        if let globalNotes = try? context.fetch(globalDescriptor) {
+            for note in globalNotes.prefix(2) {
+                noteTexts.append(truncate(note.text))
+            }
+        }
+
+        let recentMeetingNote = (person.notes ?? [])
+            .filter { !$0.isGlobal }
+            .sorted { $0.meetingDate > $1.meetingDate }
+            .first
+        if let note = recentMeetingNote {
+            noteTexts.append(truncate(note.text))
+        }
+
+        return PersonInfo(
+            name: personName,
+            followUps: Array(activeFollowUps),
+            notes: noteTexts
+        )
     }
 
     // MARK: - Filtering

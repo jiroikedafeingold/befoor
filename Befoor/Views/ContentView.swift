@@ -1,4 +1,19 @@
 import SwiftUI
+import SwiftData
+import CoreData
+
+// MARK: - CloudKit Refresh Environment Key
+
+private struct CloudRefreshTokenKey: EnvironmentKey {
+    static let defaultValue = UUID()
+}
+
+extension EnvironmentValues {
+    var cloudRefreshToken: UUID {
+        get { self[CloudRefreshTokenKey.self] }
+        set { self[CloudRefreshTokenKey.self] = newValue }
+    }
+}
 
 struct ContentView: View {
     @ObservedObject private var scheduler  = AlarmScheduler.shared
@@ -6,8 +21,11 @@ struct ContentView: View {
     @ObservedObject private var settings   = AppSettings.shared
     @ObservedObject private var calService = CalendarService.shared
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
+    @Query private var alarmSnapshots: [AlarmListSnapshot]
 
     @State private var selectedTab = 0
+    @State private var cloudRefreshToken = UUID()
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -35,17 +53,28 @@ struct ContentView: View {
                 }
                 .tag(3)
         }
+        .environment(\.cloudRefreshToken, cloudRefreshToken)
         .tint(.indigo)
         .onReceive(NotificationCenter.default.publisher(for: .navigateToPerson)) { _ in
-            // Switch to the People tab; PeopleTabView handles the rest
             selectedTab = 1
         }
+        .onReceive(NotificationCenter.default.publisher(for: .NSPersistentStoreRemoteChange)) { _ in
+            cloudRefreshToken = UUID()
+        }
+        .onChange(of: alarmSnapshots.first?.lastUpdated, initial: true) { _, _ in
+            guard !settings.isMainDevice,
+                  let snapshot = alarmSnapshots.first,
+                  let models = try? JSONDecoder().decode([TrackedAlarmModel].self, from: snapshot.alarmsJSON) else { return }
+            store.replaceAlarms(with: models)
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                Task { await AlarmScheduler.shared.sync() }
+            }
+        }
         .task {
-            // Configure TrackedAlarmsStore and AlarmScheduler with SwiftData context
-            TrackedAlarmsStore.shared.configure(with: modelContext)
             AlarmScheduler.shared.modelContext = modelContext
 
-            // Onboarding handles first-launch permissions; just sync on subsequent launches.
             if settings.hasCompletedOnboarding {
                 await AlarmScheduler.shared.sync()
             }
@@ -63,7 +92,9 @@ struct ContentView: View {
     private var alarmsTab: some View {
         NavigationStack {
             Group {
-                if store.alarms.isEmpty {
+                if scheduler.syncInProgress && store.alarms.isEmpty {
+                    syncingState
+                } else if store.alarms.isEmpty {
                     emptyState
                 } else {
                     alarmsList
@@ -73,6 +104,22 @@ struct ContentView: View {
             .toolbar { toolbarContent }
             .refreshable { await AlarmScheduler.shared.sync() }
         }
+    }
+
+    private var syncingState: some View {
+        VStack(spacing: 20) {
+            ProgressView()
+                .scaleEffect(1.5)
+                .tint(.indigo)
+
+            Text("Syncing calendars…")
+                .font(.title3.weight(.semibold))
+
+            Text("Checking for upcoming appointments.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var alarmsList: some View {
@@ -147,9 +194,14 @@ struct ContentView: View {
 
     private var sortedAlarms: [TrackedAlarmModel] {
         let calendar = Calendar.current
-        return store.alarms.values
+        let todayAlarms = store.alarms.values
             .filter { calendar.isDateInToday($0.eventStartDate) }
             .sorted { $0.eventStartDate < $1.eventStartDate }
+
+        var seen = Set<String>()
+        return todayAlarms.filter { alarm in
+            seen.insert(alarm.eventTitle + "_" + String(Int(alarm.eventStartDate.timeIntervalSince1970))).inserted
+        }
     }
 
 }

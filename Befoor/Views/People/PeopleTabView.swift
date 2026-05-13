@@ -4,13 +4,15 @@ import SwiftData
 /// Wrapper view for the People tab. Initializes SyncCoordinator and handles deep linking.
 struct PeopleTabView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.cloudRefreshToken) private var refreshToken
     @Query private var people: [Person]
     @State private var syncCoordinator = SyncCoordinator()
     @State private var navigationPath = NavigationPath()
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            PeopleListView(syncCoordinator: syncCoordinator, navigationPath: $navigationPath)
+            PeopleListView(syncCoordinator: syncCoordinator)
+                .id(refreshToken)
                 .navigationDestination(for: PersistentIdentifier.self) { personID in
                     PersonDetailFromID(personID: personID, syncCoordinator: syncCoordinator)
                 }
@@ -18,10 +20,9 @@ struct PeopleTabView: View {
         .task {
             syncCoordinator.configure(with: modelContext)
             syncCoordinator.seedDefaultKeywords()
-            await syncCoordinator.performFullSync()
+            await syncCoordinator.performFullSync(force: false)
         }
         .onReceive(NotificationCenter.default.publisher(for: .navigateToPerson)) { notification in
-            // Navigate by person name (from alarm notifications) or personID (from reminder notifications)
             if let personName = notification.userInfo?["personName"] as? String,
                let person = people.first(where: { $0.name == personName }) {
                 navigationPath = NavigationPath()

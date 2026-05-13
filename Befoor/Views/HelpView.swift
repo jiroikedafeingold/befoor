@@ -148,6 +148,12 @@ struct HelpView: View {
                         title: "Don't Force-Quit the App",
                         detail: "Befoor plays alarm audio through a background audio session, which lets it bypass silent mode. If you swipe the app away in the app switcher, iOS ends that session and alarms will fall back to standard notification sounds that respect silent mode."
                     )
+                    HelpRow(
+                        icon: "shortcuts",
+                        iconColor: .yellow,
+                        title: "Auto-Launch with Shortcuts",
+                        detail: "Create a Shortcuts automation to open Befoor every morning so it's always running in the background. Open the Shortcuts app → Automation → New Automation → Time of Day. Set a time (e.g. 7:00 AM), choose \"Run Immediately\", then add an \"Open App\" action and select Befoor. Add in a final step which is \"Go to Home Screen\". This ensures your alarms and calendar sync stay up to date each day without you having to remember to open the app."
+                    )
                 }
 
                 // MARK: Credits

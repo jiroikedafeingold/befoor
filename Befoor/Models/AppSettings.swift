@@ -92,6 +92,7 @@ final class AppSettings: ObservableObject {
         Keys.isEnabled, Keys.selectedSound, Keys.lookAheadDays,
         Keys.checkInterval, Keys.snoozeDuration, Keys.soundEnabled,
         Keys.hapticsEnabled, Keys.finalAlarmEnabled, Keys.audibleAlertsMode,
+        Keys.mainDeviceID,
     ]
 
     // Minutes before the appointment to fire the alarm
@@ -157,6 +158,23 @@ final class AppSettings: ObservableObject {
         didSet { save(audibleAlertsMode.rawValue, forKey: Keys.audibleAlertsMode) }
     }
 
+    // The device ID that owns calendar syncing — synced to iCloud so all devices know
+    @Published var mainDeviceID: String {
+        didSet { save(mainDeviceID, forKey: Keys.mainDeviceID) }
+    }
+
+    var isMainDevice: Bool {
+        mainDeviceID == DeviceID.current
+    }
+
+    func claimAsMainDevice() {
+        mainDeviceID = DeviceID.current
+    }
+
+    @Published var showDebugInfo: Bool {
+        didSet { defaults.set(showDebugInfo, forKey: Keys.showDebugInfo) }
+    }
+
     // Device-specific — NOT synced
     @Published var hasCompletedOnboarding: Bool {
         didSet { defaults.set(hasCompletedOnboarding, forKey: Keys.hasCompletedOnboarding) }
@@ -176,6 +194,8 @@ final class AppSettings: ObservableObject {
         hapticsEnabled            = defaults.object(forKey: Keys.hapticsEnabled) as? Bool ?? true
         finalAlarmEnabled         = defaults.object(forKey: Keys.finalAlarmEnabled) as? Bool ?? true
         audibleAlertsMode         = AudibleAlertsMode(rawValue: defaults.string(forKey: Keys.audibleAlertsMode) ?? "") ?? .firstAndLast
+        mainDeviceID              = defaults.string(forKey: Keys.mainDeviceID) ?? ""
+        showDebugInfo             = defaults.object(forKey: Keys.showDebugInfo) as? Bool ?? false
         hasCompletedOnboarding    = defaults.object(forKey: Keys.hasCompletedOnboarding) as? Bool ?? false
 
         // Start observing iCloud KV store changes from other devices
@@ -243,6 +263,8 @@ final class AppSettings: ObservableObject {
                     if let v = value as? Bool { finalAlarmEnabled = v }
                 case Keys.audibleAlertsMode:
                     if let v = value as? String, let m = AudibleAlertsMode(rawValue: v) { audibleAlertsMode = m }
+                case Keys.mainDeviceID:
+                    if let v = value as? String { mainDeviceID = v }
                 default:
                     break
                 }
@@ -264,6 +286,8 @@ final class AppSettings: ObservableObject {
         static let hapticsEnabled         = "bf_hapticsEnabled"
         static let finalAlarmEnabled      = "bf_finalAlarmEnabled"
         static let audibleAlertsMode      = "bf_audibleAlertsMode"
+        static let mainDeviceID           = "bf_mainDeviceID"
+        static let showDebugInfo          = "bf_showDebugInfo"
         static let hasCompletedOnboarding = "bf_hasCompletedOnboarding"
     }
 }

@@ -1,20 +1,27 @@
 import Foundation
 import SwiftData
 
-/// SwiftData model for persisting tracked alarms.
-/// Replaces the old UserDefaults-backed TrackedAlarm struct.
+/// Single CloudKit-synced record that holds the entire alarm list as JSON.
+/// Only the main device writes to it; secondary devices read via CloudKit import.
 @Model
-final class TrackedAlarmModel {
-    /// The EventKit event's unique identifier
-    var eventIdentifier: String = ""
-    /// The UNUserNotification request identifier we created
-    var notificationIdentifier: String = ""
-    /// The event start date — used to detect changes
-    var eventStartDate: Date = Date()
-    /// Human-readable title stored so we can show it without re-fetching the event
-    var eventTitle: String = ""
-    /// Calendar identifier for display
-    var calendarIdentifier: String = ""
+final class AlarmListSnapshot {
+    var alarmsJSON: Data = Data()
+    var lastUpdated: Date = Date()
+
+    init() {}
+}
+
+/// Lightweight alarm record — kept in memory and snapshotted to a shared JSON file
+/// for the widget. No longer a SwiftData model so it cannot interfere with CloudKit exports.
+struct TrackedAlarmModel: Codable, Identifiable {
+    var eventIdentifier: String
+    var notificationIdentifier: String
+    var eventStartDate: Date
+    var eventTitle: String
+    var calendarIdentifier: String
+    var deviceIdentifier: String
+
+    var id: String { eventIdentifier }
 
     init(
         eventIdentifier: String,
@@ -28,5 +35,6 @@ final class TrackedAlarmModel {
         self.eventStartDate = eventStartDate
         self.eventTitle = eventTitle
         self.calendarIdentifier = calendarIdentifier
+        self.deviceIdentifier = DeviceID.current
     }
 }

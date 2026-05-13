@@ -13,7 +13,7 @@ final class SyncCoordinator {
     private let calendarService = CalendarService.shared
     private let notificationService = NotificationService.shared
 
-
+    private static let throttleInterval: TimeInterval = 120
 
     init() {}
 
@@ -21,46 +21,61 @@ final class SyncCoordinator {
 
     func configure(with context: ModelContext) {
         modelContext = context
+        deduplicatePeople(context: context)
+        backfillPersonIDs(context: context)
     }
 
     // MARK: Public API
 
     /// Full sync: detect 1:1 meetings, create/update people, schedule pre-meeting reminders.
-    func performFullSync() async {
+    /// Only the main device scans the calendar. Non-main devices just deduplicate.
+    /// - Parameter force: When true, clears sync records and re-evaluates all events.
+    ///   When false, skips already-synced events and respects the throttle interval.
+    func performFullSync(force: Bool = false) async {
         guard let context = modelContext else {
             print("[Befoor] SyncCoordinator: no modelContext")
             return
         }
-        guard calendarService.isAuthorized else {
-            print("[Befoor] SyncCoordinator: calendar not authorized")
+
+        if !force, let last = lastSyncDate,
+           Date().timeIntervalSince(last) < Self.throttleInterval {
+            print("[Befoor] SyncCoordinator: throttled (last sync \(Int(Date().timeIntervalSince(last)))s ago)")
             return
         }
 
         isSyncing = true
         defer { isSyncing = false }
 
-        // Fetch enabled detection keywords
+        deduplicatePeople(context: context)
+
+        guard AppSettings.shared.isMainDevice else {
+            print("[Befoor] SyncCoordinator: not the main device, skipping calendar sync")
+            lastSyncDate = Date()
+            return
+        }
+
+        guard calendarService.isAuthorized else {
+            print("[Befoor] SyncCoordinator: calendar not authorized")
+            return
+        }
+
         let keywords = fetchEnabledKeywords(context: context)
         guard !keywords.isEmpty else {
             print("[Befoor] SyncCoordinator: no enabled keywords")
             lastSyncDate = Date()
             return
         }
-        print("[Befoor] SyncCoordinator: \(keywords.count) keywords active")
+        print("[Befoor] SyncCoordinator: \(keywords.count) keywords active, force=\(force)")
 
-        // Clear old sync records so events can be re-evaluated on every sync.
-        // This ensures that if detection logic improves (e.g. new title parsing),
-        // previously missed events get another chance.
-        clearSyncRecords(context: context)
+        let syncRecords = SyncRecordStore.shared
+        if force {
+            syncRecords.clearAll()
+        } else {
+            syncRecords.clearPast()
+        }
 
-        // Reset lastMeetingDate for all people so rescheduled events are reflected.
-        // We'll recompute it below from the fresh calendar scan.
-        resetMeetingDates(context: context)
-
-        // Scan for 1:1 meetings in the next 7 days.
-        // Run the calendar + contacts scan off the main actor so taps stay responsive.
         let now = Date()
-        guard let endDate = Calendar.current.date(byAdding: .day, value: 7, to: now) else { return }
+        guard let endDate = Calendar.current.date(byAdding: .day, value: 35, to: now) else { return }
         let keywordStrings = keywords.map(\.keyword)
         let meetings = await Task.detached(priority: .userInitiated) {
             CalendarService.shared.scanForOneOnOnes(
@@ -71,61 +86,53 @@ final class SyncCoordinator {
         }.value
 
         print("[Befoor] SyncCoordinator: found \(meetings.count) 1:1 meetings")
-        for m in meetings {
-            print("[Befoor]   → \"\(m.eventTitle)\" person=\"\(m.otherPersonName)\" email=\(m.otherPersonEmail ?? "nil")")
-        }
 
-        // Process each detected meeting
+        var didModifyCloudRecords = false
         for meeting in meetings {
-            // Skip already-synced events
-            if isAlreadySynced(eventIdentifier: meeting.eventIdentifier, context: context) {
-                print("[Befoor]   Skipping already-synced: \(meeting.eventTitle)")
+            if syncRecords.isAlreadySynced(eventIdentifier: meeting.eventIdentifier) {
                 continue
             }
 
-            // Find or create the person
             let person = findOrCreatePerson(
                 name: meeting.otherPersonName,
                 email: meeting.otherPersonEmail,
                 context: context
             )
 
-            // Pick the nearest upcoming meeting, or most recent past meeting
-            if let existing = person.lastMeetingDate {
+            let bestDate: Date? = {
+                guard let existing = person.lastMeetingDate else { return meeting.startDate }
                 let existingIsFuture = existing > now
                 let newIsFuture = meeting.startDate > now
                 if newIsFuture && existingIsFuture {
-                    // Both in the future — keep the sooner one
-                    if meeting.startDate < existing {
-                        person.lastMeetingDate = meeting.startDate
-                    }
+                    return meeting.startDate < existing ? meeting.startDate : nil
                 } else if newIsFuture {
-                    // New is future, existing is past — prefer the upcoming one
-                    person.lastMeetingDate = meeting.startDate
-                } else if !existingIsFuture {
-                    // Both in the past — keep the more recent one
-                    if meeting.startDate > existing {
-                        person.lastMeetingDate = meeting.startDate
-                    }
+                    return meeting.startDate
+                } else if !existingIsFuture && meeting.startDate > existing {
+                    return meeting.startDate
                 }
-                // else: existing is future, new is past — keep the future one
-            } else {
-                person.lastMeetingDate = meeting.startDate
+                return nil
+            }()
+            if let bestDate, !datesEffectivelyEqual(bestDate, person.lastMeetingDate) {
+                person.lastMeetingDate = bestDate
+                didModifyCloudRecords = true
+                print("[Befoor]   Updated date for \(person.name)")
             }
 
-            // Record the sync
-            let record = CalendarSyncRecord(
+            syncRecords.record(
                 eventIdentifier: meeting.eventIdentifier,
                 eventTitle: meeting.eventTitle,
                 eventDate: meeting.startDate,
                 personName: meeting.otherPersonName
             )
-            context.insert(record)
 
             await Task.yield()
         }
 
-        try? context.save()
+        if didModifyCloudRecords {
+            try? context.save()
+            print("[Befoor] SyncCoordinator: saved cloud record changes")
+        }
+        syncRecords.save()
         lastSyncDate = Date()
     }
 
@@ -148,6 +155,46 @@ final class SyncCoordinator {
     }
 
     // MARK: Private Helpers
+
+    /// Set personID on records that have a person relationship but nil personID.
+    /// This backfills records created before personID was added, so CloudKit can
+    /// sync the flat UUID even when the relationship doesn't resolve on the remote device.
+    private func backfillPersonIDs(context: ModelContext) {
+        var didUpdate = false
+
+        let notes = (try? context.fetch(FetchDescriptor<Note>())) ?? []
+        for note in notes where note.personID == nil {
+            guard let person = note.person else { continue }
+            note.personID = person.id
+            didUpdate = true
+        }
+
+        let followUps = (try? context.fetch(FetchDescriptor<FollowUp>())) ?? []
+        for followUp in followUps where followUp.personID == nil {
+            guard let person = followUp.person else { continue }
+            followUp.personID = person.id
+            didUpdate = true
+        }
+
+        let longTermNotes = (try? context.fetch(FetchDescriptor<LongTermNote>())) ?? []
+        for note in longTermNotes where note.personID == nil {
+            guard let person = note.person else { continue }
+            note.personID = person.id
+            didUpdate = true
+        }
+
+        let reminders = (try? context.fetch(FetchDescriptor<Reminder>())) ?? []
+        for reminder in reminders where reminder.personID == nil {
+            guard let person = reminder.person else { continue }
+            reminder.personID = person.id
+            didUpdate = true
+        }
+
+        if didUpdate {
+            try? context.save()
+            print("[Befoor] SyncCoordinator: backfilled personIDs")
+        }
+    }
 
     private func fetchEnabledKeywords(context: ModelContext) -> [DetectionKeyword] {
         let descriptor = FetchDescriptor<DetectionKeyword>(
@@ -180,31 +227,68 @@ final class SyncCoordinator {
         return Array(seen.values)
     }
 
-    private func isAlreadySynced(eventIdentifier: String, context: ModelContext) -> Bool {
-        let id = eventIdentifier
-        let descriptor = FetchDescriptor<CalendarSyncRecord>(
-            predicate: #Predicate { $0.eventIdentifier == id }
-        )
-        return ((try? context.fetchCount(descriptor)) ?? 0) > 0
-    }
-
-    /// Reset lastMeetingDate on all people so rescheduled events are picked up correctly.
-    private func resetMeetingDates(context: ModelContext) {
+    /// Merge duplicate Person records that can arise from multi-device CloudKit sync.
+    private func deduplicatePeople(context: ModelContext) {
         let descriptor = FetchDescriptor<Person>()
-        if let people = try? context.fetch(descriptor) {
-            for person in people {
-                person.lastMeetingDate = nil
+        guard let allPeople = try? context.fetch(descriptor), allPeople.count > 1 else { return }
+
+        var grouped: [String: [Person]] = [:]
+        for person in allPeople {
+            let key = person.name.lowercased().trimmingCharacters(in: .whitespaces)
+            grouped[key, default: []].append(person)
+        }
+
+        var didMerge = false
+        for (_, group) in grouped where group.count > 1 {
+            let sorted = group.sorted { $0.createdAt < $1.createdAt }
+            let keeper = sorted[0]
+
+            for duplicate in sorted.dropFirst() {
+                for note in duplicate.notes ?? [] {
+                    note.person = keeper
+                }
+                for followUp in duplicate.followUps ?? [] {
+                    followUp.person = keeper
+                }
+                for longTermNote in duplicate.longTermNotes ?? [] {
+                    longTermNote.person = keeper
+                }
+                for reminder in duplicate.reminders ?? [] {
+                    reminder.person = keeper
+                }
+                if keeper.email == nil, let email = duplicate.email {
+                    keeper.email = email
+                }
+                if let dupDate = duplicate.lastMeetingDate {
+                    if let keeperDate = keeper.lastMeetingDate {
+                        let now = Date()
+                        let dupIsFuture = dupDate > now
+                        let keeperIsFuture = keeperDate > now
+                        if dupIsFuture && keeperIsFuture {
+                            keeper.lastMeetingDate = min(dupDate, keeperDate)
+                        } else if dupIsFuture {
+                            keeper.lastMeetingDate = dupDate
+                        }
+                    } else {
+                        keeper.lastMeetingDate = dupDate
+                    }
+                }
+                context.delete(duplicate)
+                didMerge = true
             }
+        }
+
+        if didMerge {
+            try? context.save()
+            print("[Befoor] SyncCoordinator: merged duplicate people")
         }
     }
 
-    /// Clear all sync records so every sync re-evaluates all upcoming events.
-    private func clearSyncRecords(context: ModelContext) {
-        let descriptor = FetchDescriptor<CalendarSyncRecord>()
-        if let records = try? context.fetch(descriptor) {
-            for record in records {
-                context.delete(record)
-            }
+    private func datesEffectivelyEqual(_ a: Date?, _ b: Date?) -> Bool {
+        switch (a, b) {
+        case let (a?, b?): return abs(a.timeIntervalSince(b)) < 60
+        case (nil, nil): return true
+        default: return false
         }
     }
 

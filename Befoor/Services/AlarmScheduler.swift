@@ -91,18 +91,6 @@ final class AlarmScheduler: ObservableObject {
             // Check if this event has an associated 1:1 person
             let personInfo = lookUpPersonInfo(for: event)
 
-            await notifications.scheduleAlarm(
-                identifier:     notifID,
-                eventTitle:     event.title ?? "Appointment",
-                calendarName:   calName,
-                fireDate:       fireDate,
-                eventStartDate: event.startDate,
-                sound:          settings.selectedSound,
-                personName:     personInfo?.name,
-                followUps:      personInfo?.followUps,
-                notes:          personInfo?.notes
-            )
-
             store.upsert(TrackedAlarmModel(
                 eventIdentifier:        event.eventIdentifier,
                 notificationIdentifier: notifID,
@@ -111,8 +99,19 @@ final class AlarmScheduler: ObservableObject {
                 calendarIdentifier:     event.calendar?.calendarIdentifier ?? ""
             ))
 
-            // Build the list of dates when AlarmPlayer should fire audio,
-            // based on the user's audible alerts preference.
+            // 1:1 meetings with a tracked person are handled by the People tab —
+            // skip the alarm notification and sound so they don't double up.
+            if personInfo != nil { continue }
+
+            await notifications.scheduleAlarm(
+                identifier:     notifID,
+                eventTitle:     event.title ?? "Appointment",
+                calendarName:   calName,
+                fireDate:       fireDate,
+                eventStartDate: event.startDate,
+                sound:          settings.selectedSound
+            )
+
             var fireDates: [Date] = []
             let now = Date()
             switch settings.audibleAlertsMode {

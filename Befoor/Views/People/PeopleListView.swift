@@ -12,13 +12,22 @@ struct PeopleListView: View {
     @State private var showAddPerson = false
     @State private var showAddGlobalNote = false
 
-    /// All people sorted by soonest upcoming meeting first, then alphabetically.
-    /// Past dates are treated the same as no date for sorting.
+    /// Meetings that started within the last hour are considered "in progress"
+    /// and sort to the top. Then upcoming meetings by soonest first, then alphabetically.
     private var sortedPeople: [Person] {
         let now = Date()
+        let oneHourAgo = now.addingTimeInterval(-3600)
+
+        func sortDate(_ d: Date?) -> Date? {
+            guard let d else { return nil }
+            if d > now { return d }        // upcoming
+            if d > oneHourAgo { return d } // in progress
+            return nil                     // past
+        }
+
         return people.sorted { a, b in
-            let dateA = a.lastMeetingDate.flatMap { $0 > now ? $0 : nil }
-            let dateB = b.lastMeetingDate.flatMap { $0 > now ? $0 : nil }
+            let dateA = sortDate(a.lastMeetingDate)
+            let dateB = sortDate(b.lastMeetingDate)
             switch (dateA, dateB) {
             case let (dA?, dB?):
                 return dA < dB

@@ -4,6 +4,7 @@ import SwiftData
 struct PeopleListView: View {
     let syncCoordinator: SyncCoordinator
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \Person.lastMeetingDate, order: .forward) private var people: [Person]
     @Query(filter: #Predicate<Note> { $0.isGlobal == true },
            sort: \Note.meetingDate, order: .reverse)
@@ -11,11 +12,14 @@ struct PeopleListView: View {
     @State private var searchText = ""
     @State private var showAddPerson = false
     @State private var showAddGlobalNote = false
+    // Tracked so the sort re-evaluates as wall-clock time advances. SwiftUI can't
+    // observe Date() inside a computed property, so on long-lived sessions
+    // (iPad/Mac) the order would otherwise stay frozen at the time of first render.
+    @State private var now = Date()
 
     /// Meetings that started within the last hour are considered "in progress"
     /// and sort to the top. Then upcoming meetings by soonest first, then alphabetically.
     private var sortedPeople: [Person] {
-        let now = Date()
         let oneHourAgo = now.addingTimeInterval(-3600)
 
         func sortDate(_ d: Date?) -> Date? {
@@ -97,6 +101,16 @@ struct PeopleListView: View {
         }
         .sheet(isPresented: $showAddGlobalNote) {
             AddGlobalNoteView()
+        }
+        .task {
+            now = Date()
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                now = Date()
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active { now = Date() }
         }
     }
 

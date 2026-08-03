@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct WatchContentView: View {
+    @ObservedObject private var settings = AppSettings.shared
+
     var body: some View {
         TabView {
             NavigationStack {
@@ -10,11 +12,13 @@ struct WatchContentView: View {
                 Label("Alarms", systemImage: "alarm")
             }
 
-            NavigationStack {
-                WatchPeopleListView()
-            }
-            .tabItem {
-                Label("People", systemImage: "person.2")
+            if settings.peopleEnabled {
+                NavigationStack {
+                    WatchPeopleListView()
+                }
+                .tabItem {
+                    Label("People", systemImage: "person.2")
+                }
             }
         }
     }

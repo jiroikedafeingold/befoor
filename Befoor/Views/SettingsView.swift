@@ -57,6 +57,14 @@ struct SettingsView: View {
                     Text("When disabled, all scheduled alarms are cancelled.")
                 }
 
+                // MARK: People feature
+                Section {
+                    Toggle("People & 1:1 Meetings", isOn: $settings.peopleEnabled)
+                        .tint(.indigo)
+                } footer: {
+                    Text("Adds a People tab that detects 1:1 meetings, tracks notes and follow-ups, and sends pre-meeting reminders. When off, Befoor is a pure calendar alarm. On the main device this also turns the feature off on your other devices.")
+                }
+
                 // MARK: Timing
                 Section("Alarm Timing") {
                     Stepper(
@@ -161,6 +169,7 @@ struct SettingsView: View {
                 }
 
                 // MARK: Detection Keywords
+                if settings.peopleEnabled {
                 Section {
                     ForEach(detectionKeywords) { keyword in
                         HStack {
@@ -195,6 +204,7 @@ struct SettingsView: View {
                     Text("1:1 Detection Keywords")
                 } footer: {
                     Text("Calendar events whose titles contain any of these keywords (case-insensitive) will be detected as 1:1 meetings.")
+                }
                 }
 
                 // MARK: Background refresh

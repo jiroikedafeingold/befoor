@@ -35,11 +35,13 @@ struct ContentView: View {
                 }
                 .tag(0)
 
-            PeopleTabView()
-                .tabItem {
-                    Label("People", systemImage: "person.2")
-                }
-                .tag(1)
+            if settings.peopleEnabled {
+                PeopleTabView()
+                    .tabItem {
+                        Label("People", systemImage: "person.2")
+                    }
+                    .tag(1)
+            }
 
             SettingsView()
                 .tabItem {
@@ -56,6 +58,7 @@ struct ContentView: View {
         .environment(\.cloudRefreshToken, cloudRefreshToken)
         .tint(.indigo)
         .onReceive(NotificationCenter.default.publisher(for: .navigateToPerson)) { _ in
+            guard settings.peopleEnabled else { return }
             selectedTab = 1
         }
         .onReceive(NotificationCenter.default.publisher(for: .NSPersistentStoreRemoteChange)) { _ in

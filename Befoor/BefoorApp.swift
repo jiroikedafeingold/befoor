@@ -237,6 +237,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         NotificationService.shared.clearBadge()
+        NotificationService.shared.pruneStaleDeliveredNotifications()
         BackgroundAudioKeepAlive.shared.start()
         Task { await AlarmScheduler.shared.sync() }
     }

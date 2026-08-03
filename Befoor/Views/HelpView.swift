@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct HelpView: View {
+    @ObservedObject private var settings = AppSettings.shared
+
     var body: some View {
         NavigationStack {
             List {
@@ -89,6 +91,7 @@ struct HelpView: View {
                 }
 
                 // MARK: People & 1:1 Meetings
+                if settings.peopleEnabled {
                 Section("People & 1:1 Meetings") {
                     HelpRow(
                         icon: "person.2.fill",
@@ -121,6 +124,7 @@ struct HelpView: View {
                         detail: "Customize which calendar events are detected as 1:1 meetings by editing keywords in Settings. Default keywords include '1:1', 'one on one', 'catch up', and more."
                     )
                 }
+                }
 
                 // MARK: Tips
                 Section("Tips") {
@@ -140,7 +144,9 @@ struct HelpView: View {
                         icon: "square.stack.3d.up.fill",
                         iconColor: .yellow,
                         title: "64 Notification Limit",
-                        detail: "iOS allows a maximum of 64 pending local notifications. Befoor splits the budget between alarm notifications (~40 slots) and 1:1 meeting reminders (~20 slots), with a few reserved for snoozes."
+                        detail: settings.peopleEnabled
+                            ? "iOS allows a maximum of 64 pending local notifications. Befoor splits the budget between alarm notifications (~40 slots) and 1:1 meeting reminders (~20 slots), with a few reserved for snoozes."
+                            : "iOS allows a maximum of 64 pending local notifications. Befoor schedules alarm notifications up to this limit, with a few slots reserved for snoozes."
                     )
                     HelpRow(
                         icon: "xmark.app.fill",

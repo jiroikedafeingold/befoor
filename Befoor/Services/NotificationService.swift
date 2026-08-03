@@ -322,6 +322,35 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
+    /// Remove delivered notifications older than the given interval so the
+    /// notification center doesn't accumulate banners the user no longer cares about.
+    func pruneStaleDeliveredNotifications(olderThan interval: TimeInterval = 30 * 60) {
+        let cutoff = Date().addingTimeInterval(-interval)
+        let center = self.center
+        center.getDeliveredNotifications { delivered in
+            let staleIDs = delivered
+                .filter { $0.date < cutoff }
+                .map(\.request.identifier)
+            guard !staleIDs.isEmpty else { return }
+            center.removeDeliveredNotifications(withIdentifiers: staleIDs)
+            print("[Befoor] Pruned \(staleIDs.count) delivered notification(s) older than \(Int(interval / 60)) min")
+        }
+    }
+
+    /// Remove every delivered notification except the one with the given identifier.
+    /// Used when a new notification is presented so the notification center only
+    /// shows the most recent one and older banners don't pile up.
+    private func clearDeliveredNotifications(except keepIdentifier: String) {
+        let center = self.center
+        center.getDeliveredNotifications { delivered in
+            let staleIDs = delivered
+                .map(\.request.identifier)
+                .filter { $0 != keepIdentifier }
+            guard !staleIDs.isEmpty else { return }
+            center.removeDeliveredNotifications(withIdentifiers: staleIDs)
+        }
+    }
+
     // MARK: UNUserNotificationCenterDelegate
 
     /// Show alarm as a banner even when the app is foregrounded.
@@ -333,30 +362,19 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     ) {
         let category = notification.request.content.categoryIdentifier
 
+        // Whenever a new notification is presented, clear out every older
+        // delivered notification so the notification center only ever shows
+        // the one the user is currently seeing.
+        clearDeliveredNotifications(except: notification.request.identifier)
+
         if category == ReminderAction.category {
-            // Clear older delivered reminder notifications for the same person
-            let threadID = notification.request.content.threadIdentifier
-            if !threadID.isEmpty {
-                center.getDeliveredNotifications { delivered in
-                    let staleIDs = delivered
-                        .filter { $0.request.content.threadIdentifier == threadID && $0.request.identifier != notification.request.identifier }
-                        .map(\.request.identifier)
-                    if !staleIDs.isEmpty {
-                        center.removeDeliveredNotifications(withIdentifiers: staleIDs)
-                    }
-                }
-            }
             // Person reminders: show banner, play sound, show in list
             completionHandler([.banner, .sound, .list])
             return
         }
 
-        // Alarm notifications — clear earlier delivered banners for this event
+        // Alarm notifications
         let id = notification.request.identifier
-        let threadID = notification.request.content.threadIdentifier
-        if !threadID.isEmpty {
-            center.removeDeliveredNotifications(withIdentifiers: [threadID, threadID + "_r1", threadID + "_r2", threadID + "_final", threadID + "_snooze"])
-        }
         let settings = AppSettings.shared
         let isAudible: Bool = {
             switch settings.audibleAlertsMode {

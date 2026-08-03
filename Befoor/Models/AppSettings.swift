@@ -92,7 +92,7 @@ final class AppSettings: ObservableObject {
         Keys.isEnabled, Keys.selectedSound, Keys.lookAheadDays,
         Keys.checkInterval, Keys.snoozeDuration, Keys.soundEnabled,
         Keys.hapticsEnabled, Keys.finalAlarmEnabled, Keys.audibleAlertsMode,
-        Keys.mainDeviceID,
+        Keys.mainDeviceID, Keys.peopleEnabled,
     ]
 
     // Minutes before the appointment to fire the alarm
@@ -119,6 +119,11 @@ final class AppSettings: ObservableObject {
     // Master on/off switch
     @Published var isEnabled: Bool {
         didSet { save(isEnabled, forKey: Keys.isEnabled) }
+    }
+
+    // Enables the People tab and all 1:1 meeting features. Off by default.
+    @Published var peopleEnabled: Bool {
+        didSet { save(peopleEnabled, forKey: Keys.peopleEnabled) }
     }
 
     // Which soothing sound to use
@@ -186,6 +191,7 @@ final class AppSettings: ObservableObject {
         ignoredKeywords           = defaults.stringArray(forKey: Keys.ignoredKeywords) ?? ["lunch", "Lunch"]
         skipWeekends              = defaults.object(forKey: Keys.skipWeekends) as? Bool ?? false
         isEnabled                 = defaults.object(forKey: Keys.isEnabled) as? Bool ?? true
+        peopleEnabled             = defaults.object(forKey: Keys.peopleEnabled) as? Bool ?? false
         selectedSound             = BefoorSound(rawValue: defaults.string(forKey: Keys.selectedSound) ?? "") ?? .pebble
         lookAheadDays             = defaults.object(forKey: Keys.lookAheadDays) as? Int ?? 7
         backgroundCheckIntervalMinutes = defaults.object(forKey: Keys.checkInterval) as? Int ?? 30
@@ -247,6 +253,8 @@ final class AppSettings: ObservableObject {
                     if let v = value as? Bool { skipWeekends = v }
                 case Keys.isEnabled:
                     if let v = value as? Bool { isEnabled = v }
+                case Keys.peopleEnabled:
+                    if let v = value as? Bool { peopleEnabled = v }
                 case Keys.selectedSound:
                     if let v = value as? String, let s = BefoorSound(rawValue: v) { selectedSound = s }
                 case Keys.lookAheadDays:
@@ -278,6 +286,7 @@ final class AppSettings: ObservableObject {
         static let ignoredKeywords    = "bf_ignoredKeywords"
         static let skipWeekends       = "bf_skipWeekends"
         static let isEnabled          = "bf_isEnabled"
+        static let peopleEnabled      = "bf_peopleEnabled"
         static let selectedSound      = "bf_selectedSound"
         static let lookAheadDays      = "bf_lookAheadDays"
         static let checkInterval      = "bf_checkIntervalMinutes"

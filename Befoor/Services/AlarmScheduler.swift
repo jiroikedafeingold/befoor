@@ -29,9 +29,36 @@ final class AlarmScheduler: ObservableObject {
 
     private static let throttleInterval: TimeInterval = 30
 
+    /// How long to wait after a calendar change before resyncing, so a burst of
+    /// EKEventStoreChanged notifications collapses into one sync.
+    private static let storeChangeDebounce: TimeInterval = 5
+    private var storeChangeSyncTask: Task<Void, Never>?
+
+    /// Fingerprint of the alarm set last written to the CloudKit snapshot in this
+    /// process. Nil at launch so the first sync always publishes once.
+    private var lastPublishedSignature: Set<String>?
+
     private init() {
         calendar.onStoreChanged = { [weak self] in
-            Task { await self?.sync() }
+            self?.syncAfterStoreChange()
+        }
+    }
+
+    /// Calendar changes arrive in bursts (an account sync can post dozens of
+    /// EKEventStoreChanged notifications in a row), and because the process stays
+    /// alive for the audio keep-alive, every one of them used to start a full
+    /// resync. Wait a few seconds for the burst to finish, and if a sync ran very
+    /// recently, wait out the throttle window instead of dropping the change.
+    private func syncAfterStoreChange() {
+        storeChangeSyncTask?.cancel()
+        var delay = Self.storeChangeDebounce
+        if let last = lastSyncDate {
+            delay = max(delay, Self.throttleInterval - Date().timeIntervalSince(last) + 1)
+        }
+        storeChangeSyncTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(delay))
+            guard !Task.isCancelled else { return }
+            await self?.sync()
         }
     }
 
@@ -60,8 +87,16 @@ final class AlarmScheduler: ObservableObject {
         syncInProgress = true
         defer { syncInProgress = false }
 
-        // Clear everything before rescheduling so no stale notifications remain.
-        notifications.cancelAll()
+        // sync() runs on every foreground, but the alarm set usually hasn't
+        // moved. Snapshot it so the widget is only reloaded when it really
+        // changed — each reload spawns the widget extension process.
+        let previousSignature = alarmSignature()
+
+        // Clear the pending queue before rescheduling so no stale notifications
+        // remain. Delivered alerts are kept — they're tidied by age and per-event
+        // rules below rather than wiped wholesale on every sync.
+        notifications.cancelAllPending()
+        notifications.tidyDeliveredNotifications()
         store.removeAll()
 
         let events  = calendar.fetchUpcomingEvents(
@@ -141,12 +176,27 @@ final class AlarmScheduler: ObservableObject {
 
         store.prunePast()
         store.saveSnapshot()
-        if let context = modelContext {
+        let signature = alarmSignature()
+        // Publishing rewrites the CloudKit record, which costs a network export here
+        // and a push plus import on every other device. Skip it when the alarm set
+        // is identical to what this process last published.
+        if let context = modelContext, signature != lastPublishedSignature {
             store.publishToCloudKit(context: context)
+            lastPublishedSignature = signature
         }
         scheduledCount = store.alarms.count
         lastSyncDate   = Date()
-        WidgetCenter.shared.reloadAllTimelines()
+        if signature != previousSignature {
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+    }
+
+    /// Order-independent fingerprint of the tracked alarm set, used to decide
+    /// whether the widget actually needs reloading.
+    private func alarmSignature() -> Set<String> {
+        Set(store.alarms.values.map {
+            "\($0.eventIdentifier)|\($0.notificationIdentifier)|\($0.eventTitle)|\($0.calendarIdentifier)|\(Int($0.eventStartDate.timeIntervalSince1970))"
+        })
     }
 
     /// Cancel every Befoor notification, clear the store, and stop AlarmPlayer.

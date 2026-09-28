@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import CoreData
+import WidgetKit
 
 // MARK: - CloudKit Refresh Environment Key
 
@@ -69,6 +70,9 @@ struct ContentView: View {
                   let snapshot = alarmSnapshots.first,
                   let models = try? JSONDecoder().decode([TrackedAlarmModel].self, from: snapshot.alarmsJSON) else { return }
             store.replaceAlarms(with: models)
+            // The widget no longer polls on a fixed clock, so tell it the shared
+            // snapshot changed (the main device does this from AlarmScheduler).
+            WidgetCenter.shared.reloadAllTimelines()
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {

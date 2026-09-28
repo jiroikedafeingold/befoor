@@ -1,0 +1,11 @@
+This update is all about battery life, without giving up the one thing Befoor promises: your alarm sounds on time even when the phone is locked and the ringer is off.
+
+- Alarms now wake the phone only at the moment they need to ring, instead of checking the clock every second all day.
+- The silent background stream that keeps alarms reliable now uses the lightest audio settings iOS allows.
+- Notification banners for the same event are tidied up so a single meeting never leaves a stack of stale alerts.
+- The widget refreshes only when the list of upcoming events actually changes.
+- Calendar changes that arrive in bursts are handled with a single resync, and your other devices are only updated when the alarm list really changed.
+- The haptic engine now powers down between alarms.
+- Apple Watch: the People list only refreshes while it is on screen.
+
+Questions or feedback? apps@feingold5.com

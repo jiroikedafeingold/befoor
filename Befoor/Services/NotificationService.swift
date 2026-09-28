@@ -218,6 +218,13 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         center.removeAllDeliveredNotifications()
     }
 
+    /// Clears everything still scheduled but leaves already-delivered alerts alone.
+    /// Used by a resync, which rebuilds the pending queue from scratch and must not
+    /// discard alerts the user hasn't acted on yet.
+    func cancelAllPending() {
+        center.removeAllPendingNotificationRequests()
+    }
+
     /// Cancel a single notification by identifier.
     func cancelNotification(identifier: String) {
         center.removePendingNotificationRequests(withIdentifiers: [identifier])
@@ -322,30 +329,66 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
-    /// Remove delivered notifications older than the given interval so the
-    /// notification center doesn't accumulate banners the user no longer cares about.
-    func pruneStaleDeliveredNotifications(olderThan interval: TimeInterval = 30 * 60) {
-        let cutoff = Date().addingTimeInterval(-interval)
+    /// Delivered notifications older than this are cleared automatically.
+    static let deliveredRetention: TimeInterval = 60 * 60
+
+    /// Tidies the notification center in two passes:
+    /// 1. Removes any delivered notification older than `deliveredRetention` (1 hour).
+    /// 2. Collapses multiple alerts for the same event (same thread identifier) down
+    ///    to the most recent one, so a single event never shows a stack of banners.
+    ///
+    /// Notifications without a thread identifier can't be attributed to an event,
+    /// so they're only subject to the age rule.
+    func tidyDeliveredNotifications() {
         let center = self.center
+        let cutoff = Date().addingTimeInterval(-Self.deliveredRetention)
+
         center.getDeliveredNotifications { delivered in
-            let staleIDs = delivered
-                .filter { $0.date < cutoff }
-                .map(\.request.identifier)
+            var staleIDs: [String] = []
+            var newestPerThread: [String: UNNotification] = [:]
+
+            for notification in delivered {
+                // Age rule applies to everything, threaded or not.
+                if notification.date < cutoff {
+                    staleIDs.append(notification.request.identifier)
+                    continue
+                }
+
+                let thread = notification.request.content.threadIdentifier
+                guard !thread.isEmpty else { continue }
+
+                guard let incumbent = newestPerThread[thread] else {
+                    newestPerThread[thread] = notification
+                    continue
+                }
+
+                // Keep whichever arrived later; discard the other.
+                if notification.date > incumbent.date {
+                    newestPerThread[thread] = notification
+                    staleIDs.append(incumbent.request.identifier)
+                } else {
+                    staleIDs.append(notification.request.identifier)
+                }
+            }
+
             guard !staleIDs.isEmpty else { return }
             center.removeDeliveredNotifications(withIdentifiers: staleIDs)
-            print("[Befoor] Pruned \(staleIDs.count) delivered notification(s) older than \(Int(interval / 60)) min")
+            print("[Befoor] Tidied \(staleIDs.count) delivered notification(s)")
         }
     }
 
-    /// Remove every delivered notification except the one with the given identifier.
-    /// Used when a new notification is presented so the notification center only
-    /// shows the most recent one and older banners don't pile up.
-    private func clearDeliveredNotifications(except keepIdentifier: String) {
+    /// Removes earlier delivered alerts belonging to the same event as `notification`,
+    /// leaving only the one that just arrived. Other events are left untouched.
+    private func collapseThread(for notification: UNNotification) {
+        let thread = notification.request.content.threadIdentifier
+        guard !thread.isEmpty else { return }
+
+        let keepID = notification.request.identifier
         let center = self.center
         center.getDeliveredNotifications { delivered in
             let staleIDs = delivered
+                .filter { $0.request.content.threadIdentifier == thread && $0.request.identifier != keepID }
                 .map(\.request.identifier)
-                .filter { $0 != keepIdentifier }
             guard !staleIDs.isEmpty else { return }
             center.removeDeliveredNotifications(withIdentifiers: staleIDs)
         }
@@ -362,10 +405,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     ) {
         let category = notification.request.content.categoryIdentifier
 
-        // Whenever a new notification is presented, clear out every older
-        // delivered notification so the notification center only ever shows
-        // the one the user is currently seeing.
-        clearDeliveredNotifications(except: notification.request.identifier)
+        // A new alert for this event supersedes any earlier ones, so drop the
+        // older banners for the same event. Other events keep their alerts.
+        collapseThread(for: notification)
 
         if category == ReminderAction.category {
             // Person reminders: show banner, play sound, show in list
@@ -652,9 +694,10 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             content.userInfo["personName"] = personName
         }
 
-        // Clear previously delivered notifications for this event thread
-        // so the notification center doesn't pile up stale banners.
-        center.removeDeliveredNotifications(withIdentifiers: [threadID, threadID + "_r1", threadID + "_r2", threadID + "_final", threadID + "_snooze"])
+        // Delivered banners for this event are not touched here — scheduling runs
+        // ahead of time (and on every sync), so clearing them now would wipe an
+        // alert the user hasn't seen yet. Collapsing happens when the next alert
+        // for the event is presented, and in tidyDeliveredNotifications().
 
         let comps = Calendar.current.dateComponents(
             [.year, .month, .day, .hour, .minute, .second], from: date
@@ -675,11 +718,16 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
         do {
             hapticEngine = try CHHapticEngine()
+            // The process lives around the clock for the audio keep-alive, so an
+            // engine started here and never stopped would hold the haptic hardware
+            // active all day for an alarm that rings a few times. Let Core Haptics
+            // stop it after ~2 minutes idle instead; playAlarmHaptics() calls
+            // start() before every pattern, so nothing is lost.
+            hapticEngine?.isAutoShutdownEnabled = true
             hapticEngine?.resetHandler = { [weak self] in
                 try? self?.hapticEngine?.start()
             }
             hapticEngine?.stoppedHandler = { _ in }
-            try hapticEngine?.start()
         } catch {
             print("[Befoor] Haptic engine error: \(error)")
         }

@@ -75,15 +75,15 @@ struct WatchPeopleListView: View {
             }
         }
         .navigationTitle("People")
-        .task {
+        .task(id: scenePhase) {
+            // Only tick while the app is actually on screen, matching the iPhone
+            // list; there's nobody to re-sort for while it's in the background.
+            guard scenePhase == .active else { return }
             now = Date()
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(60))
                 now = Date()
             }
-        }
-        .onChange(of: scenePhase) { _, newPhase in
-            if newPhase == .active { now = Date() }
         }
     }
 }

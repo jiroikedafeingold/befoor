@@ -1,0 +1,12 @@
+# Metadata + screenshots only (the binary comes from Xcode Cloud, not here).
+#
+# DEFAULT SCOPE: only What's New + screenshots. `fastlane/metadata/en-US/` deliberately
+# contains ONLY `release_notes.txt` — deliver never changes a field it has no file for, so
+# the App Store name, subtitle, description, keywords, promo text and URLs are left exactly
+# as they are in App Store Connect. Add a field's .txt file only if you want it uploaded.
+app_identifier("com.befoor.app")
+skip_binary_upload(true)
+overwrite_screenshots(true)   # screenshots REPLACE what's on ASC; never additive
+submit_for_review(false)      # upload only; review + submit is done separately
+force(true)                   # don't open the HTML preview / prompt
+run_precheck_before_submit(false)

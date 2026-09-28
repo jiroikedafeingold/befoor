@@ -102,15 +102,16 @@ struct PeopleListView: View {
         .sheet(isPresented: $showAddGlobalNote) {
             AddGlobalNoteView()
         }
-        .task {
+        .task(id: scenePhase) {
+            // Only tick while the app is actually on screen. Background audio
+            // keeps the process alive around the clock, so an ungated loop would
+            // re-sort and re-render this list all night for nobody.
+            guard scenePhase == .active else { return }
             now = Date()
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(60))
                 now = Date()
             }
-        }
-        .onChange(of: scenePhase) { _, newPhase in
-            if newPhase == .active { now = Date() }
         }
     }
 

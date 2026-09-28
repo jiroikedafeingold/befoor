@@ -23,39 +23,49 @@ struct AlarmTimelineProvider: TimelineProvider {
         ])
     }
 
+    /// Events further out than this aren't shown.
+    private static let window: TimeInterval = 7200
+
+    /// Reload interval when nothing is on the horizon. The app reloads the timeline
+    /// itself whenever the alarm set changes, so this only covers the app having
+    /// been killed; it used to be 15 minutes, which woke the extension all night.
+    private static let idleRefresh: TimeInterval = 6 * 3600
+
     func getSnapshot(in context: Context, completion: @escaping (AlarmEntry) -> Void) {
-        completion(fetchEntry())
+        completion(load().entry)
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<AlarmEntry>) -> Void) {
-        let entry = fetchEntry()
-
-        let nextRefresh: Date
-        if let nextEvent = entry.alarms.first {
-            nextRefresh = nextEvent.startDate
-        } else {
-            nextRefresh = Date().addingTimeInterval(900)
-        }
-
+        let (entry, nextChange) = load()
+        // Refresh exactly when the shown list would change, not on a fixed clock.
+        let nextRefresh = nextChange ?? entry.date.addingTimeInterval(Self.idleRefresh)
         completion(Timeline(entries: [entry], policy: .after(nextRefresh)))
     }
 
-    private func fetchEntry() -> AlarmEntry {
+    /// Reads the shared snapshot and returns the entry plus the next moment the
+    /// visible list changes: the first shown event starting (it drops off) or a
+    /// later event entering the two-hour window, whichever comes first.
+    private func load() -> (entry: AlarmEntry, nextChange: Date?) {
         let now = Date()
-        let cutoff = now.addingTimeInterval(7200)
+        let cutoff = now.addingTimeInterval(Self.window)
 
         guard let url = FileManager.default
                 .containerURL(forSecurityApplicationGroupIdentifier: "group.com.befoor.app")?
                 .appendingPathComponent("tracked_alarms.json"),
               let data = try? Data(contentsOf: url),
               let models = try? JSONDecoder().decode([WidgetAlarmModel].self, from: data) else {
-            return AlarmEntry(date: now, alarms: [])
+            return (AlarmEntry(date: now, alarms: []), nil)
         }
 
         var seen = Set<String>()
         var alarms: [UpcomingAlarm] = []
+        var nextBeyondWindow: Date?
         for model in models.sorted(by: { $0.eventStartDate < $1.eventStartDate }) {
-            guard model.eventStartDate >= now && model.eventStartDate <= cutoff else { continue }
+            guard model.eventStartDate >= now else { continue }
+            if model.eventStartDate > cutoff {
+                nextBeyondWindow = model.eventStartDate
+                break
+            }
             if seen.insert(model.eventTitle).inserted {
                 alarms.append(UpcomingAlarm(
                     id: model.eventIdentifier,
@@ -65,7 +75,12 @@ struct AlarmTimelineProvider: TimelineProvider {
             }
         }
 
-        return AlarmEntry(date: now, alarms: alarms)
+        let candidates = [
+            alarms.first?.startDate,
+            nextBeyondWindow?.addingTimeInterval(-Self.window),
+        ].compactMap { $0 }
+
+        return (AlarmEntry(date: now, alarms: alarms), candidates.min())
     }
 }
 

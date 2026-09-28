@@ -1,0 +1,28 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Upload App Store metadata + screenshots (no binary) using an App Store Connect API key"
+  desc "Options: version:X.Y (target/create a version), skip_screenshots:true, skip_metadata:true"
+  lane :upload_store do |options|
+    api_key = app_store_connect_api_key(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key_filepath: ENV.fetch("ASC_KEY_PATH"),
+      in_house: false
+    )
+
+    deliver(
+      api_key: api_key,
+      app_version: options[:version],   # target/create this version; nil = the current editable one
+      skip_binary_upload: true,         # binary is delivered by Xcode Cloud
+      skip_metadata: options[:skip_metadata] || false,
+      skip_screenshots: options[:skip_screenshots] || false,
+      # Screenshots REPLACE what's on App Store Connect, never add to it: every set for each
+      # uploaded locale is deleted first. Look for "Successfully deleted all screenshots" in the log.
+      overwrite_screenshots: true,
+      submit_for_review: false,
+      run_precheck_before_submit: false,
+      force: true
+    )
+  end
+end

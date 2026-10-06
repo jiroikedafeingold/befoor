@@ -73,6 +73,7 @@ struct ContentView: View {
             // The widget no longer polls on a fixed clock, so tell it the shared
             // snapshot changed (the main device does this from AlarmScheduler).
             WidgetCenter.shared.reloadAllTimelines()
+            Task { await MeetingLiveActivityManager.shared.refresh() }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {

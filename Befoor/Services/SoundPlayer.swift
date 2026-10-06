@@ -32,8 +32,6 @@ final class SoundPlayer: NSObject, ObservableObject, AVAudioPlayerDelegate {
         player?.stop()
         player = nil
         playingSound = nil
-        // Do not deactivate the shared AVAudioSession — BackgroundAudioKeepAlive
-        // depends on it staying active to keep the process alive in the background.
     }
 
     // MARK: AVAudioPlayerDelegate

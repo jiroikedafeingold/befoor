@@ -188,11 +188,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         AlarmScheduler.shared.registerBackgroundTasks()
         _ = NotificationService.shared
 
-        // Configure the audio session and start the silent keep-alive immediately.
-        // This ensures the session is active before any sync or alarm scheduling,
-        // and that the app can stay alive in the background for timer-based alarms.
-        BackgroundAudioKeepAlive.shared.start()
-
         // Register for remote notifications (required for CloudKit sync push)
         application.registerForRemoteNotifications()
 
@@ -238,13 +233,15 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     func applicationDidBecomeActive(_ application: UIApplication) {
         NotificationService.shared.clearBadge()
         NotificationService.shared.tidyDeliveredNotifications()
-        BackgroundAudioKeepAlive.shared.start()
-        Task { await AlarmScheduler.shared.sync() }
+        Task {
+            await AlarmScheduler.shared.sync()
+            // Live Activities can only be started in the foreground, so check here
+            // even when sync was throttled or this isn't the main device.
+            await MeetingLiveActivityManager.shared.refresh()
+        }
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {
-        // Start silent audio loop so the process stays alive for timer-based alarms
-        BackgroundAudioKeepAlive.shared.start()
         AlarmScheduler.shared.scheduleNextBackgroundRefresh()
     }
 }

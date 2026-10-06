@@ -103,9 +103,8 @@ struct PeopleListView: View {
             AddGlobalNoteView()
         }
         .task(id: scenePhase) {
-            // Only tick while the app is actually on screen. Background audio
-            // keeps the process alive around the clock, so an ungated loop would
-            // re-sort and re-render this list all night for nobody.
+            // Only tick while the app is actually on screen; there's nobody to
+            // re-sort the list for while it's in the background.
             guard scenePhase == .active else { return }
             now = Date()
             while !Task.isCancelled {

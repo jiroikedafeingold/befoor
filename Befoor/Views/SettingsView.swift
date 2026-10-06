@@ -7,6 +7,7 @@ struct SettingsView: View {
     @ObservedObject private var soundPlayer = SoundPlayer.shared
     @ObservedObject private var ckStatus = CloudKitStatus.shared
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \DetectionKeyword.keyword) private var detectionKeywords: [DetectionKeyword]
     @State private var newKeyword = ""
     @State private var showAddKeyword = false
@@ -16,6 +17,7 @@ struct SettingsView: View {
     @State private var showResetConfirm = false
     @State private var calendarGranted = false
     @State private var contactsGranted = false
+    @State private var alarmsAllowed = false
     @Query private var allPeople: [Person]
     @Query private var allNotes: [Note]
     @Query private var allFollowUps: [FollowUp]
@@ -66,11 +68,21 @@ struct SettingsView: View {
                 }
 
                 // MARK: Timing
-                Section("Alarm Timing") {
+                Section {
                     Stepper(
-                        "\(settings.leadTimeMinutes) minutes before",
+                        "First alert: \(alertLabel(settings.leadTimeMinutes))",
                         value: $settings.leadTimeMinutes,
-                        in: 5...60
+                        in: AppSettings.firstAlertRange
+                    )
+                    Stepper(
+                        "Second alert: \(alertLabel(settings.secondAlertMinutes))",
+                        value: $settings.secondAlertMinutes,
+                        in: AppSettings.laterAlertRange
+                    )
+                    Stepper(
+                        "Third alert: \(alertLabel(settings.thirdAlertMinutes))",
+                        value: $settings.thirdAlertMinutes,
+                        in: AppSettings.laterAlertRange
                     )
 
                     Stepper(
@@ -87,6 +99,23 @@ struct SettingsView: View {
 
                     Toggle("Skip weekends", isOn: $settings.skipWeekends)
                         .tint(.indigo)
+                } header: {
+                    Text("Alarm Timing")
+                } footer: {
+                    Text("Each meeting rings up to three times. Stop on any alert skips that meeting's remaining alerts; Snooze keeps them.")
+                }
+
+                // MARK: Live Activity
+                Section {
+                    Toggle("Next Meeting Countdown", isOn: $settings.liveActivityEnabled)
+                        .tint(.indigo)
+                        .onChange(of: settings.liveActivityEnabled) { _, _ in
+                            Task { await MeetingLiveActivityManager.shared.refresh() }
+                        }
+                } header: {
+                    Text("Live Activity")
+                } footer: {
+                    Text("When a meeting's alarm goes off, shows a countdown to it in the Dynamic Island and on the Lock Screen, with its location, calendar and who it's with. Press and hold the Dynamic Island for details. iPhone only.")
                 }
 
                 // MARK: Calendars
@@ -137,19 +166,11 @@ struct SettingsView: View {
                 }
 
                 // MARK: Sound
-                Section("Alert Sound") {
+                Section {
+                    alarmPermissionRow
+
                     Toggle("Sound", isOn: $settings.soundEnabled)
                         .tint(.indigo)
-                    Toggle("Haptics", isOn: $settings.hapticsEnabled)
-                        .tint(.indigo)
-                    Toggle("Alarm at Event Start", isOn: $settings.finalAlarmEnabled)
-                        .tint(.indigo)
-
-                    Picker("Audible Alerts", selection: $settings.audibleAlertsMode) {
-                        ForEach(AudibleAlertsMode.allCases) { mode in
-                            Text(mode.displayName).tag(mode)
-                        }
-                    }
 
                     ForEach(BefoorSound.allCases) { sound in
                         SoundRow(
@@ -166,6 +187,10 @@ struct SettingsView: View {
                             }
                         }
                     }
+                } header: {
+                    Text("Alarm Sound")
+                } footer: {
+                    Text("Befoor rings a real alarm before each meeting, so it sounds even when your iPhone is on silent or in a Focus, and works even if Befoor isn't open. With Sound off, or if alarms aren't allowed, you get notifications instead, which follow your ringer switch.")
                 }
 
                 // MARK: Detection Keywords
@@ -370,6 +395,18 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            // These are baked into the scheduled alarms, so reschedule after a change.
+            .onChange(of: settings.leadTimeMinutes) { _, _ in AlarmScheduler.shared.requestResync() }
+            .onChange(of: settings.selectedSound) { _, _ in AlarmScheduler.shared.requestResync() }
+            .onChange(of: settings.soundEnabled) { _, _ in AlarmScheduler.shared.requestResync() }
+            .onChange(of: settings.secondAlertMinutes) { _, _ in AlarmScheduler.shared.requestResync() }
+            .onChange(of: settings.thirdAlertMinutes) { _, _ in AlarmScheduler.shared.requestResync() }
+            .onChange(of: settings.snoozeDurationMinutes) { _, _ in AlarmScheduler.shared.requestResync() }
+            .onAppear { alarmsAllowed = MeetingAlarms.shared.isAuthorized }
+            // Picks up a change made in iOS Settings while Befoor was in the background.
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { alarmsAllowed = MeetingAlarms.shared.isAuthorized }
+            }
             .alert("Reset Local Data?", isPresented: $showResetConfirm) {
                 Button("Reset & Restart", role: .destructive) {
                     BefoorApp.removeStoreFiles()
@@ -390,6 +427,41 @@ struct SettingsView: View {
     }
 
     // MARK: Helpers
+
+    private func alertLabel(_ minutes: Int) -> String {
+        switch minutes {
+        case 0:  return "at start"
+        case 1:  return "1 minute before"
+        default: return "\(minutes) minutes before"
+        }
+    }
+
+    /// Shows whether Befoor may schedule system alarms, with a way to fix it.
+    @ViewBuilder
+    private var alarmPermissionRow: some View {
+        if alarmsAllowed {
+            Label("Alarms Allowed", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        } else if MeetingAlarms.shared.isDenied {
+            Button {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            } label: {
+                Label("Alarms Are Off — Open Settings", systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+            }
+        } else {
+            Button {
+                Task {
+                    alarmsAllowed = await MeetingAlarms.shared.requestAuthorization()
+                    AlarmScheduler.shared.requestResync()
+                }
+            } label: {
+                Label("Allow Alarms", systemImage: "alarm")
+            }
+        }
+    }
 
     private func addKeyword() {
         let trimmed = newKeyword.trimmingCharacters(in: .whitespaces)

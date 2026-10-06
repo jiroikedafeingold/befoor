@@ -271,11 +271,11 @@ struct PersonDetailView: View {
             guard granted else { return }
 
             let id = "test_person_\(UUID().uuidString)"
-            await NotificationService.shared.scheduleAlarm(
+            await NotificationService.shared.scheduleAlerts(
                 identifier: id,
                 eventTitle: "Test 1:1 Meeting",
                 calendarName: "Test Calendar",
-                fireDate: Date().addingTimeInterval(5),
+                alerts: [(slot: 1, date: Date().addingTimeInterval(5), minutesBefore: 5)],
                 eventStartDate: Date().addingTimeInterval(300),
                 sound: AppSettings.shared.selectedSound,
                 personName: person.name

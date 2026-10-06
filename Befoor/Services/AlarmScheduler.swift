@@ -6,8 +6,8 @@ import WidgetKit
 
 // MARK: - AlarmScheduler
 
-/// Central coordinator: reads the calendar, diffs against currently-tracked alarms,
-/// then creates / updates / cancels local notifications as needed.
+/// Central coordinator: reads the calendar and schedules a system alarm (AlarmKit)
+/// before each meeting, falling back to local notifications when alarms are off.
 @MainActor
 final class AlarmScheduler: ObservableObject {
     static let shared = AlarmScheduler()
@@ -34,6 +34,11 @@ final class AlarmScheduler: ObservableObject {
     private static let storeChangeDebounce: TimeInterval = 5
     private var storeChangeSyncTask: Task<Void, Never>?
 
+    /// Whether the last sync used AlarmKit. If that changes (alarms were just
+    /// allowed, or Sound was switched), the next sync skips the throttle so the
+    /// meeting alerts are rebuilt right away.
+    private var lastSyncUsedAlarms: Bool?
+
     /// Fingerprint of the alarm set last written to the CloudKit snapshot in this
     /// process. Nil at launch so the first sync always publishes once.
     private var lastPublishedSignature: Set<String>?
@@ -45,11 +50,16 @@ final class AlarmScheduler: ObservableObject {
     }
 
     /// Calendar changes arrive in bursts (an account sync can post dozens of
-    /// EKEventStoreChanged notifications in a row), and because the process stays
-    /// alive for the audio keep-alive, every one of them used to start a full
-    /// resync. Wait a few seconds for the burst to finish, and if a sync ran very
-    /// recently, wait out the throttle window instead of dropping the change.
+    /// EKEventStoreChanged notifications in a row). Wait a few seconds for the
+    /// burst to finish, and if a sync ran very recently, wait out the throttle
+    /// window instead of dropping the change.
     private func syncAfterStoreChange() {
+        requestResync()
+    }
+
+    /// Resyncs shortly, collapsing repeated requests into one. Used for calendar
+    /// changes and for settings that are baked into scheduled alarms.
+    func requestResync() {
         storeChangeSyncTask?.cancel()
         var delay = Self.storeChangeDebounce
         if let last = lastSyncDate {
@@ -64,7 +74,7 @@ final class AlarmScheduler: ObservableObject {
 
     // MARK: - Public API
 
-    /// Full sync: clears all pending notifications, then reschedules from scratch.
+    /// Full sync: rebuilds the meeting alarms (or fallback notifications) from the calendar.
     /// On secondary devices, loads the alarm list from CloudKit instead of
     /// scanning the calendar.
     func sync() async {
@@ -79,10 +89,13 @@ final class AlarmScheduler: ObservableObject {
 
         guard calendar.isAuthorized else { return }
 
+        let useAlarms = settings.soundEnabled && MeetingAlarms.shared.isAuthorized
         if let last = lastSyncDate,
-           Date().timeIntervalSince(last) < Self.throttleInterval {
+           Date().timeIntervalSince(last) < Self.throttleInterval,
+           lastSyncUsedAlarms == useAlarms {
             return
         }
+        lastSyncUsedAlarms = useAlarms
 
         syncInProgress = true
         defer { syncInProgress = false }
@@ -105,20 +118,19 @@ final class AlarmScheduler: ObservableObject {
         )
         let filtered = filter(events)
 
-        // Budget: 4 notifs/event when finalAlarm on (10×4=40), 3 when off (13×3=39).
-        // Remaining slots reserved for 1note1 reminders (20) and snooze rescheduling (4).
-        let maxEvents = settings.finalAlarmEnabled ? 10 : 13
-        var playerEntries: [AlarmPlayer.Entry] = []
+        // Meetings ring as AlarmKit alarms, which play through silent mode and
+        // Focus. With Sound off, or if alarms aren't allowed, Befoor falls back to
+        // notifications, which follow the ringer switch.
+        var alarmRequests: [MeetingAlarmRequest] = []
+
+        // Notification budget (fallback): up to 3 per event, leaving room in the
+        // iOS limit of 64 for 1:1 reminders (20) and snoozes.
+        let maxEvents = 13
+        let alertMinutes = settings.alertMinutes
 
         for event in filtered.prefix(maxEvents) {
             guard event.startDate > Date() else { continue }
             await Task.yield()
-
-            let idealFireDate = event.startDate.addingTimeInterval(
-                -Double(settings.leadTimeMinutes) * 60
-            )
-            // If the lead-time window has already passed, fire in 3 seconds.
-            let fireDate = idealFireDate > Date() ? idealFireDate : Date().addingTimeInterval(3)
 
             let notifID = "befoor_\(event.eventIdentifier)_\(Int(event.startDate.timeIntervalSince1970))"
             let calName = event.calendar?.title ?? "Calendar"
@@ -138,41 +150,57 @@ final class AlarmScheduler: ObservableObject {
             // skip the alarm notification and sound so they don't double up.
             if personInfo != nil { continue }
 
-            await notifications.scheduleAlarm(
-                identifier:     notifID,
-                eventTitle:     event.title ?? "Appointment",
-                calendarName:   calName,
-                fireDate:       fireDate,
-                eventStartDate: event.startDate,
-                sound:          settings.selectedSound
-            )
+            let alerts = Self.alertsToSchedule(minutes: alertMinutes, start: event.startDate)
+            guard !alerts.isEmpty else { continue }
 
-            var fireDates: [Date] = []
-            let now = Date()
-            switch settings.audibleAlertsMode {
-            case .firstAndLast:
-                if fireDate > now { fireDates.append(fireDate) }
-                if settings.finalAlarmEnabled, event.startDate > now { fireDates.append(event.startDate) }
-            case .all:
-                if fireDate > now { fireDates.append(fireDate) }
-                let r1 = fireDate.addingTimeInterval(120)
-                let r2 = fireDate.addingTimeInterval(240)
-                if r1 > now { fireDates.append(r1) }
-                if r2 > now { fireDates.append(r2) }
-                if settings.finalAlarmEnabled, event.startDate > now { fireDates.append(event.startDate) }
-            case .none:
-                break
+            guard useAlarms else {
+                await notifications.scheduleAlerts(
+                    identifier:     notifID,
+                    eventTitle:     event.title ?? "Appointment",
+                    calendarName:   calName,
+                    // Notifications can't tell whether a missed alert already showed, so
+                    // only future ones are scheduled (else every sync would re-alert).
+                    alerts:         alerts.filter { $0.date > Date() }.map { (slot: $0.slot, date: $0.date, minutesBefore: $0.minutes) },
+                    eventStartDate: event.startDate,
+                    sound:          settings.selectedSound
+                )
+                continue
             }
-            if !fireDates.isEmpty {
-                playerEntries.append(AlarmPlayer.Entry(
-                    identifier: notifID,
-                    fireDates:  fireDates,
-                    sound:      settings.selectedSound
+
+            for alert in alerts {
+                alarmRequests.append(MeetingAlarmRequest(
+                    meetingKey:    notifID,
+                    slot:          alert.slot,
+                    minutesBefore: alert.minutes,
+                    fireDate:      alert.date,
+                    eventTitle:    event.title ?? "Appointment",
+                    eventStart:    event.startDate,
+                    calendarName:  calName,
+                    location:      event.location?.isEmpty == false ? event.location : nil,
+                    sound:         settings.selectedSound,
+                    snoozeMinutes: settings.snoozeDurationMinutes
                 ))
             }
         }
 
-        AlarmPlayer.shared.setSchedule(playerEntries)
+        if useAlarms {
+            // Anything AlarmKit refused (for example over its alarm limit) still
+            // gets a notification so the meeting isn't missed.
+            let failed = await MeetingAlarms.shared.reconcile(alarmRequests)
+            for (meetingKey, requests) in Dictionary(grouping: failed, by: \.meetingKey) {
+                guard let first = requests.first else { continue }
+                await notifications.scheduleAlerts(
+                    identifier:     meetingKey,
+                    eventTitle:     first.eventTitle,
+                    calendarName:   first.calendarName,
+                    alerts:         requests.filter { $0.fireDate > Date() }.map { (slot: $0.slot, date: $0.fireDate, minutesBefore: $0.minutesBefore) },
+                    eventStartDate: first.eventStart,
+                    sound:          first.sound
+                )
+            }
+        } else {
+            MeetingAlarms.shared.cancelAll()
+        }
 
         store.prunePast()
         store.saveSnapshot()
@@ -189,6 +217,25 @@ final class AlarmScheduler: ObservableObject {
         if signature != previousSignature {
             WidgetCenter.shared.reloadAllTimelines()
         }
+        await MeetingLiveActivityManager.shared.refresh(fromSync: true)
+    }
+
+    /// The alerts to schedule for a meeting: one per configured alert time, slot 1
+    /// being the earliest. If the meeting is already inside some of its alert
+    /// times (it was just added, or Befoor hadn't run), only the most recent
+    /// missed one is kept, so a late-found meeting rings once rather than
+    /// firing every missed alert at the same moment.
+    static func alertsToSchedule(minutes: [Int], start: Date) -> [(slot: Int, minutes: Int, date: Date)] {
+        let now = Date()
+        let all = minutes.enumerated().map { index, m in
+            (slot: index + 1, minutes: m, date: start.addingTimeInterval(-Double(m) * 60))
+        }
+        let missed = all.filter { $0.date <= now }
+        let upcoming = all.filter { $0.date > now }
+        if let latestMissed = missed.last {
+            return [latestMissed] + upcoming
+        }
+        return upcoming
     }
 
     /// Order-independent fingerprint of the tracked alarm set, used to decide
@@ -199,13 +246,14 @@ final class AlarmScheduler: ObservableObject {
         })
     }
 
-    /// Cancel every Befoor notification, clear the store, and stop AlarmPlayer.
+    /// Cancel every Befoor alarm and notification and clear the store.
     func cancelAll() async {
         notifications.cancelAll()
+        MeetingAlarms.shared.cancelAll()
         store.removeAll()
         store.saveSnapshot()
-        AlarmPlayer.shared.setSchedule([])
         scheduledCount = 0
+        await MeetingLiveActivityManager.shared.refresh(fromSync: true)
     }
 
     // MARK: - Background Task Registration
@@ -251,7 +299,7 @@ final class AlarmScheduler: ObservableObject {
 
     /// Check if a calendar event corresponds to a synced 1:1 person.
     /// Returns the person's name, active follow-ups, and relevant notes.
-    private func lookUpPersonInfo(for event: EKEvent) -> PersonInfo? {
+    func lookUpPersonInfo(for event: EKEvent) -> PersonInfo? {
         guard let context = modelContext else { return nil }
 
         let eventID = event.eventIdentifier ?? ""

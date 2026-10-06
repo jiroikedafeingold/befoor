@@ -1,8 +1,6 @@
 import UserNotifications
 import Foundation
-import CoreHaptics
 import SwiftData
-import UIKit
 
 // MARK: - Action / Category identifiers
 
@@ -29,10 +27,6 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationService()
 
     private let center = UNUserNotificationCenter.current()
-    private var hapticEngine: CHHapticEngine?
-    private var hapticPlayer: CHHapticAdvancedPatternPlayer?
-    private var hapticStopWork: DispatchWorkItem?
-    private var hapticFallbackItems: [DispatchWorkItem] = []
 
     /// Set by BefoorApp so notification callbacks can access SwiftData.
     var modelContainer: ModelContainer?
@@ -41,7 +35,6 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         super.init()
         center.delegate = self
         registerCategories()
-        prepareHapticEngine()
     }
 
     // MARK: Authorization
@@ -129,76 +122,43 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
     // MARK: Schedule
 
-    /// Schedules a full alarm sequence: an initial ring plus two follow-up rings
-    /// one and two minutes later, so the alarm persists until the user acts on it.
-    /// Returns the primary notification identifier.
+    /// Schedules notification alerts for a meeting, one per configured alert
+    /// time. Used when meeting alarms can't go through AlarmKit (Sound off, or
+    /// alarms not allowed). Slot 1 uses the meeting identifier itself; slots 2
+    /// and 3 add the "_r1"/"_r2" suffixes the rest of this service understands.
     @discardableResult
-    func scheduleAlarm(
+    func scheduleAlerts(
         identifier: String,
         eventTitle: String,
         calendarName: String,
-        fireDate: Date,
+        alerts: [(slot: Int, date: Date, minutesBefore: Int)],
         eventStartDate: Date,
         sound: BefoorSound,
         personName: String? = nil,
         followUps: [String]? = nil,
         notes: [String]? = nil
     ) async -> String {
-        // Build time labels for each ring based on minutes until the event starts.
-        let r1Date = fireDate.addingTimeInterval(120)
-        let r2Date = fireDate.addingTimeInterval(240)
-
-        func timeLabel(from ringDate: Date) -> String {
-            let mins = Int(ceil(eventStartDate.timeIntervalSince(ringDate) / 60))
-            if mins > 1  { return "in \(mins) minutes" }
-            if mins == 1 { return "in 1 minute" }
-            return "now"
-        }
-
-        var rings: [(id: String, date: Date, subtitle: String)] = [
-            (
-                id:       identifier,
-                date:     fireDate,
-                subtitle: "Starting \(timeLabel(from: fireDate))"
-            ),
-            (
-                id:       identifier + "_r1",
-                date:     r1Date,
-                subtitle: "Starting \(timeLabel(from: r1Date))"
-            ),
-            (
-                id:       identifier + "_r2",
-                date:     r2Date,
-                subtitle: "Starting \(timeLabel(from: r2Date))"
-            ),
-        ]
-
-        // Final alarm fires at the exact event start time if it hasn't already passed
-        // and the user has not explicitly dismissed the earlier reminders.
-        if AppSettings.shared.finalAlarmEnabled, eventStartDate > Date() {
-            rings.append((
-                id:       identifier + "_final",
-                date:     eventStartDate,
-                subtitle: "Starting now"
-            ))
-        }
-
-        for ring in rings {
-            guard ring.date > Date() else { continue }
+        for alert in alerts where alert.date > Date() {
+            let id = alert.slot <= 1 ? identifier : identifier + "_r\(alert.slot - 1)"
+            let subtitle: String
+            switch alert.minutesBefore {
+            case 0:  subtitle = "Starting now"
+            case 1:  subtitle = "Starting in 1 minute"
+            default: subtitle = "Starting in \(alert.minutesBefore) minutes"
+            }
             await schedule(
-                id:             ring.id,
+                id:             id,
                 title:          eventTitle,
-                subtitle:       ring.subtitle,
+                subtitle:       subtitle,
                 calendarName:   calendarName,
                 threadID:       identifier,
-                date:           ring.date,
+                date:           alert.date,
                 sound:          sound,
                 personName:     personName,
                 followUps:      followUps,
                 notes:          notes
             )
         }
-
         return identifier
     }
 
@@ -330,65 +290,39 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     }
 
     /// Delivered notifications older than this are cleared automatically.
-    static let deliveredRetention: TimeInterval = 60 * 60
+    static let deliveredRetention: TimeInterval = 30 * 60
 
-    /// Tidies the notification center in two passes:
-    /// 1. Removes any delivered notification older than `deliveredRetention` (1 hour).
-    /// 2. Collapses multiple alerts for the same event (same thread identifier) down
-    ///    to the most recent one, so a single event never shows a stack of banners.
+    /// Keeps Notification Center down to a single Befoor notification:
+    /// - only the most recently delivered one is kept, so a newer alert (for the
+    ///   same meeting or a new one) clears out everything before it, and
+    /// - even that one is removed once it's more than 30 minutes old.
     ///
-    /// Notifications without a thread identifier can't be attributed to an event,
-    /// so they're only subject to the age rule.
+    /// iOS gives an app no hook when a notification arrives in the background, so
+    /// this runs whenever Befoor gets a chance: when an alert is presented in the
+    /// foreground, when the app opens, on every sync (including background
+    /// refresh and alarm Stop/Snooze), and when a notification is acted on.
     func tidyDeliveredNotifications() {
         let center = self.center
         let cutoff = Date().addingTimeInterval(-Self.deliveredRetention)
 
         center.getDeliveredNotifications { delivered in
-            var staleIDs: [String] = []
-            var newestPerThread: [String: UNNotification] = [:]
-
-            for notification in delivered {
-                // Age rule applies to everything, threaded or not.
-                if notification.date < cutoff {
-                    staleIDs.append(notification.request.identifier)
-                    continue
-                }
-
-                let thread = notification.request.content.threadIdentifier
-                guard !thread.isEmpty else { continue }
-
-                guard let incumbent = newestPerThread[thread] else {
-                    newestPerThread[thread] = notification
-                    continue
-                }
-
-                // Keep whichever arrived later; discard the other.
-                if notification.date > incumbent.date {
-                    newestPerThread[thread] = notification
-                    staleIDs.append(incumbent.request.identifier)
-                } else {
-                    staleIDs.append(notification.request.identifier)
-                }
-            }
-
+            let newest = delivered.max { $0.date < $1.date }
+            let staleIDs = delivered
+                .filter { $0.request.identifier != newest?.request.identifier || $0.date < cutoff }
+                .map(\.request.identifier)
             guard !staleIDs.isEmpty else { return }
             center.removeDeliveredNotifications(withIdentifiers: staleIDs)
             print("[Befoor] Tidied \(staleIDs.count) delivered notification(s)")
         }
     }
 
-    /// Removes earlier delivered alerts belonging to the same event as `notification`,
-    /// leaving only the one that just arrived. Other events are left untouched.
-    private func collapseThread(for notification: UNNotification) {
-        let thread = notification.request.content.threadIdentifier
-        guard !thread.isEmpty else { return }
-
-        let keepID = notification.request.identifier
+    /// Removes every delivered notification except `keepIdentifier`.
+    private func clearDelivered(except keepIdentifier: String) {
         let center = self.center
         center.getDeliveredNotifications { delivered in
             let staleIDs = delivered
-                .filter { $0.request.content.threadIdentifier == thread && $0.request.identifier != keepID }
                 .map(\.request.identifier)
+                .filter { $0 != keepIdentifier }
             guard !staleIDs.isEmpty else { return }
             center.removeDeliveredNotifications(withIdentifiers: staleIDs)
         }
@@ -397,7 +331,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     // MARK: UNUserNotificationCenterDelegate
 
     /// Show alarm as a banner even when the app is foregrounded.
-    /// Routes by category: alarm → haptics + banner; reminder → banner + sound + list.
+    /// Routes by category: alarm → banner + sound; reminder → banner + sound + list.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
@@ -405,9 +339,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     ) {
         let category = notification.request.content.categoryIdentifier
 
-        // A new alert for this event supersedes any earlier ones, so drop the
-        // older banners for the same event. Other events keep their alerts.
-        collapseThread(for: notification)
+        // The newest alert supersedes everything already in Notification Center,
+        // whether it's for the same meeting or a new one.
+        clearDelivered(except: notification.request.identifier)
 
         if category == ReminderAction.category {
             // Person reminders: show banner, play sound, show in list
@@ -415,19 +349,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             return
         }
 
-        // Alarm notifications
-        let id = notification.request.identifier
-        let settings = AppSettings.shared
-        let isAudible: Bool = {
-            switch settings.audibleAlertsMode {
-            case .all:          return true
-            case .none:         return false
-            case .firstAndLast:
-                return !(id.hasSuffix("_r1") || id.hasSuffix("_r2"))
-            }
-        }()
-        if settings.hapticsEnabled && isAudible { playAlarmHaptics() }
-        completionHandler([.banner])
+        // Alarm notifications (fallback when AlarmKit isn't used). The sound is
+        // already silenced in the content when Sound is off.
+        completionHandler([.banner, .sound])
     }
 
     /// Handle Snooze / Dismiss tap — routes by category.
@@ -436,7 +360,10 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        defer { completionHandler() }
+        defer {
+            completionHandler()
+            tidyDeliveredNotifications()
+        }
 
         let notif = response.notification
         let category = notif.request.content.categoryIdentifier
@@ -455,8 +382,6 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             }
             let base = stripAlarmSuffix(response.notification.request.identifier)
             cancel(identifiers: [base])
-            stopHaptics()
-            Task { @MainActor in AlarmPlayer.shared.dismiss(identifier: base) }
             return
         }
 
@@ -476,8 +401,6 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         case AlarmAction.dismiss, UNNotificationDismissActionIdentifier:
             let base = stripAlarmSuffix(notif.request.identifier)
             cancel(identifiers: [base])
-            stopHaptics()
-            Task { @MainActor in AlarmPlayer.shared.dismiss(identifier: base) }
 
         default:
             break
@@ -600,9 +523,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     }
 
     private func snoozeAlarm(base: String, content: UNNotificationContent) {
-        let followUps = [base + "_r1", base + "_r2", base + "_final"]
-        center.removePendingNotificationRequests(withIdentifiers: followUps)
-
+        // Later alerts for the meeting stay scheduled, matching the alarm's Snooze.
         let snoozeSeconds = Double(AppSettings.shared.snoozeDurationMinutes) * 60
         let snoozeID = base + "_snooze"
 
@@ -618,16 +539,6 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             if let error { print("[Befoor] Snooze schedule failed: \(error)") }
         }
 
-        stopHaptics()
-        Task { @MainActor in
-            AlarmPlayer.shared.stopForSnooze(identifier: base)
-            let snoozeDate = Date().addingTimeInterval(snoozeSeconds)
-            AlarmPlayer.shared.addSnooze(
-                identifier: base,
-                at:         snoozeDate,
-                sound:      AppSettings.shared.selectedSound
-            )
-        }
     }
 
     /// Post a notification that navigates to a person by name.
@@ -677,27 +588,17 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         }
         content.threadIdentifier   = threadID
         content.summaryArgument    = title
-        let settings = AppSettings.shared
-        let isAudible: Bool = {
-            switch settings.audibleAlertsMode {
-            case .all:          return true
-            case .none:         return false
-            case .firstAndLast:
-                let isMidAlert = id.hasSuffix("_r1") || id.hasSuffix("_r2")
-                return !isMidAlert
-            }
-        }()
-        content.sound              = (isAudible && settings.soundEnabled) ? sound.notificationSound : nil
+        content.sound              = AppSettings.shared.soundEnabled ? sound.notificationSound : nil
         content.categoryIdentifier = personName != nil ? AlarmAction.personCategory : AlarmAction.category
         content.interruptionLevel  = .timeSensitive
         if let personName {
             content.userInfo["personName"] = personName
         }
 
-        // Delivered banners for this event are not touched here — scheduling runs
-        // ahead of time (and on every sync), so clearing them now would wipe an
-        // alert the user hasn't seen yet. Collapsing happens when the next alert
-        // for the event is presented, and in tidyDeliveredNotifications().
+        // Delivered banners are not touched here — scheduling runs ahead of time
+        // (and on every sync), so clearing them now would wipe an alert the user
+        // hasn't seen yet. Clearing happens when the next alert is presented, and
+        // in tidyDeliveredNotifications().
 
         let comps = Calendar.current.dateComponents(
             [.year, .month, .day, .hour, .minute, .second], from: date
@@ -710,112 +611,5 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         } catch {
             print("[Befoor] Failed to schedule \(id): \(error)")
         }
-    }
-
-    // MARK: Haptics
-
-    private func prepareHapticEngine() {
-        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
-        do {
-            hapticEngine = try CHHapticEngine()
-            // The process lives around the clock for the audio keep-alive, so an
-            // engine started here and never stopped would hold the haptic hardware
-            // active all day for an alarm that rings a few times. Let Core Haptics
-            // stop it after ~2 minutes idle instead; playAlarmHaptics() calls
-            // start() before every pattern, so nothing is lost.
-            hapticEngine?.isAutoShutdownEnabled = true
-            hapticEngine?.resetHandler = { [weak self] in
-                try? self?.hapticEngine?.start()
-            }
-            hapticEngine?.stoppedHandler = { _ in }
-        } catch {
-            print("[Befoor] Haptic engine error: \(error)")
-        }
-    }
-
-    /// Plays a repeating thud-thud-thud pattern to feel like an alarm.
-    func playAlarmHaptics() {
-        stopHaptics()  // cancel any previous sequence first
-
-        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics,
-              let engine = hapticEngine else {
-            #if !targetEnvironment(macCatalyst)
-            // Fallback: UIKit impact pulses stored as cancellable work items
-            DispatchQueue.main.async {
-                let gen = UIImpactFeedbackGenerator(style: .heavy)
-                gen.prepare()
-                let baseOffsets: [Double] = [0.00, 0.14, 0.28, 0.42, 0.97, 1.11, 1.25, 1.39, 1.94, 2.08, 2.22, 2.36, 2.91, 3.05, 3.19, 3.33]
-                let loopDuration = 4.0
-                for loop in 0..<6 {
-                    for offset in baseOffsets {
-                        let t = Double(loop) * loopDuration + offset
-                        let item = DispatchWorkItem { gen.impactOccurred(intensity: 1.0) }
-                        self.hapticFallbackItems.append(item)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + t, execute: item)
-                    }
-                }
-            }
-            #endif
-            return
-        }
-
-        // One loop: 4 groups of 4 rapid thumps, tightly spaced for maximum impact.
-        // Each group fires at 0.14 s intervals; groups are separated by 0.55 s gaps.
-        // The advanced player loops continuously for 25 seconds.
-        var events: [CHHapticEvent] = []
-        let times: [TimeInterval] = [
-            0.00, 0.14, 0.28, 0.42,   // group 1
-            0.97, 1.11, 1.25, 1.39,   // group 2
-            1.94, 2.08, 2.22, 2.36,   // group 3
-            2.91, 3.05, 3.19, 3.33,   // group 4
-        ]
-        let loopDuration: TimeInterval = 4.0
-
-        for t in times {
-            let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 1.0)
-            let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 1.0)
-            events.append(CHHapticEvent(
-                eventType: .hapticContinuous,
-                parameters: [intensity, sharpness],
-                relativeTime: t,
-                duration: 0.20
-            ))
-            events.append(CHHapticEvent(
-                eventType: .hapticTransient,
-                parameters: [intensity, sharpness],
-                relativeTime: t
-            ))
-        }
-
-        do {
-            let pattern = try CHHapticPattern(events: events, parameters: [])
-            let player  = try engine.makeAdvancedPlayer(with: pattern)
-            player.loopEnabled = true
-            player.loopEnd     = loopDuration
-            try engine.start()
-            try player.start(atTime: CHHapticTimeImmediate)
-            hapticPlayer = player
-
-            let stopWork = DispatchWorkItem { [weak self] in
-                try? self?.hapticPlayer?.stop(atTime: CHHapticTimeImmediate)
-                self?.hapticPlayer = nil
-            }
-            hapticStopWork = stopWork
-            DispatchQueue.main.asyncAfter(deadline: .now() + 25, execute: stopWork)
-        } catch {
-            print("[Befoor] Haptic playback error: \(error)")
-        }
-    }
-
-    private func stopHaptics() {
-        // Cancel the CHHaptic player
-        hapticStopWork?.cancel()
-        hapticStopWork = nil
-        try? hapticPlayer?.stop(atTime: CHHapticTimeImmediate)
-        hapticPlayer = nil
-
-        // Cancel any queued UIKit fallback pulses
-        hapticFallbackItems.forEach { $0.cancel() }
-        hapticFallbackItems.removeAll()
     }
 }

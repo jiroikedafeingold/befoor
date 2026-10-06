@@ -17,36 +17,42 @@ struct HelpView: View {
                     HelpRow(
                         icon: "alarm.fill",
                         iconColor: .indigo,
-                        title: "Fires Before Each Event",
-                        detail: "You'll get a notification the configured number of minutes before each appointment — so you're never caught off guard."
+                        title: "Rings Before Each Event",
+                        detail: "An alarm rings the configured number of minutes before each appointment — so you're never caught off guard."
                     )
                     HelpRow(
                         icon: "arrow.clockwise",
                         iconColor: .indigo,
                         title: "Stays in Sync",
-                        detail: "Alarms are updated automatically whenever your calendar changes. You can also pull to refresh or tap the sync button on the Alarms tab."
+                        detail: "Alarms are updated whenever you open Befoor and periodically in the background. You can also pull to refresh or tap the sync button on the Alarms tab."
                     )
                 }
 
-                // MARK: Notifications
-                Section("Notifications") {
+                // MARK: Alarms
+                Section("Alarms") {
                     HelpRow(
-                        icon: "bell.badge.fill",
+                        icon: "alarm.waves.left.and.right.fill",
                         iconColor: .orange,
-                        title: "Up to Four Alerts Per Event",
-                        detail: "Befoor sends up to four alerts per event: the first (at your lead time) and the last (at the event start) play a sound and bypass silent mode. The two middle alerts are silent banners — a gentle nudge without a second full alarm."
+                        title: "Real Alarms, Even on Silent",
+                        detail: "Befoor's alarms are system alarms, like the Clock app's. They ring even when your iPhone is on silent or in a Focus, and even if Befoor isn't open or was swiped away."
                     )
                     HelpRow(
                         icon: "moon.zzz.fill",
                         iconColor: .purple,
-                        title: "Snooze or Dismiss",
-                        detail: "Tap Snooze to be reminded again after your configured snooze duration. Tap Dismiss — or swipe the notification away — to cancel all remaining alerts for that event."
+                        title: "Snooze or Stop",
+                        detail: "Snooze rings the alarm again after your snooze time, and the meeting's later alerts still ring. Stop ends it and skips that meeting's remaining alerts."
                     )
                     HelpRow(
-                        icon: "hand.tap.fill",
+                        icon: "timer",
+                        iconColor: .red,
+                        title: "Countdown to Your Meeting",
+                        detail: "When you stop an alarm, a countdown to the meeting appears in the Dynamic Island and on the Lock Screen, with its location, calendar and who it's with. Turn it off under Live Activity in Settings."
+                    )
+                    HelpRow(
+                        icon: "bell.badge.fill",
                         iconColor: .pink,
-                        title: "Tapping the Banner Snoozes",
-                        detail: "Tapping the notification banner itself acts as a snooze, giving you a little more time."
+                        title: "When Alarms Are Off",
+                        detail: "With Sound turned off, or if alarms aren't allowed, Befoor sends notifications instead. Those follow your ringer switch and Focus. Only the newest one stays in Notification Center, and it clears itself after 30 minutes."
                     )
                 }
 
@@ -55,8 +61,8 @@ struct HelpView: View {
                     HelpRow(
                         icon: "slider.horizontal.3",
                         iconColor: .indigo,
-                        title: "Lead Time",
-                        detail: "Control how many minutes before each appointment the first alarm fires. Default is 7 minutes."
+                        title: "Three Alerts",
+                        detail: "Each meeting rings up to three times — by default 15, 7 and 1 minute before. Change any of them in Settings → Alarm Timing; set one to \"at start\" to ring when the meeting begins."
                     )
                     HelpRow(
                         icon: "calendar.badge.minus",
@@ -73,14 +79,8 @@ struct HelpView: View {
                     HelpRow(
                         icon: "speaker.wave.2.fill",
                         iconColor: .indigo,
-                        title: "Alert Sound & Haptics",
-                        detail: "Choose from a selection of alert sounds and toggle sound or haptics independently. Sounds play even in silent mode when the app is foregrounded."
-                    )
-                    HelpRow(
-                        icon: "alarm.waves.left.and.right",
-                        iconColor: .indigo,
-                        title: "Alarm at Event Start",
-                        detail: "When enabled, an additional alarm fires at the exact event start time — but only if you haven't already dismissed the earlier reminders."
+                        title: "Alarm Sound",
+                        detail: "Choose the sound your alarms ring with. Turn Sound off to get silent notifications instead of alarms."
                     )
                     HelpRow(
                         icon: "moon.fill",
@@ -129,36 +129,24 @@ struct HelpView: View {
                 // MARK: Tips
                 Section("Tips") {
                     HelpRow(
-                        icon: "bolt.fill",
+                        icon: "checkmark.shield.fill",
                         iconColor: .yellow,
-                        title: "Grant Time Sensitive Notifications",
-                        detail: "In iOS Settings → Notifications → Befoor, enable Time Sensitive Notifications so alarms can break through Focus modes."
+                        title: "Allow Alarms",
+                        detail: "If alarms aren't ringing, check Settings → Alarm Sound in Befoor. If it says alarms are off, turn them back on for Befoor in iOS Settings."
                     )
                     HelpRow(
                         icon: "iphone.radiowaves.left.and.right",
                         iconColor: .yellow,
                         title: "Allow Background App Refresh",
-                        detail: "Enable Background App Refresh for Befoor in iOS Settings so alarms stay up to date even when you're not using the app."
+                        detail: "Enable Background App Refresh for Befoor in iOS Settings so calendar changes are picked up even when you haven't opened the app."
                     )
                     HelpRow(
-                        icon: "square.stack.3d.up.fill",
+                        icon: "bolt.fill",
                         iconColor: .yellow,
-                        title: "64 Notification Limit",
+                        title: "Grant Time Sensitive Notifications",
                         detail: settings.peopleEnabled
-                            ? "iOS allows a maximum of 64 pending local notifications. Befoor splits the budget between alarm notifications (~40 slots) and 1:1 meeting reminders (~20 slots), with a few reserved for snoozes."
-                            : "iOS allows a maximum of 64 pending local notifications. Befoor schedules alarm notifications up to this limit, with a few slots reserved for snoozes."
-                    )
-                    HelpRow(
-                        icon: "xmark.app.fill",
-                        iconColor: .red,
-                        title: "Don't Force-Quit the App",
-                        detail: "Befoor plays alarm audio through a background audio session, which lets it bypass silent mode. If you swipe the app away in the app switcher, iOS ends that session and alarms will fall back to standard notification sounds that respect silent mode."
-                    )
-                    HelpRow(
-                        icon: "shortcuts",
-                        iconColor: .yellow,
-                        title: "Auto-Launch with Shortcuts",
-                        detail: "Create a Shortcuts automation to open Befoor every morning so it's always running in the background. Open the Shortcuts app → Automation → New Automation → Time of Day. Set a time (e.g. 7:00 AM), choose \"Run Immediately\", then add an \"Open App\" action and select Befoor. Add in a final step which is \"Go to Home Screen\". This ensures your alarms and calendar sync stay up to date each day without you having to remember to open the app."
+                            ? "In iOS Settings → Notifications → Befoor, enable Time Sensitive Notifications so 1:1 reminders, and meeting notifications when alarms are off, can break through Focus modes."
+                            : "In iOS Settings → Notifications → Befoor, enable Time Sensitive Notifications so meeting notifications can break through Focus modes when alarms are off."
                     )
                 }
 

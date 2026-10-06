@@ -101,6 +101,20 @@ final class CalendarService: ObservableObject {
             .sorted { $0.startDate < $1.startDate }
     }
 
+    /// Finds the specific occurrence of an event. `event(withIdentifier:)` returns the
+    /// first occurrence of a recurring series, so match on the start date instead.
+    func event(identifier: String, startingAt start: Date) -> EKEvent? {
+        guard isAuthorized else { return nil }
+        let predicate = store.predicateForEvents(
+            withStart: start.addingTimeInterval(-60),
+            end: start.addingTimeInterval(60),
+            calendars: nil
+        )
+        return store.events(matching: predicate).first {
+            $0.eventIdentifier == identifier && abs($0.startDate.timeIntervalSince(start)) < 60
+        }
+    }
+
     // MARK: 1:1 Meeting Detection
 
     /// Scan calendar events for likely 1:1 meetings based on detection keywords.

@@ -8,18 +8,19 @@ struct OnboardingView: View {
     @State private var calendarGranted = false
     @State private var contactsGranted = false
     @State private var notifGranted    = false
+    @State private var alarmsGranted   = false
     @State private var roleChosen      = false
 
     private enum Page: Hashable {
         case welcome, howItWorks, people, deviceRole
-        case calendarPermission, contactsPermission
+        case calendarPermission, contactsPermission, alarmPermission
         case notificationPermission, allSet
     }
 
     private var pages: [Page] {
         var p: [Page] = [.welcome, .howItWorks, .people, .deviceRole]
         if settings.isMainDevice {
-            p.append(contentsOf: [.calendarPermission, .contactsPermission])
+            p.append(contentsOf: [.calendarPermission, .contactsPermission, .alarmPermission])
         }
         p.append(contentsOf: [.notificationPermission, .allSet])
         return p
@@ -65,6 +66,7 @@ struct OnboardingView: View {
         .task {
             calendarGranted = CalendarService.shared.isAuthorized
             contactsGranted = CalendarService.shared.isContactsAuthorized
+            alarmsGranted = MeetingAlarms.shared.isAuthorized
             let status = await NotificationService.shared.checkPermission()
             notifGranted = (status == .authorized)
         }
@@ -81,6 +83,7 @@ struct OnboardingView: View {
         case .deviceRole:             DeviceRolePage(roleChosen: $roleChosen)
         case .calendarPermission:     CalendarPermissionPage(granted: $calendarGranted)
         case .contactsPermission:     ContactsPermissionPage(granted: $contactsGranted)
+        case .alarmPermission:        AlarmPermissionPage(granted: $alarmsGranted)
         case .notificationPermission: NotificationPermissionPage(granted: $notifGranted)
         case .allSet:                 AllSetPage(onFinish: finish)
         }
@@ -92,6 +95,7 @@ struct OnboardingView: View {
         case .deviceRole:             return roleChosen ? "Next" : "Choose a Role"
         case .calendarPermission:     return calendarGranted ? "Next" : "Continue"
         case .contactsPermission:     return contactsGranted ? "Next" : "Continue"
+        case .alarmPermission:        return alarmsGranted ? "Next" : "Continue"
         case .notificationPermission: return notifGranted ? "Next" : "Continue"
         default:                      return "Next"
         }
@@ -102,12 +106,22 @@ struct OnboardingView: View {
         case .deviceRole:             return roleChosen
         case .calendarPermission:     return calendarGranted
         case .contactsPermission:     return true
+        case .alarmPermission:        return true
         case .notificationPermission: return notifGranted
         default:                      return true
         }
     }
 
     private func advance() {
+        // Not required — without it Befoor falls back to notifications — so ask
+        // once and move on either way.
+        if currentPage == .alarmPermission, !alarmsGranted {
+            Task {
+                alarmsGranted = await MeetingAlarms.shared.requestAuthorization()
+                withAnimation { pageIndex = min(pageIndex + 1, pages.count - 1) }
+            }
+            return
+        }
         if currentPage == .contactsPermission, !contactsGranted {
             Task {
                 contactsGranted = await CalendarService.shared.requestContactsAccess()
@@ -195,31 +209,31 @@ private struct HowItWorksPage: View {
                         icon: "calendar",
                         iconColor: .green,
                         title: "Reads your calendar",
-                        detail: "Befoor watches all your calendars and keeps your alarms in sync automatically."
+                        detail: "Befoor looks at your calendars and sets an alarm before each meeting."
                     )
                     FeatureRow(
                         icon: "alarm",
                         iconColor: .indigo,
-                        title: "Rings before each meeting",
-                        detail: "The first alert rings at your lead time, with two silent follow-up banners in between, and a final ring at the event start. Dismiss any alert to cancel the rest."
+                        title: "A real alarm, even on silent",
+                        detail: "Befoor's alarms are system alarms, like the Clock app's. Each meeting rings three times — 15, 7 and 1 minute before, which you can change — even when your iPhone is on silent or in a Focus, and even if Befoor isn't open."
                     )
                     FeatureRow(
                         icon: "arrow.clockwise",
                         iconColor: .orange,
                         title: "Always up to date",
-                        detail: "Add, reschedule, or cancel a meeting and Befoor updates your alarms in the background."
+                        detail: "Add, move, or cancel a meeting and Befoor updates your alarms the next time it opens or checks in the background."
                     )
                     FeatureRow(
                         icon: "moon.zzz.fill",
                         iconColor: .purple,
-                        title: "Snooze or dismiss",
-                        detail: "Tap Snooze to delay a reminder, or Dismiss to silence the entire sequence for that event."
+                        title: "Snooze or stop",
+                        detail: "Snooze rings again after your snooze time. Stop ends the alarm and skips that meeting's remaining alerts."
                     )
                     FeatureRow(
-                        icon: "xmark.app.fill",
+                        icon: "timer",
                         iconColor: .red,
-                        title: "Keep the app running",
-                        detail: "Befoor uses a background audio session to play alarms through silent mode. Force-quitting the app ends that session, so alarms will fall back to standard notification sounds."
+                        title: "Countdown to your meeting",
+                        detail: "When you stop an alarm, a countdown to the meeting appears in the Dynamic Island and on the Lock Screen."
                     )
                 }
                 .padding(.horizontal, 32)
@@ -506,6 +520,27 @@ private struct ContactsPermissionPage: View {
     }
 }
 
+// MARK: - Alarm Permission
+
+private struct AlarmPermissionPage: View {
+    @Binding var granted: Bool
+
+    var body: some View {
+        OnboardingPageShell(
+            iconName: "alarm.waves.left.and.right.fill",
+            iconColor: .orange,
+            backgroundGradient: [Color.orange.opacity(0.10), Color.clear],
+            title: "Alarms",
+            subtitle: granted ? "Alarms allowed!" : "Rings even on silent",
+            description: "Befoor sets a real alarm before each meeting — the same kind the Clock app uses — so it rings even when your iPhone is on silent or in a Focus, and even if Befoor isn't open.\n\nIf you don't allow alarms, Befoor uses notifications instead, which follow your ringer switch.\n\nTapping Continue will show a system dialog asking to allow alarms."
+        ) {
+            if granted {
+                GrantedBadge()
+            }
+        }
+    }
+}
+
 // MARK: - Page 7: Notification Permission
 
 private struct NotificationPermissionPage: View {
@@ -518,7 +553,7 @@ private struct NotificationPermissionPage: View {
             backgroundGradient: [Color.indigo.opacity(0.10), Color.clear],
             title: "Notifications",
             subtitle: granted ? "Notifications enabled!" : "How Befoor reaches you",
-            description: "Befoor delivers alarms as notifications so you know when a meeting is coming up. For the best experience, also enable Time Sensitive Notifications in iOS Settings → Notifications → Befoor.\n\nTapping Continue will show a system dialog asking for notification access."
+            description: "Befoor uses notifications for 1:1 reminders, and for meeting alerts if alarms are off. For the best experience, also enable Time Sensitive Notifications in iOS Settings → Notifications → Befoor.\n\nTapping Continue will show a system dialog asking for notification access."
         ) {
             if !granted {
                 PermissionButton(label: "Continue", color: .indigo) {

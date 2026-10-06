@@ -60,24 +60,6 @@ enum BefoorSound: String, CaseIterable, Codable, Identifiable {
     #endif
 }
 
-// MARK: - Audible Alerts Mode
-
-enum AudibleAlertsMode: String, CaseIterable, Codable, Identifiable {
-    case firstAndLast = "firstAndLast"
-    case all          = "all"
-    case none         = "none"
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .firstAndLast: return "First & Last"
-        case .all:          return "All Alerts"
-        case .none:         return "None"
-        }
-    }
-}
-
 // MARK: - AppSettings
 
 final class AppSettings: ObservableObject {
@@ -91,14 +73,35 @@ final class AppSettings: ObservableObject {
         Keys.leadTime, Keys.ignoredKeywords, Keys.skipWeekends,
         Keys.isEnabled, Keys.selectedSound, Keys.lookAheadDays,
         Keys.checkInterval, Keys.snoozeDuration, Keys.soundEnabled,
-        Keys.hapticsEnabled, Keys.finalAlarmEnabled, Keys.audibleAlertsMode,
+        Keys.secondAlert, Keys.thirdAlert,
         Keys.mainDeviceID, Keys.peopleEnabled,
     ]
 
-    // Minutes before the appointment to fire the alarm
+    // Each meeting gets up to three alerts. These are the minutes before the
+    // meeting for each one (defaults 15, 7 and 1). 0 means "at the start".
+    // The first keeps the old lead-time key so existing values carry over.
     @Published var leadTimeMinutes: Int {
         didSet { save(leadTimeMinutes, forKey: Keys.leadTime) }
     }
+
+    @Published var secondAlertMinutes: Int {
+        didSet { save(secondAlertMinutes, forKey: Keys.secondAlert) }
+    }
+
+    @Published var thirdAlertMinutes: Int {
+        didSet { save(thirdAlertMinutes, forKey: Keys.thirdAlert) }
+    }
+
+    /// The distinct alert times, earliest alert (most minutes before) first.
+    var alertMinutes: [Int] {
+        Array(Set([leadTimeMinutes, secondAlertMinutes, thirdAlertMinutes])).sorted(by: >)
+    }
+
+    /// Minutes before the meeting that its first alert rings.
+    var earliestAlertMinutes: Int { alertMinutes.first ?? leadTimeMinutes }
+
+    static let firstAlertRange = 1...60
+    static let laterAlertRange = 0...60
 
     // EventKit calendar identifiers the user wants monitored.
     // Empty set = all calendars. (Device-specific — NOT synced)
@@ -150,19 +153,6 @@ final class AppSettings: ObservableObject {
         didSet { save(soundEnabled, forKey: Keys.soundEnabled) }
     }
 
-    @Published var hapticsEnabled: Bool {
-        didSet { save(hapticsEnabled, forKey: Keys.hapticsEnabled) }
-    }
-
-    @Published var finalAlarmEnabled: Bool {
-        didSet { save(finalAlarmEnabled, forKey: Keys.finalAlarmEnabled) }
-    }
-
-    // Which alerts play sound/haptics: first & last, all four, or none
-    @Published var audibleAlertsMode: AudibleAlertsMode {
-        didSet { save(audibleAlertsMode.rawValue, forKey: Keys.audibleAlertsMode) }
-    }
-
     // The device ID that owns calendar syncing — synced to iCloud so all devices know
     @Published var mainDeviceID: String {
         didSet { save(mainDeviceID, forKey: Keys.mainDeviceID) }
@@ -180,13 +170,30 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(showDebugInfo, forKey: Keys.showDebugInfo) }
     }
 
+    // Live Activity counting down to the next meeting (Dynamic Island + Lock Screen).
+    // Device-specific — NOT synced
+    @Published var liveActivityEnabled: Bool {
+        didSet { defaults.set(liveActivityEnabled, forKey: Keys.liveActivityEnabled) }
+    }
+
     // Device-specific — NOT synced
     @Published var hasCompletedOnboarding: Bool {
         didSet { defaults.set(hasCompletedOnboarding, forKey: Keys.hasCompletedOnboarding) }
     }
 
     private init() {
-        leadTimeMinutes           = max(5, defaults.object(forKey: Keys.leadTime) as? Int ?? 7)
+        // 3.0 moved the first alert's default from 7 to 15 minutes. A stored 7 is
+        // the old default, so drop it once and let everyone start at 15; any
+        // other stored value was a real choice and is kept.
+        if !defaults.bool(forKey: Keys.alertsMigratedV3) {
+            if defaults.object(forKey: Keys.leadTime) as? Int == 7 {
+                defaults.removeObject(forKey: Keys.leadTime)
+            }
+            defaults.set(true, forKey: Keys.alertsMigratedV3)
+        }
+        leadTimeMinutes           = Self.clamp(defaults.object(forKey: Keys.leadTime) as? Int ?? 15, Self.firstAlertRange)
+        secondAlertMinutes        = Self.clamp(defaults.object(forKey: Keys.secondAlert) as? Int ?? 7, Self.laterAlertRange)
+        thirdAlertMinutes         = Self.clamp(defaults.object(forKey: Keys.thirdAlert) as? Int ?? 1, Self.laterAlertRange)
         selectedCalendarIdentifiers = Set(defaults.stringArray(forKey: Keys.selectedCalendars) ?? [])
         ignoredKeywords           = defaults.stringArray(forKey: Keys.ignoredKeywords) ?? ["lunch", "Lunch"]
         skipWeekends              = defaults.object(forKey: Keys.skipWeekends) as? Bool ?? false
@@ -194,14 +201,12 @@ final class AppSettings: ObservableObject {
         peopleEnabled             = defaults.object(forKey: Keys.peopleEnabled) as? Bool ?? false
         selectedSound             = BefoorSound(rawValue: defaults.string(forKey: Keys.selectedSound) ?? "") ?? .pebble
         lookAheadDays             = defaults.object(forKey: Keys.lookAheadDays) as? Int ?? 7
-        backgroundCheckIntervalMinutes = defaults.object(forKey: Keys.checkInterval) as? Int ?? 30
+        backgroundCheckIntervalMinutes = defaults.object(forKey: Keys.checkInterval) as? Int ?? 15
         snoozeDurationMinutes     = defaults.object(forKey: Keys.snoozeDuration) as? Int ?? 5
         soundEnabled              = defaults.object(forKey: Keys.soundEnabled) as? Bool ?? true
-        hapticsEnabled            = defaults.object(forKey: Keys.hapticsEnabled) as? Bool ?? true
-        finalAlarmEnabled         = defaults.object(forKey: Keys.finalAlarmEnabled) as? Bool ?? true
-        audibleAlertsMode         = AudibleAlertsMode(rawValue: defaults.string(forKey: Keys.audibleAlertsMode) ?? "") ?? .firstAndLast
         mainDeviceID              = defaults.string(forKey: Keys.mainDeviceID) ?? ""
         showDebugInfo             = defaults.object(forKey: Keys.showDebugInfo) as? Bool ?? false
+        liveActivityEnabled       = defaults.object(forKey: Keys.liveActivityEnabled) as? Bool ?? true
         hasCompletedOnboarding    = defaults.object(forKey: Keys.hasCompletedOnboarding) as? Bool ?? false
 
         // Start observing iCloud KV store changes from other devices
@@ -212,6 +217,10 @@ final class AppSettings: ObservableObject {
             object: cloud
         )
         cloud.synchronize()
+    }
+
+    private static func clamp(_ value: Int, _ range: ClosedRange<Int>) -> Int {
+        min(max(value, range.lowerBound), range.upperBound)
     }
 
     // MARK: - iCloud KV Store Sync
@@ -246,7 +255,11 @@ final class AppSettings: ObservableObject {
                 // Update the corresponding @Published property
                 switch key {
                 case Keys.leadTime:
-                    if let v = value as? Int { leadTimeMinutes = max(5, v) }
+                    if let v = value as? Int { leadTimeMinutes = Self.clamp(v, Self.firstAlertRange) }
+                case Keys.secondAlert:
+                    if let v = value as? Int { secondAlertMinutes = Self.clamp(v, Self.laterAlertRange) }
+                case Keys.thirdAlert:
+                    if let v = value as? Int { thirdAlertMinutes = Self.clamp(v, Self.laterAlertRange) }
                 case Keys.ignoredKeywords:
                     if let v = value as? [String] { ignoredKeywords = v }
                 case Keys.skipWeekends:
@@ -265,12 +278,6 @@ final class AppSettings: ObservableObject {
                     if let v = value as? Int { snoozeDurationMinutes = v }
                 case Keys.soundEnabled:
                     if let v = value as? Bool { soundEnabled = v }
-                case Keys.hapticsEnabled:
-                    if let v = value as? Bool { hapticsEnabled = v }
-                case Keys.finalAlarmEnabled:
-                    if let v = value as? Bool { finalAlarmEnabled = v }
-                case Keys.audibleAlertsMode:
-                    if let v = value as? String, let m = AudibleAlertsMode(rawValue: v) { audibleAlertsMode = m }
                 case Keys.mainDeviceID:
                     if let v = value as? String { mainDeviceID = v }
                 default:
@@ -292,11 +299,12 @@ final class AppSettings: ObservableObject {
         static let checkInterval      = "bf_checkIntervalMinutes"
         static let snoozeDuration     = "bf_snoozeDurationMinutes"
         static let soundEnabled           = "bf_soundEnabled"
-        static let hapticsEnabled         = "bf_hapticsEnabled"
-        static let finalAlarmEnabled      = "bf_finalAlarmEnabled"
-        static let audibleAlertsMode      = "bf_audibleAlertsMode"
+        static let secondAlert            = "bf_secondAlertMinutes"
+        static let thirdAlert             = "bf_thirdAlertMinutes"
+        static let alertsMigratedV3       = "bf_alertsMigratedV3"
         static let mainDeviceID           = "bf_mainDeviceID"
         static let showDebugInfo          = "bf_showDebugInfo"
         static let hasCompletedOnboarding = "bf_hasCompletedOnboarding"
+        static let liveActivityEnabled    = "bf_liveActivityEnabled"
     }
 }

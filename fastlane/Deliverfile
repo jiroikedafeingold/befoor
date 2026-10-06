@@ -1,6 +1,6 @@
 # Metadata + screenshots only (the binary comes from Xcode Cloud, not here).
 #
-# DEFAULT SCOPE: only What's New + screenshots. `fastlane/metadata/en-US/` deliberately
+# DEFAULT SCOPE: What's New + screenshots. (3.0 also updates description.txt.)
 # contains ONLY `release_notes.txt` — deliver never changes a field it has no file for, so
 # the App Store name, subtitle, description, keywords, promo text and URLs are left exactly
 # as they are in App Store Connect. Add a field's .txt file only if you want it uploaded.

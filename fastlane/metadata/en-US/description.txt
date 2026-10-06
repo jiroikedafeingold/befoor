@@ -1,0 +1,14 @@
+Befoor reads the calendars you choose and rings a real alarm before each meeting, so you're never caught off guard.
+
+- Real alarms: Befoor uses the same system alarms as the Clock app, so they ring even when your iPhone is on silent or in a Focus, and even if Befoor isn't open.
+- Three alerts per meeting: 15, 7 and 1 minute before by default. Change any of them.
+- Snooze or stop right from the alarm. Stop skips that meeting's remaining alerts.
+- A countdown to your next meeting in the Dynamic Island and on the Lock Screen.
+- Choose from a set of pleasant alarm sounds.
+- Ignore meetings by keyword (like "lunch"), skip weekends, and pick which calendars to watch.
+- Keeps up with your calendar automatically.
+- Use it on iPhone, iPad and Mac, with one device set as the main device. On Mac, Befoor uses notifications instead of alarms.
+
+Optionally, Befoor can also track your 1:1 meetings: notes, follow-ups, long-term notes and reminders for each person, synced through iCloud.
+
+Requires iOS 26.

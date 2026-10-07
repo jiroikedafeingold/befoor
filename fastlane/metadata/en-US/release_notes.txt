@@ -1,4 +1,7 @@
 - Fixed: if you updated from an earlier version, Befoor may never have asked to use alarms, so meeting reminders came as quiet notifications instead. It now asks when you open the app.
+- Each alarm now plays its sound once instead of repeating until you stop it.
+- Sound previews in Settings now play even when your phone is on silent.
+- Fixed the background check, so new and changed meetings are picked up even when you haven't opened Befoor.
 - The meeting countdown now pops up on its own in the Dynamic Island and on the Lock Screen as soon as the first alert rings, and goes away about 10 minutes after the meeting starts.
 - Alarms now ring on every device where you've allowed them, not only on your main device.
 - Every meeting in your look-ahead window now gets alarms, not just the next few.

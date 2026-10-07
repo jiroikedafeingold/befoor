@@ -1,4 +1,5 @@
 import Foundation
+import AVFoundation
 import CryptoKit
 
 #if !targetEnvironment(macCatalyst)
@@ -31,7 +32,85 @@ struct MeetingAlarmRequest: Sendable {
 
     /// Everything baked into a scheduled alarm. If it changes, the alarm is rescheduled.
     var fingerprint: String {
-        "\(slot)|\(minutesBefore)|\(Int(fireDate.timeIntervalSince1970))|\(eventTitle)|\(location ?? "")|\(sound.rawValue)|\(snoozeMinutes)"
+        "\(slot)|\(minutesBefore)|\(Int(fireDate.timeIntervalSince1970))|\(eventTitle)|\(location ?? "")|\(sound.rawValue)|\(AlarmTones.isReady(sound))|\(snoozeMinutes)"
+    }
+}
+
+// MARK: - Ring-once tones
+
+/// AlarmKit loops an alarm's sound until it's stopped, for up to 15 minutes.
+/// To have an alert sound just once, each tone gets a copy in Library/Sounds
+/// (where the system also looks for alert sounds) followed by enough silence
+/// that the loop never comes back around.
+enum AlarmTones {
+    /// AlarmKit's longest ring, plus a margin.
+    private static let paddedLength: TimeInterval = 905
+
+    static func fileName(for sound: BefoorSound) -> String { sound.rawValue + "_once.caf" }
+
+    private static var directory: URL {
+        URL.libraryDirectory.appending(path: "Sounds", directoryHint: .isDirectory)
+    }
+
+    private static func url(for sound: BefoorSound) -> URL {
+        directory.appending(path: fileName(for: sound))
+    }
+
+    static func isReady(_ sound: BefoorSound) -> Bool {
+        sound != .systemDefault && FileManager.default.fileExists(atPath: url(for: sound).path)
+    }
+
+    /// Builds the padded copy of `sound` if it doesn't exist yet.
+    static func prepare(_ sound: BefoorSound) async {
+        guard sound != .systemDefault, !isReady(sound) else { return }
+        await Task.detached(priority: .utility) {
+            do {
+                try build(sound)
+            } catch {
+                print("[Befoor] Building ring-once tone failed: \(error)")
+            }
+        }.value
+    }
+
+    private static func build(_ sound: BefoorSound) throws {
+        guard let source = Bundle.main.url(forResource: sound.rawValue, withExtension: "caf") else { return }
+        let input = try AVAudioFile(forReading: source)
+        let format = input.processingFormat
+        guard let tone = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(input.length)) else { return }
+        try input.read(into: tone)
+
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let temp = directory.appending(path: UUID().uuidString + ".caf")
+        defer { try? FileManager.default.removeItem(at: temp) }
+
+        // AAC keeps the silence tiny: about 170 KB per tone instead of 150 MB as PCM.
+        do {
+            let output = try AVAudioFile(
+                forWriting: temp,
+                settings: [
+                    AVFormatIDKey: kAudioFormatMPEG4AAC,
+                    AVSampleRateKey: format.sampleRate,
+                    AVNumberOfChannelsKey: format.channelCount,
+                ],
+                commonFormat: format.commonFormat,
+                interleaved: format.isInterleaved
+            )
+            try output.write(from: tone)
+
+            let chunk = AVAudioFrameCount(format.sampleRate * 10)
+            guard let silence = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: chunk) else { return }
+            silence.frameLength = chunk
+            for buffer in UnsafeMutableAudioBufferListPointer(silence.mutableAudioBufferList) {
+                if let data = buffer.mData { memset(data, 0, Int(buffer.mDataByteSize)) }
+            }
+            var remaining = paddedLength - Double(input.length) / format.sampleRate
+            while remaining > 0 {
+                try output.write(from: silence)
+                remaining -= 10
+            }
+        } // Closing the file finishes the AAC stream before it's moved into place.
+
+        try FileManager.default.moveItem(at: temp, to: url(for: sound))
     }
 }
 
@@ -121,6 +200,10 @@ final class MeetingAlarms {
         var fingerprints = self.fingerprints
         var history = self.history
         let suppressed = self.suppressed
+
+        for sound in Set(requests.map(\.sound)) {
+            await AlarmTones.prepare(sound)
+        }
 
         let existing = Dictionary(currentAlarms.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         let wanted = requests.filter { !suppressed.contains($0.id.uuidString) }
@@ -219,9 +302,14 @@ final class MeetingAlarms {
             ),
             tintColor: .indigo
         )
-        let sound: AlertConfiguration.AlertSound = request.sound == .systemDefault
-            ? .default
-            : .named(request.sound.rawValue + ".caf")
+        let sound: AlertConfiguration.AlertSound
+        if request.sound == .systemDefault {
+            sound = .default
+        } else if AlarmTones.isReady(request.sound) {
+            sound = .named(AlarmTones.fileName(for: request.sound))
+        } else {
+            sound = .named(request.sound.rawValue + ".caf")
+        }
 
         return AlarmManager.AlarmConfiguration(
             // postAlert is the snooze length.

@@ -75,9 +75,28 @@ struct ContentView: View {
             WidgetCenter.shared.reloadAllTimelines()
             Task { await MeetingLiveActivityManager.shared.refresh() }
         }
+        // Befoor uses a scene, so UIKit never calls the app delegate's
+        // didBecomeActive/didEnterBackground; the scene phase stands in for them.
         .onChange(of: scenePhase) { _, newPhase in
-            if newPhase == .active {
-                Task { await AlarmScheduler.shared.sync() }
+            switch newPhase {
+            case .active:
+                NotificationService.shared.clearBadge()
+                NotificationService.shared.tidyDeliveredNotifications()
+                Task {
+                    // People who updated from a pre-AlarmKit version finished onboarding
+                    // before it asked for alarms, so ask here, once, while on screen.
+                    if settings.hasCompletedOnboarding, MeetingAlarms.shared.isUndetermined {
+                        await MeetingAlarms.shared.requestAuthorization()
+                    }
+                    await AlarmScheduler.shared.sync()
+                    // Live Activities can only be started in the foreground, so check here
+                    // even when sync was throttled or this isn't the main device.
+                    await MeetingLiveActivityManager.shared.refresh()
+                }
+            case .background:
+                AlarmScheduler.shared.scheduleNextBackgroundRefresh()
+            default:
+                break
             }
         }
         .task {

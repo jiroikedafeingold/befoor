@@ -1,11 +1,5 @@
-Befoor 3.0 is a big update. It now requires iOS 26.
-
-- Real alarms: meetings now ring with the same system alarms as the Clock app. They sound even when your iPhone is on silent or in a Focus, and Befoor no longer has to keep running in the background, which is much easier on your battery.
-- Three alerts per meeting: 15, 7 and 1 minute before by default, each one adjustable in Settings.
-- Snooze or stop right from the alarm. Stop skips that meeting's remaining alerts.
-- New countdown to your next meeting in the Dynamic Island and on the Lock Screen, with its location, calendar and who it's with.
-- Tidier notifications: only the newest one stays in Notification Center, and it clears itself after 30 minutes.
-- Your calendar is checked for changes more often in the background.
-- Updated onboarding and help to explain how it all works.
+- Calendars you add after setting up Befoor are now watched automatically. Before, if you had picked specific calendars, a new one could be missed until you selected it by hand.
+- In Settings, all your calendars are checked by default; just uncheck any you want Befoor to ignore. Your current choices carry over.
+- Changes to your calendar selection now take effect right away.
 
 Questions or feedback? apps@feingold5.com

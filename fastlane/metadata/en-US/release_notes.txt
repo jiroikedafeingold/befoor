@@ -1,5 +1,7 @@
-- Calendars you add after setting up Befoor are now watched automatically. Before, if you had picked specific calendars, a new one could be missed until you selected it by hand.
-- In Settings, all your calendars are checked by default; just uncheck any you want Befoor to ignore. Your current choices carry over.
-- Changes to your calendar selection now take effect right away.
+- Fixed: if you updated from an earlier version, Befoor may never have asked to use alarms, so meeting reminders came as quiet notifications instead. It now asks when you open the app.
+- The meeting countdown now pops up on its own in the Dynamic Island and on the Lock Screen as soon as the first alert rings, and goes away about 10 minutes after the meeting starts.
+- Alarms now ring on every device where you've allowed them, not only on your main device.
+- Every meeting in your look-ahead window now gets alarms, not just the next few.
+- Calendars you add after setting up Befoor are now watched automatically, and your existing calendar choices carry over.
 
 Questions or feedback? apps@feingold5.com

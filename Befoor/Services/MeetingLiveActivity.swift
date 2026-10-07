@@ -1,5 +1,6 @@
 import Foundation
 import CoreGraphics
+import OSLog
 
 #if !targetEnvironment(macCatalyst)
 import ActivityKit
@@ -37,18 +38,19 @@ struct NextMeetingAttributes: ActivityAttributes {
 // MARK: - Manager
 
 /// Shows a countdown to the next meeting in a Live Activity, from the moment its
-/// alarm goes off until the meeting starts.
+/// first alert rings until 10 minutes after the meeting starts.
 ///
-/// ActivityKit only lets an app start a Live Activity from the foreground or from
-/// a Live Activity intent. Befoor uses both:
-/// - Stopping a meeting alarm runs MeetingAlarmIntent, which starts the countdown
-///   even though Befoor is in the background.
-/// - Opening the app inside a meeting's alarm window starts it directly.
+/// Befoor doesn't run in the background, so the activity has to start without it:
+/// - Whenever Befoor runs (app open, alarm Stop/Snooze, background refresh where
+///   allowed), it books an activity for each of the next few meetings that iOS
+///   starts by itself at the first alert. iOS requires an alert when a booked
+///   activity starts; it uses the alarm sound and fires together with the alarm.
+/// - Opening the app, or stopping an alarm, inside a meeting's window starts one
+///   directly if it isn't already showing.
 ///
-/// An activity already on screen is moved on to the following meeting when one
-/// starts (back-to-back meetings) and ended otherwise. That needs Befoor to run,
-/// which happens on the next alarm action, background refresh or app open; until
-/// then a finished meeting's activity shows "Now" via its stale date.
+/// Ending: the content goes stale 10 minutes after the start (showing "Now"), and
+/// Befoor removes it the next time it runs after that — a timer if the app is
+/// open, otherwise the next background refresh, app open or alarm action.
 ///
 /// Battery: the countdown is rendered by the system from the start date, so the
 /// activity is only updated when the meeting itself changes.
@@ -56,7 +58,17 @@ struct NextMeetingAttributes: ActivityAttributes {
 final class MeetingLiveActivityManager {
     static let shared = MeetingLiveActivityManager()
 
-    /// When a meeting's countdown may appear: the moment its first alert rings.
+    /// Decisions are logged so a countdown that didn't show (or vanished) can be
+    /// traced from the device log.
+    private let log = Logger(subsystem: "com.befoor.app", category: "LiveActivity")
+
+    /// How long a meeting's activity stays up after the meeting starts.
+    static let linger: TimeInterval = 10 * 60
+
+    /// Booked activities count toward the system's per-app limit, so only book a few.
+    private static let maxScheduled = 3
+
+    /// When a meeting's countdown appears: the moment its first alert rings.
     private static func showAt(_ meeting: TrackedAlarmModel) -> Date {
         meeting.eventStartDate.addingTimeInterval(-Double(AppSettings.shared.earliestAlertMinutes) * 60)
     }
@@ -66,57 +78,161 @@ final class MeetingLiveActivityManager {
 
     private init() {}
 
-    /// Brings the Live Activity in line with the upcoming meetings.
+    /// Brings the Live Activities in line with the upcoming meetings.
     /// - Parameters:
     ///   - fromSync: AlarmScheduler passes true. Other callers are ignored while a
     ///     sync is rebuilding the alarm store, because a half-built store would
     ///     look like "no meetings" and end the activity.
     ///   - allowStart: true when called from a Live Activity intent, which may
-    ///     start an activity even though the app isn't in the foreground.
+    ///     start or book an activity even though the app isn't in the foreground.
     func refresh(fromSync: Bool = false, allowStart: Bool = false) async {
         #if !targetEnvironment(macCatalyst)
         if !fromSync && AlarmScheduler.shared.syncInProgress { return }
 
         let settings = AppSettings.shared
-        let activities = Activity<NextMeetingAttributes>.activities
+        let all = Activity<NextMeetingAttributes>.activities
+        let pending = all.filter(Self.isPending)
+        let live = all.filter { !Self.isPending($0) }
 
         guard settings.isEnabled,
               settings.liveActivityEnabled,
               ActivityAuthorizationInfo().areActivitiesEnabled else {
+            log.notice("refresh: disabled (enabled=\(settings.isEnabled), toggle=\(settings.liveActivityEnabled), system=\(ActivityAuthorizationInfo().areActivitiesEnabled)); ending \(all.count)")
             cancelAdvance()
-            for activity in activities { await activity.end(nil, dismissalPolicy: .immediate) }
+            for activity in all { await activity.end(nil, dismissalPolicy: .immediate) }
             return
         }
 
         let now = Date()
         let meetings = upcomingMeetings(after: now)
+        let canCreate = allowStart || UIApplication.shared.applicationState == .active
+        log.notice("refresh: fromSync=\(fromSync) canCreate=\(canCreate) meetings=\(meetings.count) next=\(meetings.first?.eventTitle ?? "-", privacy: .private) live=\(live.map { $0.content.state.meetingID.suffix(12) }.joined(separator: ","), privacy: .public) pending=\(pending.count)")
 
-        if let current = meetings.first, Self.showAt(current) <= now {
-            let content = self.content(for: current, following: meetings.dropFirst().first)
-            if let activity = activities.first {
+        // 1. What should be on screen: the next meeting once its first alert has
+        //    rung; otherwise a meeting that started less than 10 minutes ago.
+        var keepID: String?
+        if let next = meetings.first, Self.showAt(next) <= now {
+            let content = self.content(for: next, following: meetings.dropFirst().first)
+            keepID = content.state.meetingID
+            // Prefer the activity already showing this meeting (a booked one that
+            // started by itself), else repurpose whichever is up.
+            if let activity = live.first(where: { $0.content.state.meetingID == keepID }) ?? live.first {
                 if activity.content.state != content.state { await activity.update(content) }
-                for extra in activities.dropFirst() { await extra.end(nil, dismissalPolicy: .immediate) }
-            } else if allowStart || UIApplication.shared.applicationState == .active {
-                do {
-                    _ = try Activity.request(attributes: NextMeetingAttributes(), content: content)
-                } catch {
-                    print("[Befoor] Live Activity request failed: \(error)")
-                }
+            } else if pending.contains(where: { $0.content.state.meetingID == keepID }) {
+                // Its booked activity is starting right now; the app can still see
+                // it as pending for a moment. Leave it be.
+            } else if canCreate {
+                request(content)
             }
-        } else {
-            for activity in activities { await activity.end(nil, dismissalPolicy: .immediate) }
+        } else if let started = live.first(where: {
+            $0.content.state.startDate <= now && $0.content.state.startDate.addingTimeInterval(Self.linger) > now
+        }) {
+            keepID = started.content.state.meetingID
         }
 
-        // While Befoor happens to be running, move on at the next transition: the
-        // current meeting starting, or the next one's alarm ringing.
-        let transitions = meetings.prefix(2).flatMap { [Self.showAt($0), $0.eventStartDate] }
-        if let next = transitions.filter({ $0 > now }).min() {
-            armAdvance(at: next)
+        // Anything else on screen is finished or superseded.
+        let showing = live.first { $0.content.state.meetingID == keepID } ?? (keepID == nil ? nil : live.first)
+        for activity in live where activity.id != showing?.id {
+            log.notice("refresh: ending \(activity.content.state.meetingID.suffix(12), privacy: .public) (keep=\(keepID?.suffix(12) ?? "none", privacy: .public))")
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+
+        // 2. Book activities that start by themselves at later meetings' first alert.
+        await reconcileScheduled(meetings: meetings, pending: pending, now: now,
+                                 keepID: keepID, canCreate: canCreate)
+
+        // 3. While Befoor happens to be running, act at the next transition: a
+        //    first alert, or 10 minutes after a meeting started.
+        var transitions = meetings.prefix(2).map { Self.showAt($0) }
+        if let showing {
+            transitions.append(showing.content.state.startDate.addingTimeInterval(Self.linger))
+        }
+        if let nextChange = transitions.filter({ $0 > now }).min() {
+            armAdvance(at: nextChange)
         } else {
             cancelAdvance()
         }
         #endif
     }
+
+    // MARK: - Booking
+
+    #if !targetEnvironment(macCatalyst)
+    private func reconcileScheduled(
+        meetings: [TrackedAlarmModel],
+        pending: [Activity<NextMeetingAttributes>],
+        now: Date,
+        keepID: String?,
+        canCreate: Bool
+    ) async {
+        // The booked start needs an alert sound, so only book when alerts make a
+        // sound anyway; it then rings in step with the meeting's first alarm.
+        // 1:1s handled by the People tab have no alarm, so they're not booked.
+        var targets: [(content: ActivityContent<NextMeetingAttributes.ContentState>, showAt: Date)] = []
+        if AppSettings.shared.soundEnabled {
+            for (index, meeting) in meetings.enumerated() {
+                let showAt = Self.showAt(meeting)
+                guard showAt > now else { continue }
+                let following = index + 1 < meetings.count ? meetings[index + 1] : nil
+                let content = self.content(for: meeting, following: following)
+                guard content.state.alarmDate != nil else { continue }
+                targets.append((content, showAt))
+                if targets.count == Self.maxScheduled { break }
+            }
+        }
+
+        // Never end the current meeting's activity: at its start time the app can
+        // still see it as pending, and ending it then kills it the moment it appears.
+        var keepIDs = Set(targets.map(\.content.state.meetingID))
+        if let keepID { keepIDs.insert(keepID) }
+        for activity in pending where !keepIDs.contains(activity.content.state.meetingID) {
+            log.notice("booking: ending pending \(activity.content.state.meetingID.suffix(12), privacy: .public)")
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+        for target in targets {
+            if let existing = pending.first(where: { $0.content.state.meetingID == target.content.state.meetingID }) {
+                if existing.content.state != target.content.state { await existing.update(target.content) }
+            } else if canCreate {
+                book(target.content, at: target.showAt)
+            }
+        }
+    }
+
+    private func book(_ content: ActivityContent<NextMeetingAttributes.ContentState>, at date: Date) {
+        let state = content.state
+        var body = "Starts at \(state.startDate.formatted(date: .omitted, time: .shortened))"
+        if let location = state.location { body += " · \(location)" }
+        let selected = AppSettings.shared.selectedSound
+        let sound: AlertConfiguration.AlertSound = selected == .systemDefault
+            ? .default
+            : .named(selected.rawValue + ".caf")
+        let alert = AlertConfiguration(
+            title: LocalizedStringResource(stringLiteral: state.title),
+            body: LocalizedStringResource(stringLiteral: body),
+            sound: sound
+        )
+        do {
+            _ = try Activity.request(attributes: NextMeetingAttributes(), content: content,
+                                     pushType: nil, style: .standard,
+                                     alertConfiguration: alert, start: date)
+        } catch {
+            print("[Befoor] Booking Live Activity failed: \(error)")
+        }
+    }
+
+    private func request(_ content: ActivityContent<NextMeetingAttributes.ContentState>) {
+        log.notice("refresh: starting \(content.state.meetingID.suffix(12), privacy: .public)")
+        do {
+            _ = try Activity.request(attributes: NextMeetingAttributes(), content: content)
+        } catch {
+            print("[Befoor] Live Activity request failed: \(error)")
+        }
+    }
+
+    private static func isPending(_ activity: Activity<NextMeetingAttributes>) -> Bool {
+        activity.activityState == .pending
+    }
+    #endif
 
     // MARK: - Advancing
 
@@ -172,7 +288,9 @@ final class MeetingLiveActivityManager {
         }
 
         let state = NextMeetingAttributes.ContentState(
-            meetingID: meeting.notificationIdentifier,
+            // Includes the alert timing and sound, which are baked into a booked
+            // activity's start time and alert; changing either rebooks it.
+            meetingID: "\(meeting.notificationIdentifier)|\(settings.earliestAlertMinutes)|\(settings.selectedSound.rawValue)",
             title: meeting.eventTitle,
             startDate: meeting.eventStartDate,
             endDate: event?.endDate,
@@ -189,9 +307,9 @@ final class MeetingLiveActivityManager {
             nextTitle: sameDayFollowing?.eventTitle,
             nextStartDate: sameDayFollowing?.eventStartDate
         )
-        // Goes stale at the start, so the countdown switches to "Now" on time even
-        // if Befoor isn't running to move it on.
-        return ActivityContent(state: state, staleDate: meeting.eventStartDate)
+        // Goes stale 10 minutes after the start, when it's due to be removed, so it
+        // reads as finished even if Befoor isn't running to remove it right then.
+        return ActivityContent(state: state, staleDate: meeting.eventStartDate.addingTimeInterval(Self.linger))
     }
     #endif
 

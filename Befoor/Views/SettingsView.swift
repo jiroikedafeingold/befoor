@@ -115,7 +115,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Live Activity")
                 } footer: {
-                    Text("When a meeting's alarm goes off, shows a countdown to it in the Dynamic Island and on the Lock Screen, with its location, calendar and who it's with. Press and hold the Dynamic Island for details. iPhone only.")
+                    Text("Pops up by itself when a meeting's first alert rings: a countdown in the Dynamic Island and on the Lock Screen, with its location, calendar and who it's with. It goes away about 10 minutes after the meeting starts. Press and hold the Dynamic Island for details. iPhone only.")
                 }
 
                 // MARK: Calendars

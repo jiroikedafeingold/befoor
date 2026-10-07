@@ -233,7 +233,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     func applicationDidBecomeActive(_ application: UIApplication) {
         NotificationService.shared.clearBadge()
         NotificationService.shared.tidyDeliveredNotifications()
-        Task {
+        Task { @MainActor in
+            // People who updated from a pre-AlarmKit version finished onboarding
+            // before it asked for alarms, so ask here, once, while on screen.
+            if AppSettings.shared.hasCompletedOnboarding, MeetingAlarms.shared.isUndetermined {
+                await MeetingAlarms.shared.requestAuthorization()
+            }
             await AlarmScheduler.shared.sync()
             // Live Activities can only be started in the foreground, so check here
             // even when sync was throttled or this isn't the main device.

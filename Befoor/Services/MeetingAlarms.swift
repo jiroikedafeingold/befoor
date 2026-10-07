@@ -63,6 +63,7 @@ final class MeetingAlarms {
     // AlarmKit isn't available on Mac; Befoor uses notifications there.
     var isAuthorized: Bool { false }
     var isDenied: Bool { false }
+    var isUndetermined: Bool { false }
     func requestAuthorization() async -> Bool { false }
     func reconcile(_ requests: [MeetingAlarmRequest]) async -> [MeetingAlarmRequest] { requests }
     func cancelAll() {}
@@ -75,6 +76,7 @@ final class MeetingAlarms {
 
     var isAuthorized: Bool { manager.authorizationState == .authorized }
     var isDenied: Bool { manager.authorizationState == .denied }
+    var isUndetermined: Bool { manager.authorizationState == .notDetermined }
 
     @discardableResult
     func requestAuthorization() async -> Bool {
@@ -254,18 +256,15 @@ final class MeetingAlarms {
             self.suppressed = suppressed
             self.history = history
         }
-        // Stopping an alarm hands over to the countdown Live Activity. (While
-        // snoozed, the alarm's own countdown is already on screen.) This must run
-        // before the sync, which can't start an activity from the background.
-        if stopped {
-            await MeetingLiveActivityManager.shared.refresh(allowStart: true)
-        }
-
         // Befoor is awake anyway, so use the moment to pick up calendar changes
         // made since it last ran. Awaited so the system doesn't suspend the app
         // mid-sync once the intent returns. Ringing and snoozed alarms are left
         // alone by the sync, and alerts skipped above stay skipped.
         await AlarmScheduler.shared.sync()
+
+        // Then refresh the countdown with intent rights, which (unlike the sync's
+        // own background refresh) may start an activity and book upcoming ones.
+        await MeetingLiveActivityManager.shared.refresh(allowStart: true)
     }
     #endif
 }

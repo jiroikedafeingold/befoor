@@ -233,7 +233,7 @@ private struct HowItWorksPage: View {
                         icon: "timer",
                         iconColor: .red,
                         title: "Countdown to your meeting",
-                        detail: "When you stop an alarm, a countdown to the meeting appears in the Dynamic Island and on the Lock Screen."
+                        detail: "When a meeting's first alert rings, a countdown to it pops up in the Dynamic Island and on the Lock Screen."
                     )
                 }
                 .padding(.horizontal, 32)

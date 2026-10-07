@@ -83,13 +83,19 @@ final class AlarmScheduler: ObservableObject {
             return
         }
 
-        if !settings.isMainDevice {
-            return
-        }
-
         guard calendar.isAuthorized else { return }
 
+        // Alarms are per device, so every device that's allowed them rings its own.
+        // Only the main device owns the shared meeting list, the notification
+        // fallback and 1:1 handling; other devices just schedule their alarms.
+        let isMain = settings.isMainDevice
         let useAlarms = settings.soundEnabled && MeetingAlarms.shared.isAuthorized
+        guard isMain || useAlarms else {
+            // A non-main device with alarms off has nothing to schedule; drop any
+            // alarms it booked while they were on.
+            MeetingAlarms.shared.cancelAll()
+            return
+        }
         if let last = lastSyncDate,
            Date().timeIntervalSince(last) < Self.throttleInterval,
            lastSyncUsedAlarms == useAlarms {
@@ -108,9 +114,11 @@ final class AlarmScheduler: ObservableObject {
         // Clear the pending queue before rescheduling so no stale notifications
         // remain. Delivered alerts are kept — they're tidied by age and per-event
         // rules below rather than wiped wholesale on every sync.
-        notifications.cancelAllPending()
-        notifications.tidyDeliveredNotifications()
-        store.removeAll()
+        if isMain {
+            notifications.cancelAllPending()
+            notifications.tidyDeliveredNotifications()
+            store.removeAll()
+        }
 
         settings.migrateCalendarSelectionIfNeeded(allCalendarIdentifiers: calendar.allCalendarIdentifiers)
         let events  = calendar.fetchUpcomingEvents(
@@ -124,9 +132,11 @@ final class AlarmScheduler: ObservableObject {
         // notifications, which follow the ringer switch.
         var alarmRequests: [MeetingAlarmRequest] = []
 
-        // Notification budget (fallback): up to 3 per event, leaving room in the
-        // iOS limit of 64 for 1:1 reminders (20) and snoozes.
-        let maxEvents = 13
+        // Alarms have no small budget, so every meeting in the look-ahead window
+        // gets them (anything over AlarmKit's limit falls back to notifications).
+        // The notification fallback keeps to 3 per event within the iOS limit of
+        // 64, leaving room for 1:1 reminders (20) and snoozes.
+        let maxEvents = useAlarms ? 100 : 13
         let alertMinutes = settings.alertMinutes
 
         for event in filtered.prefix(maxEvents) {
@@ -139,13 +149,13 @@ final class AlarmScheduler: ObservableObject {
             // Check if this event has an associated 1:1 person
             let personInfo = lookUpPersonInfo(for: event)
 
-            store.upsert(TrackedAlarmModel(
+            if isMain { store.upsert(TrackedAlarmModel(
                 eventIdentifier:        event.eventIdentifier,
                 notificationIdentifier: notifID,
                 eventStartDate:         event.startDate,
                 eventTitle:             event.title ?? "Appointment",
                 calendarIdentifier:     event.calendar?.calendarIdentifier ?? ""
-            ))
+            )) }
 
             // 1:1 meetings with a tracked person are handled by the People tab —
             // skip the alarm notification and sound so they don't double up.
@@ -188,7 +198,7 @@ final class AlarmScheduler: ObservableObject {
             // Anything AlarmKit refused (for example over its alarm limit) still
             // gets a notification so the meeting isn't missed.
             let failed = await MeetingAlarms.shared.reconcile(alarmRequests)
-            for (meetingKey, requests) in Dictionary(grouping: failed, by: \.meetingKey) {
+            for (meetingKey, requests) in Dictionary(grouping: failed, by: \.meetingKey) where isMain {
                 guard let first = requests.first else { continue }
                 await notifications.scheduleAlerts(
                     identifier:     meetingKey,
@@ -201,6 +211,12 @@ final class AlarmScheduler: ObservableObject {
             }
         } else {
             MeetingAlarms.shared.cancelAll()
+        }
+
+        guard isMain else {
+            lastSyncDate = Date()
+            await MeetingLiveActivityManager.shared.refresh(fromSync: true)
+            return
         }
 
         store.prunePast()

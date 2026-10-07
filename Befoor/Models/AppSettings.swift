@@ -103,10 +103,26 @@ final class AppSettings: ObservableObject {
     static let firstAlertRange = 1...60
     static let laterAlertRange = 0...60
 
-    // EventKit calendar identifiers the user wants monitored.
-    // Empty set = all calendars. (Device-specific — NOT synced)
-    @Published var selectedCalendarIdentifiers: Set<String> {
-        didSet { defaults.set(Array(selectedCalendarIdentifiers), forKey: Keys.selectedCalendars) }
+    // EventKit calendar identifiers the user has turned OFF. Every other calendar
+    // is watched, so a calendar added later (or one whose identifier changes when
+    // an account is re-added) is picked up automatically. (Device-specific — NOT synced)
+    @Published var excludedCalendarIdentifiers: Set<String> {
+        didSet { defaults.set(Array(excludedCalendarIdentifiers), forKey: Keys.excludedCalendars) }
+    }
+
+    /// Converts the pre-3.1 setting, which listed the calendars to watch, into the
+    /// list of calendars to skip. Needs the calendars that exist right now, so it
+    /// runs from the first sync with calendar access rather than at launch.
+    func migrateCalendarSelectionIfNeeded(allCalendarIdentifiers: Set<String>) {
+        guard let legacy = defaults.stringArray(forKey: Keys.selectedCalendars),
+              !allCalendarIdentifiers.isEmpty else { return }   // wait for calendar access
+        // An empty list meant "all calendars", which is now simply nothing excluded.
+        // If none of the old picks exist any more (their identifiers changed), the
+        // old setting was silently watching nothing; start over with everything.
+        if !legacy.isEmpty, !allCalendarIdentifiers.isDisjoint(with: legacy) {
+            excludedCalendarIdentifiers = allCalendarIdentifiers.subtracting(legacy)
+        }
+        defaults.removeObject(forKey: Keys.selectedCalendars)
     }
 
     // Event title substrings to ignore (case-insensitive)
@@ -194,7 +210,7 @@ final class AppSettings: ObservableObject {
         leadTimeMinutes           = Self.clamp(defaults.object(forKey: Keys.leadTime) as? Int ?? 15, Self.firstAlertRange)
         secondAlertMinutes        = Self.clamp(defaults.object(forKey: Keys.secondAlert) as? Int ?? 7, Self.laterAlertRange)
         thirdAlertMinutes         = Self.clamp(defaults.object(forKey: Keys.thirdAlert) as? Int ?? 1, Self.laterAlertRange)
-        selectedCalendarIdentifiers = Set(defaults.stringArray(forKey: Keys.selectedCalendars) ?? [])
+        excludedCalendarIdentifiers = Set(defaults.stringArray(forKey: Keys.excludedCalendars) ?? [])
         ignoredKeywords           = defaults.stringArray(forKey: Keys.ignoredKeywords) ?? ["lunch", "Lunch"]
         skipWeekends              = defaults.object(forKey: Keys.skipWeekends) as? Bool ?? false
         isEnabled                 = defaults.object(forKey: Keys.isEnabled) as? Bool ?? true
@@ -289,7 +305,8 @@ final class AppSettings: ObservableObject {
 
     private enum Keys {
         static let leadTime           = "bf_leadTimeMinutes"
-        static let selectedCalendars  = "bf_selectedCalendarIdentifiers"
+        static let selectedCalendars  = "bf_selectedCalendarIdentifiers"   // legacy, pre-3.1
+        static let excludedCalendars  = "bf_excludedCalendarIdentifiers"
         static let ignoredKeywords    = "bf_ignoredKeywords"
         static let skipWeekends       = "bf_skipWeekends"
         static let isEnabled          = "bf_isEnabled"

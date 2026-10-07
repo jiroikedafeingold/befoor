@@ -8,7 +8,7 @@ struct CalendarPickerView: View {
     var body: some View {
         List {
             Section {
-                Text("Choose which calendars Befoor monitors. Leave all unchecked to watch every calendar.")
+                Text("Befoor watches every checked calendar. Uncheck any you want it to ignore. Calendars you add later are watched automatically.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -16,21 +16,29 @@ struct CalendarPickerView: View {
 
             Section("Calendars") {
                 ForEach(calendarService.availableCalendars, id: \.calendarIdentifier) { cal in
-                    CalendarRow(calendar: cal, isSelected: settings.selectedCalendarIdentifiers.contains(cal.calendarIdentifier)) {
+                    CalendarRow(calendar: cal, isSelected: !settings.excludedCalendarIdentifiers.contains(cal.calendarIdentifier)) {
                         toggle(cal)
                     }
                 }
             }
         }
         .navigationTitle("Calendars")
-        .onAppear { calendarService.refreshCalendars() }
+        .onAppear {
+            // Convert an old-style selection before showing checkmarks for it.
+            settings.migrateCalendarSelectionIfNeeded(allCalendarIdentifiers: calendarService.allCalendarIdentifiers)
+            calendarService.refreshCalendars()
+        }
+        // Reschedule alarms for the new set of calendars.
+        .onChange(of: settings.excludedCalendarIdentifiers) { _, _ in
+            AlarmScheduler.shared.requestResync()
+        }
     }
 
     private func toggle(_ cal: EKCalendar) {
-        if settings.selectedCalendarIdentifiers.contains(cal.calendarIdentifier) {
-            settings.selectedCalendarIdentifiers.remove(cal.calendarIdentifier)
+        if settings.excludedCalendarIdentifiers.contains(cal.calendarIdentifier) {
+            settings.excludedCalendarIdentifiers.remove(cal.calendarIdentifier)
         } else {
-            settings.selectedCalendarIdentifiers.insert(cal.calendarIdentifier)
+            settings.excludedCalendarIdentifiers.insert(cal.calendarIdentifier)
         }
     }
 }

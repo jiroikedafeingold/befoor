@@ -126,9 +126,9 @@ struct SettingsView: View {
                         HStack {
                             Text("Monitored Calendars")
                             Spacer()
-                            Text(settings.selectedCalendarIdentifiers.isEmpty
+                            Text(settings.excludedCalendarIdentifiers.isEmpty
                                  ? "All"
-                                 : "\(settings.selectedCalendarIdentifiers.count) selected")
+                                 : "\(settings.excludedCalendarIdentifiers.count) off")
                                 .foregroundStyle(.secondary)
                         }
                     }

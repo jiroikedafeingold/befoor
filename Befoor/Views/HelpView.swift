@@ -74,7 +74,7 @@ struct HelpView: View {
                         icon: "building.2",
                         iconColor: .indigo,
                         title: "Monitored Calendars",
-                        detail: "Pick specific calendars to watch, or leave the selection empty to monitor all calendars."
+                        detail: "Befoor watches all your calendars. Uncheck any you want it to ignore. Calendars you add later are watched automatically."
                     )
                     HelpRow(
                         icon: "speaker.wave.2.fill",

@@ -77,9 +77,15 @@ final class CalendarService: ObservableObject {
 
     // MARK: Events
 
-    /// Fetch all events between now and `lookAheadDays` days from now,
-    /// filtered to the user's selected calendars.
-    func fetchUpcomingEvents(lookAheadDays: Int, selectedIdentifiers: Set<String>) -> [EKEvent] {
+    /// Identifiers of every event calendar on the device right now.
+    var allCalendarIdentifiers: Set<String> {
+        guard isAuthorized else { return [] }
+        return Set(store.calendars(for: .event).map(\.calendarIdentifier))
+    }
+
+    /// Fetch all events between now and `lookAheadDays` days from now, from every
+    /// calendar except the ones the user turned off.
+    func fetchUpcomingEvents(lookAheadDays: Int, excludedIdentifiers: Set<String>) -> [EKEvent] {
         guard isAuthorized else { return [] }
 
         let now = Date()
@@ -87,12 +93,8 @@ final class CalendarService: ObservableObject {
             return []
         }
 
-        let calendars: [EKCalendar]
-        if selectedIdentifiers.isEmpty {
-            calendars = store.calendars(for: .event)
-        } else {
-            calendars = selectedIdentifiers.compactMap { store.calendar(withIdentifier: $0) }
-        }
+        let calendars = store.calendars(for: .event)
+            .filter { !excludedIdentifiers.contains($0.calendarIdentifier) }
 
         guard !calendars.isEmpty else { return [] }
 

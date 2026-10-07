@@ -112,9 +112,10 @@ final class AlarmScheduler: ObservableObject {
         notifications.tidyDeliveredNotifications()
         store.removeAll()
 
+        settings.migrateCalendarSelectionIfNeeded(allCalendarIdentifiers: calendar.allCalendarIdentifiers)
         let events  = calendar.fetchUpcomingEvents(
             lookAheadDays: settings.lookAheadDays,
-            selectedIdentifiers: settings.selectedCalendarIdentifiers
+            excludedIdentifiers: settings.excludedCalendarIdentifiers
         )
         let filtered = filter(events)
 

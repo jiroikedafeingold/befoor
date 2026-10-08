@@ -48,9 +48,12 @@ struct NextMeetingAttributes: ActivityAttributes {
 /// - Opening the app, or stopping an alarm, inside a meeting's window starts one
 ///   directly if it isn't already showing.
 ///
-/// Ending: the content goes stale 10 minutes after the start (showing "Now"), and
-/// Befoor removes it the next time it runs after that — a timer if the app is
-/// open, otherwise the next background refresh, app open or alarm action.
+/// Ending: an activity can't remove itself on a timer, so the first time Befoor
+/// runs after the meeting starts — or within 5 minutes of it while in the
+/// background, such as Stop/Snooze on the last alert — it ends the activity with
+/// a dismissal date 10 minutes into the meeting, and the system removes it then.
+/// Ending takes it out of the Dynamic Island right away; it stays on the Lock
+/// Screen. The content also goes stale at that time (showing "Now").
 ///
 /// Battery: the countdown is rendered by the system from the start date, so the
 /// activity is only updated when the meeting itself changes.
@@ -64,6 +67,10 @@ final class MeetingLiveActivityManager {
 
     /// How long a meeting's activity stays up after the meeting starts.
     static let linger: TimeInterval = 10 * 60
+
+    /// How close to the start a background run hands the activity's removal to
+    /// the system. Covers the usual last alert (1 minute before).
+    private static let handOffLead: TimeInterval = 5 * 60
 
     /// Booked activities count toward the system's per-app limit, so only book a few.
     private static let maxScheduled = 3
@@ -92,7 +99,9 @@ final class MeetingLiveActivityManager {
         let settings = AppSettings.shared
         let all = Activity<NextMeetingAttributes>.activities
         let pending = all.filter(Self.isPending)
-        let live = all.filter { !Self.isPending($0) }
+        let live = all.filter { $0.activityState == .active || $0.activityState == .stale }
+        // Already ended and left on the Lock Screen until the system removes it.
+        let handedOff = Set(all.filter { $0.activityState == .ended }.map(\.content.state.meetingID))
 
         guard settings.isEnabled,
               settings.liveActivityEnabled,
@@ -114,10 +123,18 @@ final class MeetingLiveActivityManager {
         if let next = meetings.first, Self.showAt(next) <= now {
             let content = self.content(for: next, following: meetings.dropFirst().first)
             keepID = content.state.meetingID
-            // Prefer the activity already showing this meeting (a booked one that
-            // started by itself), else repurpose whichever is up.
-            if let activity = live.first(where: { $0.content.state.meetingID == keepID }) ?? live.first {
+            if handedOff.contains(content.state.meetingID) {
+                // Already ended; the system removes it 10 minutes into the meeting.
+            } else if let activity = live.first(where: { $0.content.state.meetingID == keepID }) ?? live.first {
+                // Prefer the activity already showing this meeting (a booked one that
+                // started by itself), else repurpose whichever is up.
                 if activity.content.state != content.state { await activity.update(content) }
+                // Befoor may not run again before the meeting, so when it's about to
+                // start and Befoor is in the background, hand removal to the system.
+                if next.eventStartDate.timeIntervalSince(now) <= Self.handOffLead,
+                   UIApplication.shared.applicationState != .active {
+                    await handOff(activity, content: content)
+                }
             } else if pending.contains(where: { $0.content.state.meetingID == keepID }) {
                 // Its booked activity is starting right now; the app can still see
                 // it as pending for a moment. Leave it be.
@@ -128,10 +145,12 @@ final class MeetingLiveActivityManager {
             $0.content.state.startDate <= now && $0.content.state.startDate.addingTimeInterval(Self.linger) > now
         }) {
             keepID = started.content.state.meetingID
+            await handOff(started, content: started.content)
         }
 
         // Anything else on screen is finished or superseded.
-        let showing = live.first { $0.content.state.meetingID == keepID } ?? (keepID == nil ? nil : live.first)
+        let repurpose = keepID != nil && !handedOff.contains(keepID ?? "")
+        let showing = live.first { $0.content.state.meetingID == keepID } ?? (repurpose ? live.first : nil)
         for activity in live where activity.id != showing?.id {
             log.notice("refresh: ending \(activity.content.state.meetingID.suffix(12), privacy: .public) (keep=\(keepID?.suffix(12) ?? "none", privacy: .public))")
             await activity.end(nil, dismissalPolicy: .immediate)
@@ -218,6 +237,16 @@ final class MeetingLiveActivityManager {
         } catch {
             print("[Befoor] Booking Live Activity failed: \(error)")
         }
+    }
+
+    /// Ends the activity but leaves it on the Lock Screen until 10 minutes after the
+    /// meeting starts, when the system removes it — whether or not Befoor is running.
+    /// An ended activity leaves the Dynamic Island right away.
+    private func handOff(_ activity: Activity<NextMeetingAttributes>,
+                         content: ActivityContent<NextMeetingAttributes.ContentState>) async {
+        let removeAt = content.state.startDate.addingTimeInterval(Self.linger)
+        log.notice("refresh: handing off \(content.state.meetingID.suffix(12), privacy: .public), removed at \(removeAt, privacy: .public)")
+        await activity.end(content, dismissalPolicy: .after(removeAt))
     }
 
     private func request(_ content: ActivityContent<NextMeetingAttributes.ContentState>) {

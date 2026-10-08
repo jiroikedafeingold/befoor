@@ -50,9 +50,8 @@ struct NextMeetingLiveActivity: Widget {
             let state = context.state
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "calendar")
-                            .foregroundStyle(state.calendarColor)
+                    HStack(spacing: 6) {
+                        AppIconView(size: 24)
                         Text(state.startDate, style: .time)
                             .monospacedDigit()
                     }
@@ -76,8 +75,7 @@ struct NextMeetingLiveActivity: Widget {
                     .padding(.horizontal, 4)
                 }
             } compactLeading: {
-                Image(systemName: "calendar")
-                    .foregroundStyle(state.calendarColor)
+                AppIconView(size: 20)
             } compactTrailing: {
                 CountdownText(startDate: state.startDate, isStale: context.isStale)
                     .frame(maxWidth: 64)
@@ -98,6 +96,19 @@ struct NextMeetingLiveActivity: Widget {
 }
 
 // MARK: - Views
+
+/// Befoor's icon, from a small copy in the widget's assets (a Live Activity may
+/// fail to start if an image is larger than where it's shown).
+private struct AppIconView: View {
+    let size: CGFloat
+
+    var body: some View {
+        Image("BefoorIcon")
+            .resizable()
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.225, style: .continuous))
+    }
+}
 
 /// Counts down to the start; the system animates it, so no updates are needed.
 private struct CountdownText: View {
@@ -171,7 +182,8 @@ private struct LockScreenMeetingView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
+            HStack(alignment: .center, spacing: 10) {
+                AppIconView(size: 36)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Next meeting · \(state.startDate, style: .time)")
                         .font(.caption.weight(.semibold))

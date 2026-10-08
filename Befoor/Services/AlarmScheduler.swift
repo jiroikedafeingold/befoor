@@ -1,6 +1,5 @@
 import Foundation
 import EventKit
-import SwiftData
 import BackgroundTasks
 import WidgetKit
 
@@ -24,9 +23,6 @@ final class AlarmScheduler: ObservableObject {
     @Published private(set) var syncInProgress = false
     @Published private(set) var scheduledCount = 0
 
-    /// Set from ContentView so we can query Person records during sync.
-    var modelContext: ModelContext?
-
     private static let throttleInterval: TimeInterval = 30
 
     /// How long to wait after a calendar change before resyncing, so a burst of
@@ -38,10 +34,6 @@ final class AlarmScheduler: ObservableObject {
     /// allowed, or Sound was switched), the next sync skips the throttle so the
     /// meeting alerts are rebuilt right away.
     private var lastSyncUsedAlarms: Bool?
-
-    /// Fingerprint of the alarm set last written to the CloudKit snapshot in this
-    /// process. Nil at launch so the first sync always publishes once.
-    private var lastPublishedSignature: Set<String>?
 
     private init() {
         calendar.onStoreChanged = { [weak self] in
@@ -75,8 +67,6 @@ final class AlarmScheduler: ObservableObject {
     // MARK: - Public API
 
     /// Full sync: rebuilds the meeting alarms (or fallback notifications) from the calendar.
-    /// On secondary devices, loads the alarm list from CloudKit instead of
-    /// scanning the calendar.
     func sync() async {
         guard settings.isEnabled else {
             await cancelAll()
@@ -85,17 +75,8 @@ final class AlarmScheduler: ObservableObject {
 
         guard calendar.isAuthorized else { return }
 
-        // Alarms are per device, so every device that's allowed them rings its own.
-        // Only the main device owns the shared meeting list, the notification
-        // fallback and 1:1 handling; other devices just schedule their alarms.
-        let isMain = settings.isMainDevice
+        // Every device reads its own calendar and rings its own alarms.
         let useAlarms = settings.soundEnabled && MeetingAlarms.shared.isAuthorized
-        guard isMain || useAlarms else {
-            // A non-main device with alarms off has nothing to schedule; drop any
-            // alarms it booked while they were on.
-            MeetingAlarms.shared.cancelAll()
-            return
-        }
         if let last = lastSyncDate,
            Date().timeIntervalSince(last) < Self.throttleInterval,
            lastSyncUsedAlarms == useAlarms {
@@ -114,11 +95,9 @@ final class AlarmScheduler: ObservableObject {
         // Clear the pending queue before rescheduling so no stale notifications
         // remain. Delivered alerts are kept — they're tidied by age and per-event
         // rules below rather than wiped wholesale on every sync.
-        if isMain {
-            notifications.cancelAllPending()
-            notifications.tidyDeliveredNotifications()
-            store.removeAll()
-        }
+        notifications.cancelAllPending()
+        notifications.tidyDeliveredNotifications()
+        store.removeAll()
 
         settings.migrateCalendarSelectionIfNeeded(allCalendarIdentifiers: calendar.allCalendarIdentifiers)
         let events  = calendar.fetchUpcomingEvents(
@@ -135,7 +114,7 @@ final class AlarmScheduler: ObservableObject {
         // Alarms have no small budget, so every meeting in the look-ahead window
         // gets them (anything over AlarmKit's limit falls back to notifications).
         // The notification fallback keeps to 3 per event within the iOS limit of
-        // 64, leaving room for 1:1 reminders (20) and snoozes.
+        // 64, leaving room for snoozes.
         let maxEvents = useAlarms ? 100 : 13
         let alertMinutes = settings.alertMinutes
 
@@ -146,20 +125,13 @@ final class AlarmScheduler: ObservableObject {
             let notifID = "befoor_\(event.eventIdentifier)_\(Int(event.startDate.timeIntervalSince1970))"
             let calName = event.calendar?.title ?? "Calendar"
 
-            // Check if this event has an associated 1:1 person
-            let personInfo = lookUpPersonInfo(for: event)
-
-            if isMain { store.upsert(TrackedAlarmModel(
+            store.upsert(TrackedAlarmModel(
                 eventIdentifier:        event.eventIdentifier,
                 notificationIdentifier: notifID,
                 eventStartDate:         event.startDate,
                 eventTitle:             event.title ?? "Appointment",
                 calendarIdentifier:     event.calendar?.calendarIdentifier ?? ""
-            )) }
-
-            // 1:1 meetings with a tracked person are handled by the People tab —
-            // skip the alarm notification and sound so they don't double up.
-            if personInfo != nil { continue }
+            ))
 
             let alerts = Self.alertsToSchedule(minutes: alertMinutes, start: event.startDate)
             guard !alerts.isEmpty else { continue }
@@ -198,7 +170,7 @@ final class AlarmScheduler: ObservableObject {
             // Anything AlarmKit refused (for example over its alarm limit) still
             // gets a notification so the meeting isn't missed.
             let failed = await MeetingAlarms.shared.reconcile(alarmRequests)
-            for (meetingKey, requests) in Dictionary(grouping: failed, by: \.meetingKey) where isMain {
+            for (meetingKey, requests) in Dictionary(grouping: failed, by: \.meetingKey) {
                 guard let first = requests.first else { continue }
                 await notifications.scheduleAlerts(
                     identifier:     meetingKey,
@@ -213,22 +185,9 @@ final class AlarmScheduler: ObservableObject {
             MeetingAlarms.shared.cancelAll()
         }
 
-        guard isMain else {
-            lastSyncDate = Date()
-            await MeetingLiveActivityManager.shared.refresh(fromSync: true)
-            return
-        }
-
         store.prunePast()
         store.saveSnapshot()
         let signature = alarmSignature()
-        // Publishing rewrites the CloudKit record, which costs a network export here
-        // and a push plus import on every other device. Skip it when the alarm set
-        // is identical to what this process last published.
-        if let context = modelContext, signature != lastPublishedSignature {
-            store.publishToCloudKit(context: context)
-            lastPublishedSignature = signature
-        }
         scheduledCount = store.alarms.count
         lastSyncDate   = Date()
         if signature != previousSignature {
@@ -304,79 +263,6 @@ final class AlarmScheduler: ObservableObject {
         task.expirationHandler = {
             syncTask.cancel()
         }
-    }
-
-    // MARK: - 1:1 Person Lookup
-
-    struct PersonInfo {
-        let name: String
-        let followUps: [String]
-        let notes: [String]
-    }
-
-    /// Check if a calendar event corresponds to a synced 1:1 person.
-    /// Returns the person's name, active follow-ups, and relevant notes.
-    func lookUpPersonInfo(for event: EKEvent) -> PersonInfo? {
-        guard let context = modelContext else { return nil }
-
-        let eventID = event.eventIdentifier ?? ""
-        guard !eventID.isEmpty else { return nil }
-
-        guard let personName = SyncRecordStore.shared.personName(forEventIdentifier: eventID),
-              !personName.isEmpty else {
-            return nil
-        }
-
-        let nameQuery = personName
-        let personDescriptor = FetchDescriptor<Person>(
-            predicate: #Predicate { $0.name == nameQuery }
-        )
-        guard let person = try? context.fetch(personDescriptor).first else {
-            return nil
-        }
-
-        let activeFollowUps = (person.followUps ?? [])
-            .filter { !$0.isCompleted }
-            .sorted { ($0.dueDate ?? .distantFuture) < ($1.dueDate ?? .distantFuture) }
-            .prefix(3)
-            .map(\.text)
-
-        let truncate: (String) -> String = { text in
-            text.count > 80 ? String(text.prefix(77)) + "…" : text
-        }
-
-        var noteTexts: [String] = []
-
-        let longTermNotes = (person.longTermNotes ?? [])
-            .sorted { $0.createdAt > $1.createdAt }
-            .prefix(2)
-        for note in longTermNotes {
-            noteTexts.append(truncate(note.text))
-        }
-
-        let globalDescriptor = FetchDescriptor<Note>(
-            predicate: #Predicate<Note> { $0.isGlobal == true },
-            sortBy: [SortDescriptor(\Note.meetingDate, order: .reverse)]
-        )
-        if let globalNotes = try? context.fetch(globalDescriptor) {
-            for note in globalNotes.prefix(2) {
-                noteTexts.append(truncate(note.text))
-            }
-        }
-
-        let recentMeetingNote = (person.notes ?? [])
-            .filter { !$0.isGlobal }
-            .sorted { $0.meetingDate > $1.meetingDate }
-            .first
-        if let note = recentMeetingNote {
-            noteTexts.append(truncate(note.text))
-        }
-
-        return PersonInfo(
-            name: personName,
-            followUps: Array(activeFollowUps),
-            notes: noteTexts
-        )
     }
 
     // MARK: - Filtering

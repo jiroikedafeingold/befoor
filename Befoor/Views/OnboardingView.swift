@@ -6,25 +6,19 @@ struct OnboardingView: View {
     @ObservedObject private var settings = AppSettings.shared
     @State private var pageIndex = 0
     @State private var calendarGranted = false
-    @State private var contactsGranted = false
     @State private var notifGranted    = false
     @State private var alarmsGranted   = false
-    @State private var roleChosen      = false
 
     private enum Page: Hashable {
-        case welcome, howItWorks, people, deviceRole
-        case calendarPermission, contactsPermission, alarmPermission
+        case welcome, howItWorks
+        case calendarPermission, alarmPermission
         case notificationPermission, allSet
     }
 
-    private var pages: [Page] {
-        var p: [Page] = [.welcome, .howItWorks, .people, .deviceRole]
-        if settings.isMainDevice {
-            p.append(contentsOf: [.calendarPermission, .contactsPermission, .alarmPermission])
-        }
-        p.append(contentsOf: [.notificationPermission, .allSet])
-        return p
-    }
+    private let pages: [Page] = [
+        .welcome, .howItWorks, .calendarPermission, .alarmPermission,
+        .notificationPermission, .allSet,
+    ]
 
     private var currentPage: Page {
         pages[min(pageIndex, pages.count - 1)]
@@ -65,7 +59,6 @@ struct OnboardingView: View {
         }
         .task {
             calendarGranted = CalendarService.shared.isAuthorized
-            contactsGranted = CalendarService.shared.isContactsAuthorized
             alarmsGranted = MeetingAlarms.shared.isAuthorized
             let status = await NotificationService.shared.checkPermission()
             notifGranted = (status == .authorized)
@@ -79,10 +72,7 @@ struct OnboardingView: View {
         switch page {
         case .welcome:                WelcomePage()
         case .howItWorks:             HowItWorksPage()
-        case .people:                 PeoplePage()
-        case .deviceRole:             DeviceRolePage(roleChosen: $roleChosen)
         case .calendarPermission:     CalendarPermissionPage(granted: $calendarGranted)
-        case .contactsPermission:     ContactsPermissionPage(granted: $contactsGranted)
         case .alarmPermission:        AlarmPermissionPage(granted: $alarmsGranted)
         case .notificationPermission: NotificationPermissionPage(granted: $notifGranted)
         case .allSet:                 AllSetPage(onFinish: finish)
@@ -92,9 +82,7 @@ struct OnboardingView: View {
     private var primaryButtonTitle: String {
         switch currentPage {
         case .welcome:                return "Get Started"
-        case .deviceRole:             return roleChosen ? "Next" : "Choose a Role"
         case .calendarPermission:     return calendarGranted ? "Next" : "Continue"
-        case .contactsPermission:     return contactsGranted ? "Next" : "Continue"
         case .alarmPermission:        return alarmsGranted ? "Next" : "Continue"
         case .notificationPermission: return notifGranted ? "Next" : "Continue"
         default:                      return "Next"
@@ -103,9 +91,7 @@ struct OnboardingView: View {
 
     private var buttonEnabled: Bool {
         switch currentPage {
-        case .deviceRole:             return roleChosen
         case .calendarPermission:     return calendarGranted
-        case .contactsPermission:     return true
         case .alarmPermission:        return true
         case .notificationPermission: return notifGranted
         default:                      return true
@@ -122,21 +108,12 @@ struct OnboardingView: View {
             }
             return
         }
-        if currentPage == .contactsPermission, !contactsGranted {
-            Task {
-                contactsGranted = await CalendarService.shared.requestContactsAccess()
-                withAnimation { pageIndex = min(pageIndex + 1, pages.count - 1) }
-            }
-            return
-        }
         withAnimation { pageIndex = min(pageIndex + 1, pages.count - 1) }
     }
 
     private func finish() {
         settings.hasCompletedOnboarding = true
-        if settings.isMainDevice {
-            Task { await AlarmScheduler.shared.sync() }
-        }
+        Task { await AlarmScheduler.shared.sync() }
     }
 }
 
@@ -168,7 +145,7 @@ private struct WelcomePage: View {
             backgroundGradient: [Color.indigo.opacity(0.08), Color.clear],
             title: "Welcome to Befoor",
             subtitle: "The alarm clock for your calendar",
-            description: "Befoor reads your upcoming meetings and sets alarms in advance — so you're never scrambling to join at the last second. It also detects your 1:1 meetings and helps you keep track of notes, follow-ups, and reminders for each person."
+            description: "Befoor reads your upcoming meetings and sets alarms in advance — so you're never scrambling to join at the last second."
         )
     }
 }
@@ -276,197 +253,7 @@ private struct FeatureRow: View {
     }
 }
 
-// MARK: - Page 3: People & 1:1 Meetings
-
-private struct PeoplePage: View {
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                // Hero area — gradient spans full width, content centered in 600pt column
-                ZStack {
-                    LinearGradient(
-                        colors: [Color.blue.opacity(0.12), Color.clear],
-                        startPoint: .top, endPoint: .bottom
-                    )
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 300)
-
-                    VStack(spacing: 12) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.blue.opacity(0.15))
-                                .frame(width: 120, height: 120)
-                            Image(systemName: "person.2.fill")
-                                .font(.system(size: 52, weight: .medium))
-                                .foregroundStyle(Color.blue)
-                        }
-                        .padding(.top, 60)
-
-                        Text("People & 1:1s")
-                            .font(.title.bold())
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 20) {
-                    FeatureRow(
-                        icon: "person.crop.circle.badge.plus",
-                        iconColor: .blue,
-                        title: "Track your 1:1s",
-                        detail: "Befoor detects 1:1 meetings on your calendar and automatically builds a People list so you always know who you're meeting."
-                    )
-                    FeatureRow(
-                        icon: "note.text",
-                        iconColor: .indigo,
-                        title: "Meeting notes",
-                        detail: "Jot down notes during or after each meeting. They're saved by date so you can look back at past conversations."
-                    )
-                    FeatureRow(
-                        icon: "arrow.uturn.forward",
-                        iconColor: .orange,
-                        title: "Follow-ups",
-                        detail: "Create follow-up items with due dates and optional recurrence. Mark them complete when done — they carry forward until you do."
-                    )
-                    FeatureRow(
-                        icon: "pin.fill",
-                        iconColor: .purple,
-                        title: "Long-term notes",
-                        detail: "Pin important context about a person — preferences, ongoing topics, or anything you want to remember across meetings."
-                    )
-                    FeatureRow(
-                        icon: "bell.fill",
-                        iconColor: .red,
-                        title: "Reminders",
-                        detail: "Set a reminder for a specific person and get notified at the time you choose — great for birthday wishes or check-ins."
-                    )
-                    FeatureRow(
-                        icon: "icloud.fill",
-                        iconColor: .teal,
-                        title: "Synced via iCloud",
-                        detail: "Your People data syncs across all your devices through iCloud, so your notes and follow-ups are always with you."
-                    )
-                }
-                .padding(.horizontal, 32)
-                .frame(maxWidth: 600, alignment: .leading)
-                .padding(.vertical, 28)
-
-                Spacer(minLength: 140)
-            }
-            .frame(maxWidth: .infinity)
-        }
-    }
-}
-
-// MARK: - Page 4: Device Role
-
-private struct DeviceRolePage: View {
-    @Binding var roleChosen: Bool
-    @ObservedObject private var settings = AppSettings.shared
-
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                ZStack {
-                    LinearGradient(
-                        colors: [Color.cyan.opacity(0.12), Color.clear],
-                        startPoint: .top, endPoint: .bottom
-                    )
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 300)
-
-                    VStack(spacing: 12) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.cyan.opacity(0.15))
-                                .frame(width: 120, height: 120)
-                            Image(systemName: "iphone.and.ipad")
-                                .font(.system(size: 48, weight: .medium))
-                                .foregroundStyle(Color.cyan)
-                        }
-                        .padding(.top, 60)
-
-                        Text("Device Role")
-                            .font(.title.bold())
-                    }
-                }
-
-                VStack(spacing: 16) {
-                    Text("Is this your primary device?")
-                        .font(.headline)
-
-                    Text("Your primary device syncs with your calendar to detect 1:1 meetings and create people. Other devices receive that data via iCloud and let you add notes and follow-ups.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-
-                    VStack(spacing: 12) {
-                        Button {
-                            settings.claimAsMainDevice()
-                            roleChosen = true
-                        } label: {
-                            HStack {
-                                Image(systemName: "star.fill")
-                                    .font(.title3)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Primary Device")
-                                        .font(.body.weight(.semibold))
-                                    Text("Syncs calendar & detects 1:1s")
-                                        .font(.caption)
-                                        .foregroundStyle(.white.opacity(0.8))
-                                }
-                                Spacer()
-                                if settings.isMainDevice {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .font(.title3)
-                                }
-                            }
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(settings.isMainDevice ? Color.indigo : Color.indigo.opacity(0.7))
-                            .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                        }
-
-                        Button {
-                            roleChosen = true
-                        } label: {
-                            HStack {
-                                Image(systemName: "icloud.and.arrow.down")
-                                    .font(.title3)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Secondary Device")
-                                        .font(.body.weight(.semibold))
-                                    Text("Reads from iCloud, adds notes")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                if roleChosen && !settings.isMainDevice {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .font(.title3)
-                                        .foregroundStyle(.green)
-                                }
-                            }
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color(uiColor: .secondarySystemBackground))
-                            .foregroundStyle(.primary)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                        }
-                    }
-                    .padding(.top, 8)
-                }
-                .padding(.horizontal, 32)
-                .frame(maxWidth: 600)
-                .padding(.top, 28)
-
-                Spacer(minLength: 140)
-            }
-            .frame(maxWidth: .infinity)
-        }
-    }
-}
-
-// MARK: - Page 5: Calendar Permission
+// MARK: - Page 3: Calendar Permission
 
 private struct CalendarPermissionPage: View {
     @Binding var granted: Bool
@@ -493,34 +280,7 @@ private struct CalendarPermissionPage: View {
     }
 }
 
-// MARK: - Page 6: Contacts Permission (optional)
-
-private struct ContactsPermissionPage: View {
-    @Binding var granted: Bool
-
-    var body: some View {
-        OnboardingPageShell(
-            iconName: "person.crop.circle.badge.checkmark",
-            iconColor: .blue,
-            backgroundGradient: [Color.blue.opacity(0.10), Color.clear],
-            title: "Connect Contacts",
-            subtitle: granted ? "Access granted!" : "Better name resolution (optional)",
-            description: "Befoor can look up attendee names from your Contacts to better identify people in your 1:1 meetings. This is optional — you can skip this step.\n\nTapping Continue will show a system dialog asking for contacts access."
-        ) {
-            if !granted {
-                PermissionButton(label: "Continue", color: .blue) {
-                    Task {
-                        granted = await CalendarService.shared.requestContactsAccess()
-                    }
-                }
-            } else {
-                GrantedBadge()
-            }
-        }
-    }
-}
-
-// MARK: - Alarm Permission
+// MARK: - Page 4: Alarm Permission
 
 private struct AlarmPermissionPage: View {
     @Binding var granted: Bool
@@ -541,7 +301,7 @@ private struct AlarmPermissionPage: View {
     }
 }
 
-// MARK: - Page 7: Notification Permission
+// MARK: - Page 5: Notification Permission
 
 private struct NotificationPermissionPage: View {
     @Binding var granted: Bool
@@ -553,7 +313,7 @@ private struct NotificationPermissionPage: View {
             backgroundGradient: [Color.indigo.opacity(0.10), Color.clear],
             title: "Notifications",
             subtitle: granted ? "Notifications enabled!" : "How Befoor reaches you",
-            description: "Befoor uses notifications for 1:1 reminders, and for meeting alerts if alarms are off. For the best experience, also enable Time Sensitive Notifications in iOS Settings → Notifications → Befoor.\n\nTapping Continue will show a system dialog asking for notification access."
+            description: "Befoor uses notifications for meeting alerts if alarms are off. For the best experience, also enable Time Sensitive Notifications in iOS Settings → Notifications → Befoor.\n\nTapping Continue will show a system dialog asking for notification access."
         ) {
             if !granted {
                 PermissionButton(label: "Continue", color: .indigo) {
@@ -568,7 +328,7 @@ private struct NotificationPermissionPage: View {
     }
 }
 
-// MARK: - Page 8: All Set
+// MARK: - Page 6: All Set
 
 private struct AllSetPage: View {
     let onFinish: () -> Void

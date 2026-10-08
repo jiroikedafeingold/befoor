@@ -20,14 +20,12 @@ struct NextMeetingAttributes: ActivityAttributes {
         var title: String
         var startDate: Date
         var endDate: Date?
-        /// When Befoor's alarm rings. Nil for 1:1s handled by the People tab.
+        /// When Befoor's first alarm rings.
         var alarmDate: Date?
         var calendarName: String?
         /// sRGB components of the calendar color.
         var calendarRGB: [Double]?
         var location: String?
-        var personName: String?
-        var followUp: String?
         var attendeeCount: Int
         var nextTitle: String?
         var nextStartDate: Date?
@@ -186,7 +184,6 @@ final class MeetingLiveActivityManager {
     ) async {
         // The booked start needs an alert sound, so only book when alerts make a
         // sound anyway; it then rings in step with the meeting's first alarm.
-        // 1:1s handled by the People tab have no alarm, so they're not booked.
         var targets: [(content: ActivityContent<NextMeetingAttributes.ContentState>, showAt: Date)] = []
         if AppSettings.shared.soundEnabled {
             for (index, meeting) in meetings.enumerated() {
@@ -307,9 +304,6 @@ final class MeetingLiveActivityManager {
         let event = calendarService.event(identifier: meeting.eventIdentifier,
                                           startingAt: meeting.eventStartDate)
         let calendar = calendarService.calendar(for: meeting.calendarIdentifier) ?? event?.calendar
-        let person = settings.peopleEnabled
-            ? event.flatMap { AlarmScheduler.shared.lookUpPersonInfo(for: $0) }
-            : nil
 
         // Only mention the following meeting if it's the same day.
         let sameDayFollowing = following.flatMap {
@@ -323,15 +317,10 @@ final class MeetingLiveActivityManager {
             title: meeting.eventTitle,
             startDate: meeting.eventStartDate,
             endDate: event?.endDate,
-            // 1:1s with a tracked person don't get a Befoor alarm (see AlarmScheduler).
-            alarmDate: person == nil
-                ? meeting.eventStartDate.addingTimeInterval(-Double(settings.earliestAlertMinutes) * 60)
-                : nil,
+            alarmDate: meeting.eventStartDate.addingTimeInterval(-Double(settings.earliestAlertMinutes) * 60),
             calendarName: calendar?.title,
             calendarRGB: Self.rgb(calendar?.cgColor),
             location: Self.trimmed(event?.location),
-            personName: person?.name,
-            followUp: Self.trimmed(person?.followUps.first),
             attendeeCount: event?.attendees?.count ?? 0,
             nextTitle: sameDayFollowing?.eventTitle,
             nextStartDate: sameDayFollowing?.eventStartDate

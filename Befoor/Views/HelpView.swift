@@ -1,8 +1,6 @@
 import SwiftUI
 
 struct HelpView: View {
-    @ObservedObject private var settings = AppSettings.shared
-
     var body: some View {
         NavigationStack {
             List {
@@ -46,7 +44,7 @@ struct HelpView: View {
                         icon: "timer",
                         iconColor: .red,
                         title: "Countdown to Your Meeting",
-                        detail: "When a meeting's first alert rings, a countdown to it pops up in the Dynamic Island and on the Lock Screen, with its location, calendar and who it's with. It goes away about 10 minutes after the meeting starts. Turn it off under Live Activity in Settings."
+                        detail: "When a meeting's first alert rings, a countdown to it pops up in the Dynamic Island and on the Lock Screen, with its location and calendar. It goes away 10 minutes after the meeting starts. Turn it off under Live Activity in Settings."
                     )
                     HelpRow(
                         icon: "bell.badge.fill",
@@ -90,42 +88,6 @@ struct HelpView: View {
                     )
                 }
 
-                // MARK: People & 1:1 Meetings
-                if settings.peopleEnabled {
-                Section("People & 1:1 Meetings") {
-                    HelpRow(
-                        icon: "person.2.fill",
-                        iconColor: .indigo,
-                        title: "People Tab",
-                        detail: "Befoor automatically detects people from your 1:1 meetings and creates profiles for them. You can also add people manually."
-                    )
-                    HelpRow(
-                        icon: "bell.badge.fill",
-                        iconColor: .blue,
-                        title: "Pre-Meeting Reminders",
-                        detail: "30 minutes before a detected 1:1, you'll get a reminder to review your notes and follow-ups for that person."
-                    )
-                    HelpRow(
-                        icon: "checklist",
-                        iconColor: .orange,
-                        title: "Follow-ups & Recurrence",
-                        detail: "Track action items for each person. Mark them as recurring to automatically create the next occurrence when you complete one."
-                    )
-                    HelpRow(
-                        icon: "note.text",
-                        iconColor: .purple,
-                        title: "Long-term Notes",
-                        detail: "Store persistent notes about a person — career goals, preferences, or ongoing topics — that carry across meetings."
-                    )
-                    HelpRow(
-                        icon: "magnifyingglass",
-                        iconColor: .green,
-                        title: "Detection Keywords",
-                        detail: "Customize which calendar events are detected as 1:1 meetings by editing keywords in Settings. Default keywords include '1:1', 'one on one', 'catch up', and more."
-                    )
-                }
-                }
-
                 // MARK: Tips
                 Section("Tips") {
                     HelpRow(
@@ -144,9 +106,7 @@ struct HelpView: View {
                         icon: "bolt.fill",
                         iconColor: .yellow,
                         title: "Grant Time Sensitive Notifications",
-                        detail: settings.peopleEnabled
-                            ? "In iOS Settings → Notifications → Befoor, enable Time Sensitive Notifications so 1:1 reminders, and meeting notifications when alarms are off, can break through Focus modes."
-                            : "In iOS Settings → Notifications → Befoor, enable Time Sensitive Notifications so meeting notifications can break through Focus modes when alarms are off."
+                        detail: "In iOS Settings → Notifications → Befoor, enable Time Sensitive Notifications so meeting notifications can break through Focus modes when alarms are off."
                     )
                 }
 

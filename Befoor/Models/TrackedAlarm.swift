@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import SwiftData
 
 // MARK: - TrackedAlarm (legacy, used only for migration)
 
@@ -18,10 +17,7 @@ struct TrackedAlarm: Codable, Identifiable {
 // MARK: - TrackedAlarmsStore
 
 /// In-memory store for tracked alarms. Writes a JSON snapshot to the app group
-/// container so the widget can read it. No SwiftData involvement for local storage.
-///
-/// The main device saves an AlarmListSnapshot to SwiftData/CloudKit after each sync.
-/// Secondary devices load from that snapshot when a remote change is detected.
+/// container so the widget can read it.
 @MainActor
 final class TrackedAlarmsStore: ObservableObject {
     static let shared = TrackedAlarmsStore()
@@ -54,13 +50,6 @@ final class TrackedAlarmsStore: ObservableObject {
         alarms.removeAll()
     }
 
-    /// Replace the entire alarm set from decoded models (used by secondary devices).
-    func replaceAlarms(with models: [TrackedAlarmModel]) {
-        alarms = Dictionary(models.map { ($0.eventIdentifier, $0) },
-                            uniquingKeysWith: { _, latest in latest })
-        saveSnapshot()
-    }
-
     func prunePast() {
         let now = Date()
         let stale = alarms.filter { $0.value.eventStartDate < now }
@@ -74,32 +63,6 @@ final class TrackedAlarmsStore: ObservableObject {
         guard let url = Self.snapshotURL else { return }
         let values = Array(alarms.values)
         try? JSONEncoder().encode(values).write(to: url, options: .atomic)
-    }
-
-    /// Save the current alarm list to the CloudKit-synced AlarmListSnapshot model.
-    func publishToCloudKit(context: ModelContext) {
-        let descriptor = FetchDescriptor<AlarmListSnapshot>()
-        let snapshot: AlarmListSnapshot
-        if let existing = try? context.fetch(descriptor).first {
-            snapshot = existing
-        } else {
-            snapshot = AlarmListSnapshot()
-            context.insert(snapshot)
-        }
-        let values = Array(alarms.values)
-        snapshot.alarmsJSON = (try? JSONEncoder().encode(values)) ?? Data()
-        snapshot.lastUpdated = Date()
-        try? context.save()
-    }
-
-    /// Load the alarm list from the CloudKit-synced AlarmListSnapshot model.
-    func loadFromCloudKit(context: ModelContext) {
-        let descriptor = FetchDescriptor<AlarmListSnapshot>()
-        guard let snapshot = try? context.fetch(descriptor).first,
-              let models = try? JSONDecoder().decode([TrackedAlarmModel].self, from: snapshot.alarmsJSON) else { return }
-        alarms = Dictionary(models.map { ($0.eventIdentifier, $0) },
-                            uniquingKeysWith: { _, latest in latest })
-        saveSnapshot()
     }
 
     // MARK: Private

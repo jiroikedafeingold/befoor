@@ -17,8 +17,6 @@ struct NextMeetingAttributes: ActivityAttributes {
         var calendarName: String?
         var calendarRGB: [Double]?
         var location: String?
-        var personName: String?
-        var followUp: String?
         var attendeeCount: Int
         var nextTitle: String?
         var nextStartDate: Date?
@@ -136,12 +134,7 @@ private struct MeetingDetailsView: View {
                 Label(location, systemImage: "mappin.and.ellipse")
             }
 
-            if let person = state.personName {
-                Label("1:1 with \(person)", systemImage: "person.fill")
-                if let followUp = state.followUp {
-                    Label(followUp, systemImage: "checklist")
-                }
-            } else if state.attendeeCount > 0 {
+            if state.attendeeCount > 0 {
                 Label("\(state.attendeeCount) attendees", systemImage: "person.2")
             }
 
@@ -209,16 +202,14 @@ private struct LockScreenMeetingView: View {
 } contentStates: {
     NextMeetingAttributes.ContentState(
         meetingID: "preview",
-        title: "1:1 with Maya Chen",
+        title: "Design Review",
         startDate: .now.addingTimeInterval(1500),
         endDate: .now.addingTimeInterval(3300),
-        alarmDate: nil,
+        alarmDate: .now.addingTimeInterval(600),
         calendarName: "Work",
         calendarRGB: [0.2, 0.5, 0.9],
         location: "Room 4B",
-        personName: "Maya Chen",
-        followUp: "Share Q4 roadmap draft",
-        attendeeCount: 2,
+        attendeeCount: 4,
         nextTitle: "Product Sync",
         nextStartDate: .now.addingTimeInterval(7200)
     )

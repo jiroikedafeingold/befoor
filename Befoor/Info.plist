@@ -28,8 +28,6 @@
 	<string>Befoor reads your calendar to schedule gentle alarms before your appointments.</string>
 	<key>NSCalendarsUsageDescription</key>
 	<string>Befoor reads your calendar to schedule gentle alarms before your appointments.</string>
-	<key>NSContactsUsageDescription</key>
-	<string>Befoor uses your contacts to identify people in your 1:1 meetings by matching attendee email addresses to contact names.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
@@ -41,7 +39,6 @@
 	<array>
 		<string>fetch</string>
 		<string>processing</string>
-		<string>remote-notification</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict/>

@@ -74,7 +74,6 @@ final class AppSettings: ObservableObject {
         Keys.isEnabled, Keys.selectedSound, Keys.lookAheadDays,
         Keys.checkInterval, Keys.snoozeDuration, Keys.soundEnabled,
         Keys.secondAlert, Keys.thirdAlert,
-        Keys.mainDeviceID, Keys.peopleEnabled,
     ]
 
     // Each meeting gets up to three alerts. These are the minutes before the
@@ -140,11 +139,6 @@ final class AppSettings: ObservableObject {
         didSet { save(isEnabled, forKey: Keys.isEnabled) }
     }
 
-    // Enables the People tab and all 1:1 meeting features. Off by default.
-    @Published var peopleEnabled: Bool {
-        didSet { save(peopleEnabled, forKey: Keys.peopleEnabled) }
-    }
-
     // Which soothing sound to use
     @Published var selectedSound: BefoorSound {
         didSet { save(selectedSound.rawValue, forKey: Keys.selectedSound) }
@@ -167,19 +161,6 @@ final class AppSettings: ObservableObject {
 
     @Published var soundEnabled: Bool {
         didSet { save(soundEnabled, forKey: Keys.soundEnabled) }
-    }
-
-    // The device ID that owns calendar syncing — synced to iCloud so all devices know
-    @Published var mainDeviceID: String {
-        didSet { save(mainDeviceID, forKey: Keys.mainDeviceID) }
-    }
-
-    var isMainDevice: Bool {
-        mainDeviceID == DeviceID.current
-    }
-
-    func claimAsMainDevice() {
-        mainDeviceID = DeviceID.current
     }
 
     @Published var showDebugInfo: Bool {
@@ -214,13 +195,11 @@ final class AppSettings: ObservableObject {
         ignoredKeywords           = defaults.stringArray(forKey: Keys.ignoredKeywords) ?? ["lunch", "Lunch"]
         skipWeekends              = defaults.object(forKey: Keys.skipWeekends) as? Bool ?? false
         isEnabled                 = defaults.object(forKey: Keys.isEnabled) as? Bool ?? true
-        peopleEnabled             = defaults.object(forKey: Keys.peopleEnabled) as? Bool ?? false
         selectedSound             = BefoorSound(rawValue: defaults.string(forKey: Keys.selectedSound) ?? "") ?? .pebble
         lookAheadDays             = defaults.object(forKey: Keys.lookAheadDays) as? Int ?? 7
         backgroundCheckIntervalMinutes = defaults.object(forKey: Keys.checkInterval) as? Int ?? 15
         snoozeDurationMinutes     = defaults.object(forKey: Keys.snoozeDuration) as? Int ?? 5
         soundEnabled              = defaults.object(forKey: Keys.soundEnabled) as? Bool ?? true
-        mainDeviceID              = defaults.string(forKey: Keys.mainDeviceID) ?? ""
         showDebugInfo             = defaults.object(forKey: Keys.showDebugInfo) as? Bool ?? false
         liveActivityEnabled       = defaults.object(forKey: Keys.liveActivityEnabled) as? Bool ?? true
         hasCompletedOnboarding    = defaults.object(forKey: Keys.hasCompletedOnboarding) as? Bool ?? false
@@ -282,8 +261,6 @@ final class AppSettings: ObservableObject {
                     if let v = value as? Bool { skipWeekends = v }
                 case Keys.isEnabled:
                     if let v = value as? Bool { isEnabled = v }
-                case Keys.peopleEnabled:
-                    if let v = value as? Bool { peopleEnabled = v }
                 case Keys.selectedSound:
                     if let v = value as? String, let s = BefoorSound(rawValue: v) { selectedSound = s }
                 case Keys.lookAheadDays:
@@ -294,8 +271,6 @@ final class AppSettings: ObservableObject {
                     if let v = value as? Int { snoozeDurationMinutes = v }
                 case Keys.soundEnabled:
                     if let v = value as? Bool { soundEnabled = v }
-                case Keys.mainDeviceID:
-                    if let v = value as? String { mainDeviceID = v }
                 default:
                     break
                 }
@@ -310,7 +285,6 @@ final class AppSettings: ObservableObject {
         static let ignoredKeywords    = "bf_ignoredKeywords"
         static let skipWeekends       = "bf_skipWeekends"
         static let isEnabled          = "bf_isEnabled"
-        static let peopleEnabled      = "bf_peopleEnabled"
         static let selectedSound      = "bf_selectedSound"
         static let lookAheadDays      = "bf_lookAheadDays"
         static let checkInterval      = "bf_checkIntervalMinutes"
@@ -319,7 +293,6 @@ final class AppSettings: ObservableObject {
         static let secondAlert            = "bf_secondAlertMinutes"
         static let thirdAlert             = "bf_thirdAlertMinutes"
         static let alertsMigratedV3       = "bf_alertsMigratedV3"
-        static let mainDeviceID           = "bf_mainDeviceID"
         static let showDebugInfo          = "bf_showDebugInfo"
         static let hasCompletedOnboarding = "bf_hasCompletedOnboarding"
         static let liveActivityEnabled    = "bf_liveActivityEnabled"

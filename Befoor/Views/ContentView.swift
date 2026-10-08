@@ -1,32 +1,13 @@
 import SwiftUI
-import SwiftData
-import CoreData
-import WidgetKit
-
-// MARK: - CloudKit Refresh Environment Key
-
-private struct CloudRefreshTokenKey: EnvironmentKey {
-    static let defaultValue = UUID()
-}
-
-extension EnvironmentValues {
-    var cloudRefreshToken: UUID {
-        get { self[CloudRefreshTokenKey.self] }
-        set { self[CloudRefreshTokenKey.self] = newValue }
-    }
-}
 
 struct ContentView: View {
     @ObservedObject private var scheduler  = AlarmScheduler.shared
     @ObservedObject private var store      = TrackedAlarmsStore.shared
     @ObservedObject private var settings   = AppSettings.shared
     @ObservedObject private var calService = CalendarService.shared
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
-    @Query private var alarmSnapshots: [AlarmListSnapshot]
 
     @State private var selectedTab = 0
-    @State private var cloudRefreshToken = UUID()
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -36,45 +17,19 @@ struct ContentView: View {
                 }
                 .tag(0)
 
-            if settings.peopleEnabled {
-                PeopleTabView()
-                    .tabItem {
-                        Label("People", systemImage: "person.2")
-                    }
-                    .tag(1)
-            }
-
             SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gear")
                 }
-                .tag(2)
+                .tag(1)
 
             HelpView()
                 .tabItem {
                     Label("Help", systemImage: "questionmark.circle")
                 }
-                .tag(3)
+                .tag(2)
         }
-        .environment(\.cloudRefreshToken, cloudRefreshToken)
         .tint(.indigo)
-        .onReceive(NotificationCenter.default.publisher(for: .navigateToPerson)) { _ in
-            guard settings.peopleEnabled else { return }
-            selectedTab = 1
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .NSPersistentStoreRemoteChange)) { _ in
-            cloudRefreshToken = UUID()
-        }
-        .onChange(of: alarmSnapshots.first?.lastUpdated, initial: true) { _, _ in
-            guard !settings.isMainDevice,
-                  let snapshot = alarmSnapshots.first,
-                  let models = try? JSONDecoder().decode([TrackedAlarmModel].self, from: snapshot.alarmsJSON) else { return }
-            store.replaceAlarms(with: models)
-            // The widget no longer polls on a fixed clock, so tell it the shared
-            // snapshot changed (the main device does this from AlarmScheduler).
-            WidgetCenter.shared.reloadAllTimelines()
-            Task { await MeetingLiveActivityManager.shared.refresh() }
-        }
         // Befoor uses a scene, so UIKit never calls the app delegate's
         // didBecomeActive/didEnterBackground; the scene phase stands in for them.
         .onChange(of: scenePhase) { _, newPhase in
@@ -90,7 +45,7 @@ struct ContentView: View {
                     }
                     await AlarmScheduler.shared.sync()
                     // Live Activities can only be started in the foreground, so check here
-                    // even when sync was throttled or this isn't the main device.
+                    // even when sync was throttled.
                     await MeetingLiveActivityManager.shared.refresh()
                 }
             case .background:
@@ -100,8 +55,6 @@ struct ContentView: View {
             }
         }
         .task {
-            AlarmScheduler.shared.modelContext = modelContext
-
             if settings.hasCompletedOnboarding {
                 await AlarmScheduler.shared.sync()
             }

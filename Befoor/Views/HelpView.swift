@@ -38,7 +38,7 @@ struct HelpView: View {
                         icon: "moon.zzz.fill",
                         iconColor: .purple,
                         title: "Snooze or Stop",
-                        detail: "Snooze rings the alarm again after your snooze time, and the meeting's later alerts still ring. Stop ends it and skips that meeting's remaining alerts."
+                        detail: "Snooze rings the alarm again after your snooze time. Stop ends it. Either way, the meeting's last alert still rings."
                     )
                     HelpRow(
                         icon: "timer",
@@ -59,8 +59,8 @@ struct HelpView: View {
                     HelpRow(
                         icon: "slider.horizontal.3",
                         iconColor: .indigo,
-                        title: "Three Alerts",
-                        detail: "Each meeting rings up to three times — by default 15, 7 and 1 minute before. Change any of them in Settings → Alarm Timing; set one to \"at start\" to ring when the meeting begins."
+                        title: "First and Last Alert",
+                        detail: "Each meeting rings twice — by default 15 minutes and 1 minute before. Change either in Settings → Alarm Timing; set the last alert to \"at start\" to ring when the meeting begins. Meetings that start at the same time share one alarm."
                     )
                     HelpRow(
                         icon: "calendar.badge.minus",

@@ -13,8 +13,9 @@ import SwiftUI
 
 /// One alarm Befoor wants to exist.
 struct MeetingAlarmRequest: Sendable {
+    /// One key per start time: meetings that start together share their alarms.
     let meetingKey: String
-    /// Which of the meeting's alerts this is: 1 is the earliest, 3 the latest.
+    /// Which of the meeting's alerts this is: 1 is the first, 2 the last.
     let slot: Int
     /// Minutes before the meeting this alert rings (0 = at the start).
     let minutesBefore: Int
@@ -24,6 +25,8 @@ struct MeetingAlarmRequest: Sendable {
     let eventTitle: String
     let eventStart: Date
     let calendarName: String
+    /// sRGB components of the calendar color.
+    let calendarRGB: [Double]?
     let location: String?
     let sound: BefoorSound
     let snoozeMinutes: Int
@@ -32,7 +35,7 @@ struct MeetingAlarmRequest: Sendable {
 
     /// Everything baked into a scheduled alarm. If it changes, the alarm is rescheduled.
     var fingerprint: String {
-        "\(slot)|\(minutesBefore)|\(Int(fireDate.timeIntervalSince1970))|\(eventTitle)|\(location ?? "")|\(sound.rawValue)|\(AlarmTones.isReady(sound))|\(snoozeMinutes)"
+        "\(slot)|\(minutesBefore)|\(Int(fireDate.timeIntervalSince1970))|\(eventTitle)|\(location ?? "")|\(calendarRGB ?? [])|\(sound.rawValue)|\(AlarmTones.isReady(sound))|\(snoozeMinutes)"
     }
 }
 
@@ -127,9 +130,6 @@ final class MeetingAlarms {
 
     private init() {}
 
-    /// Most alerts a meeting can have.
-    nonisolated static let maxSlots = 3
-
     /// Stable alarm ID per meeting and alert slot, so every sync addresses the same alarm.
     nonisolated static func alarmID(meetingKey: String, slot: Int) -> UUID {
         var bytes = Array(Insecure.MD5.hash(data: Data("\(meetingKey)|alert\(slot)".utf8)))
@@ -166,13 +166,13 @@ final class MeetingAlarms {
 
     /// Fingerprint of each alarm as last scheduled, keyed by alarm ID.
     private static let fingerprintsKey = "MeetingAlarmFingerprints"
-    /// Alarm ID → intended fire date, for every alarm ever scheduled or suppressed.
+    /// Alarm ID → intended fire date, for every alarm ever scheduled.
     /// Stops an alarm whose time has already passed from being rescheduled (and
     /// ringing again) after it rang and went away.
     private static let historyKey = "MeetingAlarmHistory"
-    /// Alarm IDs the person cancelled indirectly — a meeting's remaining alerts
-    /// after they stopped an earlier one. Never rescheduled.
-    private static let suppressedKey = "MeetingAlarmSuppressed"
+    /// Alarm ID → start of the meeting it's for. Lets a sync recognise a ringing
+    /// or snoozed alarm whose meeting has since moved or been cancelled.
+    private static let startsKey = "MeetingAlarmStarts"
 
     private var fingerprints: [String: String] {
         get { UserDefaults.standard.dictionary(forKey: Self.fingerprintsKey) as? [String: String] ?? [:] }
@@ -182,32 +182,33 @@ final class MeetingAlarms {
         get { UserDefaults.standard.dictionary(forKey: Self.historyKey) as? [String: Double] ?? [:] }
         set { UserDefaults.standard.set(newValue, forKey: Self.historyKey) }
     }
-    private var suppressed: Set<String> {
-        get { Set(UserDefaults.standard.stringArray(forKey: Self.suppressedKey) ?? []) }
-        set { UserDefaults.standard.set(Array(newValue), forKey: Self.suppressedKey) }
+    private var starts: [String: Double] {
+        get { UserDefaults.standard.dictionary(forKey: Self.startsKey) as? [String: Double] ?? [:] }
+        set { UserDefaults.standard.set(newValue, forKey: Self.startsKey) }
     }
 
     // MARK: Scheduling
 
     /// Makes the scheduled alarms match `requests`.
     ///
-    /// Alarms that are ringing or snoozed are never touched, so a resync can't cut
-    /// off an alarm in progress. Returns the requests that couldn't be scheduled
+    /// Alarms that are ringing or snoozed are left alone, so a resync can't cut
+    /// off an alarm in progress — unless their meeting has moved or been
+    /// cancelled, when they're taken down along with their Live Activity so they
+    /// don't count down (and ring again) for the old time. Returns the requests that couldn't be scheduled
     /// (for example when the system's alarm limit is reached) so the caller can
     /// fall back to a notification.
     func reconcile(_ requests: [MeetingAlarmRequest]) async -> [MeetingAlarmRequest] {
         let now = Date()
         var fingerprints = self.fingerprints
         var history = self.history
-        let suppressed = self.suppressed
+        var starts = self.starts
 
         for sound in Set(requests.map(\.sound)) {
             await AlarmTones.prepare(sound)
         }
 
         let existing = Dictionary(currentAlarms.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
-        let wanted = requests.filter { !suppressed.contains($0.id.uuidString) }
-        let wantedByID = Dictionary(wanted.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        let wantedByID = Dictionary(requests.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
 
         // Cancel scheduled alarms that are no longer wanted or have changed.
         for (id, alarm) in existing where alarm.state == .scheduled {
@@ -217,8 +218,18 @@ final class MeetingAlarms {
             fingerprints[key] = nil
         }
 
+        // Ringing or snoozed alarms for a meeting time that no longer has a meeting.
+        let wantedStarts = Set(requests.map(\.eventStart.timeIntervalSince1970))
+        for (id, alarm) in existing where alarm.state != .scheduled && wantedByID[id] == nil {
+            guard let start = starts[id.uuidString], start > now.timeIntervalSince1970,
+                  !wantedStarts.contains(start) else { continue }
+            print("[Befoor] Meeting moved; taking down its \(alarm.state) alarm")
+            try? manager.cancel(id: id)
+            fingerprints[id.uuidString] = nil
+        }
+
         var failed: [MeetingAlarmRequest] = []
-        for request in wanted {
+        for request in requests {
             let key = request.id.uuidString
             if let alarm = existing[request.id] {
                 if alarm.state != .scheduled { continue }              // ringing or snoozed
@@ -237,6 +248,7 @@ final class MeetingAlarms {
                 _ = try await manager.schedule(id: request.id, configuration: configuration(for: request, at: ringAt))
                 fingerprints[key] = request.fingerprint
                 history[key] = request.fireDate.timeIntervalSince1970
+                starts[key] = request.eventStart.timeIntervalSince1970
             } catch {
                 print("[Befoor] Scheduling alarm failed: \(error)")
                 failed.append(request)
@@ -247,8 +259,8 @@ final class MeetingAlarms {
         let cutoff = now.addingTimeInterval(-86_400).timeIntervalSince1970
         let liveIDs = Set(currentAlarms.map(\.id.uuidString))
         self.history = history.filter { $0.value > cutoff }
+        self.starts = starts.filter { $0.value > cutoff }
         self.fingerprints = fingerprints.filter { liveIDs.contains($0.key) }
-        self.suppressed = suppressed.filter { self.history[$0] != nil }
 
         return failed
     }
@@ -298,9 +310,10 @@ final class MeetingAlarms {
             metadata: MeetingAlarmMetadata(
                 meetingTitle: request.eventTitle,
                 startDate: request.eventStart,
-                location: request.location
+                location: request.location,
+                calendarRGB: request.calendarRGB
             ),
-            tintColor: .indigo
+            tintColor: request.calendarRGB.map { Color(.sRGB, red: $0[0], green: $0[1], blue: $0[2]) } ?? .indigo
         )
         let sound: AlertConfiguration.AlertSound
         if request.sound == .systemDefault {
@@ -324,34 +337,18 @@ final class MeetingAlarms {
 
     // MARK: Alarm actions
 
-    /// Called when the person taps Stop or Snooze on a ringing alarm.
-    func handleAction(meetingKey: String, slot: Int, stopped: Bool) async {
-        // Stop means "I'm on it": skip the meeting's remaining alerts, the same
-        // as dismissing the old notification. Snooze keeps them, so the later
-        // alerts still ring on time.
-        if stopped && slot < Self.maxSlots {
-            let alarms = currentAlarms
-            var suppressed = self.suppressed
-            var history = self.history
-            for later in (slot + 1)...Self.maxSlots {
-                let id = Self.alarmID(meetingKey: meetingKey, slot: later)
-                if alarms.first(where: { $0.id == id })?.state == .scheduled {
-                    try? manager.cancel(id: id)
-                }
-                suppressed.insert(id.uuidString)
-                history[id.uuidString] = Date().addingTimeInterval(86_400).timeIntervalSince1970
-            }
-            self.suppressed = suppressed
-            self.history = history
-        }
+    /// Called when the person taps Stop or Snooze on a ringing alarm. Either way
+    /// the meeting's last alert still rings.
+    func handleAction() async {
         // Befoor is awake anyway, so use the moment to pick up calendar changes
         // made since it last ran. Awaited so the system doesn't suspend the app
         // mid-sync once the intent returns. Ringing and snoozed alarms are left
-        // alone by the sync, and alerts skipped above stay skipped.
+        // alone by the sync.
         await AlarmScheduler.shared.sync()
 
         // Then refresh the countdown with intent rights, which (unlike the sync's
         // own background refresh) may start an activity and book upcoming ones.
+        // At the last alert this also hands the countdown's removal to the system.
         await MeetingLiveActivityManager.shared.refresh(allowStart: true)
     }
     #endif
@@ -369,11 +366,14 @@ struct MeetingAlarmMetadata: AlarmMetadata {
     var meetingTitle: String
     var startDate: Date
     var location: String?
+    /// sRGB components of the calendar color.
+    var calendarRGB: [Double]?
 }
 
 // MARK: - Intent
 
 /// Runs in Befoor when the person taps Stop or Snooze on a meeting alarm.
+/// The parameters are no longer used, but alarms already scheduled carry them.
 struct MeetingAlarmIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Meeting Alarm Action"
     static let isDiscoverable = false
@@ -396,10 +396,7 @@ struct MeetingAlarmIntent: LiveActivityIntent {
     }
 
     func perform() async throws -> some IntentResult {
-        let meetingKey = meetingKey
-        let slot = slot
-        let stopped = action == "stop"
-        await MeetingAlarms.shared.handleAction(meetingKey: meetingKey, slot: slot, stopped: stopped)
+        await MeetingAlarms.shared.handleAction()
         return .result()
     }
 }

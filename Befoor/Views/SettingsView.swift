@@ -28,13 +28,8 @@ struct SettingsView: View {
                         in: AppSettings.firstAlertRange
                     )
                     Stepper(
-                        "Second alert: \(alertLabel(settings.secondAlertMinutes))",
-                        value: $settings.secondAlertMinutes,
-                        in: AppSettings.laterAlertRange
-                    )
-                    Stepper(
-                        "Third alert: \(alertLabel(settings.thirdAlertMinutes))",
-                        value: $settings.thirdAlertMinutes,
+                        "Last alert: \(alertLabel(settings.lastAlertMinutes))",
+                        value: $settings.lastAlertMinutes,
                         in: AppSettings.laterAlertRange
                     )
 
@@ -55,7 +50,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Alarm Timing")
                 } footer: {
-                    Text("Each meeting rings up to three times. Stop on any alert skips that meeting's remaining alerts; Snooze keeps them.")
+                    Text("Each meeting rings at the first alert, when its countdown appears, and again at the last alert. Meetings that start at the same time share one alarm.")
                 }
 
                 // MARK: Live Activity
@@ -68,7 +63,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Live Activity")
                 } footer: {
-                    Text("Pops up by itself when a meeting's first alert rings: a countdown in the Dynamic Island and on the Lock Screen, with its location and calendar. It goes away about 10 minutes after the meeting starts. Press and hold the Dynamic Island for details. iPhone only.")
+                    Text("Pops up by itself when a meeting's first alert rings: a countdown in the Dynamic Island and on the Lock Screen, with its location and calendar. It goes away 10 minutes after the meeting starts. Press and hold the Dynamic Island for details. iPhone only.")
                 }
 
                 // MARK: Calendars
@@ -192,24 +187,13 @@ struct SettingsView: View {
                         Label("Restart Onboarding", systemImage: "arrow.counterclockwise")
                     }
                 }
-
-                // MARK: Debug
-                Section("Debug") {
-                    Toggle("Show Debug Info", isOn: $settings.showDebugInfo)
-                        .tint(.indigo)
-
-                    if settings.showDebugInfo {
-                        LabeledContent("Alarms in Store", value: "\(TrackedAlarmsStore.shared.alarms.count)")
-                    }
-                }
             }
             .navigationTitle("Settings")
             // These are baked into the scheduled alarms, so reschedule after a change.
             .onChange(of: settings.leadTimeMinutes) { _, _ in AlarmScheduler.shared.requestResync() }
             .onChange(of: settings.selectedSound) { _, _ in AlarmScheduler.shared.requestResync() }
             .onChange(of: settings.soundEnabled) { _, _ in AlarmScheduler.shared.requestResync() }
-            .onChange(of: settings.secondAlertMinutes) { _, _ in AlarmScheduler.shared.requestResync() }
-            .onChange(of: settings.thirdAlertMinutes) { _, _ in AlarmScheduler.shared.requestResync() }
+            .onChange(of: settings.lastAlertMinutes) { _, _ in AlarmScheduler.shared.requestResync() }
             .onChange(of: settings.snoozeDurationMinutes) { _, _ in AlarmScheduler.shared.requestResync() }
             .onAppear { alarmsAllowed = MeetingAlarms.shared.isAuthorized }
             // Picks up a change made in iOS Settings while Befoor was in the background.

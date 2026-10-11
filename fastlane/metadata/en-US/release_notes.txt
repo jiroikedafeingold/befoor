@@ -1,10 +1,9 @@
-- Fixed: if you updated from an earlier version, Befoor may never have asked to use alarms, so meeting reminders came as quiet notifications instead. It now asks when you open the app.
-- Each alarm now plays its sound once instead of repeating until you stop it.
-- Sound previews in Settings now play even when your phone is on silent.
-- Fixed the background check, so new and changed meetings are picked up even when you haven't opened Befoor.
-- The meeting countdown now pops up on its own in the Dynamic Island and on the Lock Screen as soon as the first alert rings, shows the Befoor icon, and goes away 10 minutes after the meeting starts.
-- Alarms now ring on every device where you've allowed them, not only on your main device.
-- Every meeting in your look-ahead window now gets alarms, not just the next few.
-- Calendars you add after setting up Befoor are now watched automatically, and your existing calendar choices carry over.
+- People and 1:1 tracking have been removed so Befoor can focus on meeting alarms. 1:1 meetings now get alarms like any other meeting.
+- Simpler alarms: each meeting rings at your first alert (15 minutes before by default) and again at your last alert (1 minute before). Both always ring, even if you stop the first one.
+- Meetings that start at the same time now share one alarm and one countdown.
+- The meeting countdown appears with the first alarm, now uses your calendar's color, and goes away 10 minutes after the meeting starts.
+- If a meeting moves to a new time, its countdown and any snoozed alarm for the old time go away.
+- New app icon.
+- Befoor no longer runs on Mac.
 
 Questions or feedback? apps@feingold5.com

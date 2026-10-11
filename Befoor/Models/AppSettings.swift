@@ -73,27 +73,24 @@ final class AppSettings: ObservableObject {
         Keys.leadTime, Keys.ignoredKeywords, Keys.skipWeekends,
         Keys.isEnabled, Keys.selectedSound, Keys.lookAheadDays,
         Keys.checkInterval, Keys.snoozeDuration, Keys.soundEnabled,
-        Keys.secondAlert, Keys.thirdAlert,
+        Keys.lastAlert,
     ]
 
-    // Each meeting gets up to three alerts. These are the minutes before the
-    // meeting for each one (defaults 15, 7 and 1). 0 means "at the start".
+    // Each meeting rings twice: at the first alert, when its countdown appears,
+    // and again at the last alert. These are the minutes before the meeting for
+    // each (defaults 15 and 1). 0 means "at the start".
     // The first keeps the old lead-time key so existing values carry over.
     @Published var leadTimeMinutes: Int {
         didSet { save(leadTimeMinutes, forKey: Keys.leadTime) }
     }
 
-    @Published var secondAlertMinutes: Int {
-        didSet { save(secondAlertMinutes, forKey: Keys.secondAlert) }
-    }
-
-    @Published var thirdAlertMinutes: Int {
-        didSet { save(thirdAlertMinutes, forKey: Keys.thirdAlert) }
+    @Published var lastAlertMinutes: Int {
+        didSet { save(lastAlertMinutes, forKey: Keys.lastAlert) }
     }
 
     /// The distinct alert times, earliest alert (most minutes before) first.
     var alertMinutes: [Int] {
-        Array(Set([leadTimeMinutes, secondAlertMinutes, thirdAlertMinutes])).sorted(by: >)
+        Array(Set([leadTimeMinutes, lastAlertMinutes])).sorted(by: >)
     }
 
     /// Minutes before the meeting that its first alert rings.
@@ -163,10 +160,6 @@ final class AppSettings: ObservableObject {
         didSet { save(soundEnabled, forKey: Keys.soundEnabled) }
     }
 
-    @Published var showDebugInfo: Bool {
-        didSet { defaults.set(showDebugInfo, forKey: Keys.showDebugInfo) }
-    }
-
     // Live Activity counting down to the next meeting (Dynamic Island + Lock Screen).
     // Device-specific — NOT synced
     @Published var liveActivityEnabled: Bool {
@@ -189,8 +182,7 @@ final class AppSettings: ObservableObject {
             defaults.set(true, forKey: Keys.alertsMigratedV3)
         }
         leadTimeMinutes           = Self.clamp(defaults.object(forKey: Keys.leadTime) as? Int ?? 15, Self.firstAlertRange)
-        secondAlertMinutes        = Self.clamp(defaults.object(forKey: Keys.secondAlert) as? Int ?? 7, Self.laterAlertRange)
-        thirdAlertMinutes         = Self.clamp(defaults.object(forKey: Keys.thirdAlert) as? Int ?? 1, Self.laterAlertRange)
+        lastAlertMinutes          = Self.clamp(defaults.object(forKey: Keys.lastAlert) as? Int ?? 1, Self.laterAlertRange)
         excludedCalendarIdentifiers = Set(defaults.stringArray(forKey: Keys.excludedCalendars) ?? [])
         ignoredKeywords           = defaults.stringArray(forKey: Keys.ignoredKeywords) ?? ["lunch", "Lunch"]
         skipWeekends              = defaults.object(forKey: Keys.skipWeekends) as? Bool ?? false
@@ -200,7 +192,6 @@ final class AppSettings: ObservableObject {
         backgroundCheckIntervalMinutes = defaults.object(forKey: Keys.checkInterval) as? Int ?? 15
         snoozeDurationMinutes     = defaults.object(forKey: Keys.snoozeDuration) as? Int ?? 5
         soundEnabled              = defaults.object(forKey: Keys.soundEnabled) as? Bool ?? true
-        showDebugInfo             = defaults.object(forKey: Keys.showDebugInfo) as? Bool ?? false
         liveActivityEnabled       = defaults.object(forKey: Keys.liveActivityEnabled) as? Bool ?? true
         hasCompletedOnboarding    = defaults.object(forKey: Keys.hasCompletedOnboarding) as? Bool ?? false
 
@@ -251,10 +242,8 @@ final class AppSettings: ObservableObject {
                 switch key {
                 case Keys.leadTime:
                     if let v = value as? Int { leadTimeMinutes = Self.clamp(v, Self.firstAlertRange) }
-                case Keys.secondAlert:
-                    if let v = value as? Int { secondAlertMinutes = Self.clamp(v, Self.laterAlertRange) }
-                case Keys.thirdAlert:
-                    if let v = value as? Int { thirdAlertMinutes = Self.clamp(v, Self.laterAlertRange) }
+                case Keys.lastAlert:
+                    if let v = value as? Int { lastAlertMinutes = Self.clamp(v, Self.laterAlertRange) }
                 case Keys.ignoredKeywords:
                     if let v = value as? [String] { ignoredKeywords = v }
                 case Keys.skipWeekends:
@@ -290,10 +279,9 @@ final class AppSettings: ObservableObject {
         static let checkInterval      = "bf_checkIntervalMinutes"
         static let snoozeDuration     = "bf_snoozeDurationMinutes"
         static let soundEnabled           = "bf_soundEnabled"
-        static let secondAlert            = "bf_secondAlertMinutes"
-        static let thirdAlert             = "bf_thirdAlertMinutes"
+        // The last alert was the third of three before 4.0; keeps its key so the value carries over.
+        static let lastAlert              = "bf_thirdAlertMinutes"
         static let alertsMigratedV3       = "bf_alertsMigratedV3"
-        static let showDebugInfo          = "bf_showDebugInfo"
         static let hasCompletedOnboarding = "bf_hasCompletedOnboarding"
         static let liveActivityEnabled    = "bf_liveActivityEnabled"
     }

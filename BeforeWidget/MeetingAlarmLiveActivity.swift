@@ -12,6 +12,15 @@ struct MeetingAlarmMetadata: AlarmMetadata {
     var meetingTitle: String
     var startDate: Date
     var location: String?
+    /// sRGB components of the calendar color.
+    var calendarRGB: [Double]?
+}
+
+private extension AlarmAttributes<MeetingAlarmMetadata> {
+    var calendarColor: Color {
+        guard let rgb = metadata?.calendarRGB, rgb.count == 3 else { return .indigo }
+        return Color(.sRGB, red: rgb[0], green: rgb[1], blue: rgb[2])
+    }
 }
 
 // MARK: - Live Activity
@@ -22,19 +31,20 @@ struct MeetingAlarmLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: AlarmAttributes<MeetingAlarmMetadata>.self) { context in
             AlarmLockScreenView(attributes: context.attributes, state: context.state)
-                .activitySystemActionForegroundColor(.indigo)
+                .activitySystemActionForegroundColor(context.attributes.calendarColor)
         } dynamicIsland: { context in
-            DynamicIsland {
+            let color = context.attributes.calendarColor
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     Label("Snoozed", systemImage: "zzz")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.indigo)
+                        .foregroundStyle(color)
                         .padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     RingCountdown(state: context.state)
                         .font(.title3.weight(.semibold))
-                        .foregroundStyle(.indigo)
+                        .foregroundStyle(color)
                         .padding(.trailing, 4)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
@@ -44,16 +54,16 @@ struct MeetingAlarmLiveActivity: Widget {
                 }
             } compactLeading: {
                 Image(systemName: "alarm")
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(color)
             } compactTrailing: {
                 RingCountdown(state: context.state)
                     .frame(maxWidth: 64)
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(color)
             } minimal: {
                 Image(systemName: "alarm")
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(color)
             }
-            .keylineTint(.indigo)
+            .keylineTint(color)
         }
     }
 }
@@ -110,11 +120,11 @@ private struct AlarmLockScreenView: View {
             HStack(alignment: .firstTextBaseline) {
                 Label("Snoozed", systemImage: "zzz")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(attributes.calendarColor)
                 Spacer()
                 RingCountdown(state: state)
                     .font(.title2.weight(.semibold))
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(attributes.calendarColor)
                     .frame(maxWidth: 110, alignment: .trailing)
             }
             MeetingSummary(metadata: attributes.metadata)

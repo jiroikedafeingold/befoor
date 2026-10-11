@@ -113,38 +113,47 @@ final class AlarmScheduler: ObservableObject {
 
         // Alarms have no small budget, so every meeting in the look-ahead window
         // gets them (anything over AlarmKit's limit falls back to notifications).
-        // The notification fallback keeps to 3 per event within the iOS limit of
-        // 64, leaving room for snoozes.
-        let maxEvents = useAlarms ? 100 : 13
+        // The notification fallback keeps to 2 per meeting time within the iOS
+        // limit of 64, leaving room for snoozes.
+        let maxMeetingTimes = useAlarms ? 100 : 20
         let alertMinutes = settings.alertMinutes
 
-        for event in filtered.prefix(maxEvents) {
-            guard event.startDate > Date() else { continue }
+        // Meetings that start at the same time share one set of alerts.
+        let byStart = Dictionary(grouping: filtered.filter { $0.startDate > Date() }, by: \.startDate)
+            .sorted { $0.key < $1.key }
+
+        for (start, events) in byStart.prefix(maxMeetingTimes) {
             await Task.yield()
 
-            let notifID = "befoor_\(event.eventIdentifier)_\(Int(event.startDate.timeIntervalSince1970))"
-            let calName = event.calendar?.title ?? "Calendar"
+            // Same order as the countdown, which sorts by title too.
+            let events = events.sorted { ($0.title ?? "Appointment") < ($1.title ?? "Appointment") }
+            let meetingKey = Self.meetingKey(start: start)
+            let title = Self.combinedTitle(events.map { $0.title ?? "Appointment" })
+            let calName = events.first?.calendar?.title ?? "Calendar"
+            let location = events.compactMap(\.location).first { !$0.isEmpty }
 
-            store.upsert(TrackedAlarmModel(
-                eventIdentifier:        event.eventIdentifier,
-                notificationIdentifier: notifID,
-                eventStartDate:         event.startDate,
-                eventTitle:             event.title ?? "Appointment",
-                calendarIdentifier:     event.calendar?.calendarIdentifier ?? ""
-            ))
+            for event in events {
+                store.upsert(TrackedAlarmModel(
+                    eventIdentifier:        event.eventIdentifier,
+                    notificationIdentifier: meetingKey,
+                    eventStartDate:         event.startDate,
+                    eventTitle:             event.title ?? "Appointment",
+                    calendarIdentifier:     event.calendar?.calendarIdentifier ?? ""
+                ))
+            }
 
-            let alerts = Self.alertsToSchedule(minutes: alertMinutes, start: event.startDate)
+            let alerts = Self.alertsToSchedule(minutes: alertMinutes, start: start)
             guard !alerts.isEmpty else { continue }
 
             guard useAlarms else {
                 await notifications.scheduleAlerts(
-                    identifier:     notifID,
-                    eventTitle:     event.title ?? "Appointment",
+                    identifier:     meetingKey,
+                    eventTitle:     title,
                     calendarName:   calName,
                     // Notifications can't tell whether a missed alert already showed, so
                     // only future ones are scheduled (else every sync would re-alert).
                     alerts:         alerts.filter { $0.date > Date() }.map { (slot: $0.slot, date: $0.date, minutesBefore: $0.minutes) },
-                    eventStartDate: event.startDate,
+                    eventStartDate: start,
                     sound:          settings.selectedSound
                 )
                 continue
@@ -152,14 +161,15 @@ final class AlarmScheduler: ObservableObject {
 
             for alert in alerts {
                 alarmRequests.append(MeetingAlarmRequest(
-                    meetingKey:    notifID,
+                    meetingKey:    meetingKey,
                     slot:          alert.slot,
                     minutesBefore: alert.minutes,
                     fireDate:      alert.date,
-                    eventTitle:    event.title ?? "Appointment",
-                    eventStart:    event.startDate,
+                    eventTitle:    title,
+                    eventStart:    start,
                     calendarName:  calName,
-                    location:      event.location?.isEmpty == false ? event.location : nil,
+                    calendarRGB:   MeetingLiveActivityManager.rgb(events.first?.calendar?.cgColor),
+                    location:      location,
                     sound:         settings.selectedSound,
                     snoozeMinutes: settings.snoozeDurationMinutes
                 ))
@@ -194,6 +204,19 @@ final class AlarmScheduler: ObservableObject {
             WidgetCenter.shared.reloadAllTimelines()
         }
         await MeetingLiveActivityManager.shared.refresh(fromSync: true)
+    }
+
+    /// Meetings that start at the same time share one alarm, notification and
+    /// countdown, all keyed by the start time.
+    nonisolated static func meetingKey(start: Date) -> String {
+        "befoor_\(Int(start.timeIntervalSince1970))"
+    }
+
+    /// "Standup", or "Standup and Design Review" for meetings at the same time.
+    /// A title that appears twice (the same event in two calendars) is listed once.
+    nonisolated static func combinedTitle(_ titles: [String]) -> String {
+        var seen = Set<String>()
+        return titles.filter { seen.insert($0).inserted }.formatted(.list(type: .and))
     }
 
     /// The alerts to schedule for a meeting: one per configured alert time, slot 1

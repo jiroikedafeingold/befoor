@@ -43,7 +43,7 @@ struct NextMeetingLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: NextMeetingAttributes.self) { context in
             LockScreenMeetingView(state: context.state, isStale: context.isStale)
-                .activitySystemActionForegroundColor(.indigo)
+                .activitySystemActionForegroundColor(context.state.calendarColor)
         } dynamicIsland: { context in
             let state = context.state
             return DynamicIsland {
@@ -59,7 +59,7 @@ struct NextMeetingLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.trailing) {
                     CountdownText(startDate: state.startDate, isStale: context.isStale)
                         .font(.title3.weight(.semibold))
-                        .foregroundStyle(.indigo)
+                        .foregroundStyle(state.calendarColor)
                         .padding(.trailing, 4)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
@@ -77,7 +77,7 @@ struct NextMeetingLiveActivity: Widget {
             } compactTrailing: {
                 CountdownText(startDate: state.startDate, isStale: context.isStale)
                     .frame(maxWidth: 64)
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(state.calendarColor)
             } minimal: {
                 ProgressView(timerInterval: state.countdownRange, countsDown: true) {
                     EmptyView()
@@ -86,9 +86,9 @@ struct NextMeetingLiveActivity: Widget {
                         .font(.caption2)
                 }
                 .progressViewStyle(.circular)
-                .tint(.indigo)
+                .tint(state.calendarColor)
             }
-            .keylineTint(.indigo)
+            .keylineTint(state.calendarColor)
         }
     }
 }
@@ -180,7 +180,7 @@ private struct LockScreenMeetingView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Next meeting · \(state.startDate, style: .time)")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.indigo)
+                        .foregroundStyle(state.calendarColor)
                     Text(state.title)
                         .font(.headline)
                         .lineLimit(1)
@@ -188,7 +188,7 @@ private struct LockScreenMeetingView: View {
                 Spacer()
                 CountdownText(startDate: state.startDate, isStale: isStale)
                     .font(.title2.weight(.semibold))
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(state.calendarColor)
                     .frame(maxWidth: 110, alignment: .trailing)
             }
             MeetingDetailsView(state: state)

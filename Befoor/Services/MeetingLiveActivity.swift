@@ -36,7 +36,8 @@ struct NextMeetingAttributes: ActivityAttributes {
 // MARK: - Manager
 
 /// Shows a countdown to the next meeting in a Live Activity, from the moment its
-/// first alert rings until 10 minutes after the meeting starts.
+/// first alert rings until 10 minutes after the meeting starts. Meetings that
+/// start at the same time share one activity.
 ///
 /// Befoor doesn't run in the background, so the activity has to start without it:
 /// - Whenever Befoor runs (app open, alarm Stop/Snooze, background refresh where
@@ -47,7 +48,7 @@ struct NextMeetingAttributes: ActivityAttributes {
 ///   directly if it isn't already showing.
 ///
 /// Ending: an activity can't remove itself on a timer, so the first time Befoor
-/// runs after the meeting starts — or within 5 minutes of it while in the
+/// runs after the meeting starts — or from the last alert on while in the
 /// background, such as Stop/Snooze on the last alert — it ends the activity with
 /// a dismissal date 10 minutes into the meeting, and the system removes it then.
 /// Ending takes it out of the Dynamic Island right away; it stays on the Lock
@@ -67,8 +68,11 @@ final class MeetingLiveActivityManager {
     static let linger: TimeInterval = 10 * 60
 
     /// How close to the start a background run hands the activity's removal to
-    /// the system. Covers the usual last alert (1 minute before).
-    private static let handOffLead: TimeInterval = 5 * 60
+    /// the system: from a few minutes before the last alert, so Stop/Snooze on
+    /// it is covered, while keeping the countdown in the Dynamic Island until then.
+    private static var handOffLead: TimeInterval {
+        Double(AppSettings.shared.lastAlertMinutes + 4) * 60
+    }
 
     /// Booked activities count toward the system's per-app limit, so only book a few.
     private static let maxScheduled = 3
@@ -99,7 +103,7 @@ final class MeetingLiveActivityManager {
         let pending = all.filter(Self.isPending)
         let live = all.filter { $0.activityState == .active || $0.activityState == .stale }
         // Already ended and left on the Lock Screen until the system removes it.
-        let handedOff = Set(all.filter { $0.activityState == .ended }.map(\.content.state.meetingID))
+        let ended = all.filter { $0.activityState == .ended }
 
         guard settings.isEnabled,
               settings.liveActivityEnabled,
@@ -115,17 +119,32 @@ final class MeetingLiveActivityManager {
         let canCreate = allowStart || UIApplication.shared.applicationState == .active
         log.notice("refresh: fromSync=\(fromSync) canCreate=\(canCreate) meetings=\(meetings.count) next=\(meetings.first?.eventTitle ?? "-", privacy: .private) live=\(live.map { $0.content.state.meetingID.suffix(12) }.joined(separator: ","), privacy: .public) pending=\(pending.count)")
 
+        // A countdown belongs to the meetings starting at its start time. If they
+        // moved (or were cancelled) after it was handed to the system, take it
+        // down now rather than leave it counting to the old time.
+        let upcomingStarts = Set(meetings.map(\.eventStartDate))
+        for activity in ended where activity.content.state.startDate > now
+            && !upcomingStarts.contains(activity.content.state.startDate) {
+            log.notice("refresh: meeting moved, removing \(activity.content.state.meetingID.suffix(12), privacy: .public)")
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+        let handedOff = Set(ended.map(\.content.state.startDate))
+
         // 1. What should be on screen: the next meeting once its first alert has
         //    rung; otherwise a meeting that started less than 10 minutes ago.
+        //    Activities are matched to meetings by start time, so one counting to a
+        //    time no meeting has any more (the meeting moved) is ended below.
         var keepID: String?
+        var keepStart: Date?
         if let next = meetings.first, Self.showAt(next) <= now {
             let content = self.content(for: next, following: meetings.dropFirst().first)
             keepID = content.state.meetingID
-            if handedOff.contains(content.state.meetingID) {
+            keepStart = next.eventStartDate
+            if handedOff.contains(next.eventStartDate) {
                 // Already ended; the system removes it 10 minutes into the meeting.
-            } else if let activity = live.first(where: { $0.content.state.meetingID == keepID }) ?? live.first {
-                // Prefer the activity already showing this meeting (a booked one that
-                // started by itself), else repurpose whichever is up.
+            } else if let activity = live.first(where: { $0.content.state.startDate == keepStart }) {
+                // Already showing this meeting (often a booked one that started by
+                // itself). Picks up title, location or settings changes.
                 if activity.content.state != content.state { await activity.update(content) }
                 // Befoor may not run again before the meeting, so when it's about to
                 // start and Befoor is in the background, hand removal to the system.
@@ -143,12 +162,12 @@ final class MeetingLiveActivityManager {
             $0.content.state.startDate <= now && $0.content.state.startDate.addingTimeInterval(Self.linger) > now
         }) {
             keepID = started.content.state.meetingID
+            keepStart = started.content.state.startDate
             await handOff(started, content: started.content)
         }
 
-        // Anything else on screen is finished or superseded.
-        let repurpose = keepID != nil && !handedOff.contains(keepID ?? "")
-        let showing = live.first { $0.content.state.meetingID == keepID } ?? (repurpose ? live.first : nil)
+        // Anything else on screen is finished, superseded, or for a meeting that moved.
+        let showing = live.first { $0.content.state.startDate == keepStart }
         for activity in live where activity.id != showing?.id {
             log.notice("refresh: ending \(activity.content.state.meetingID.suffix(12), privacy: .public) (keep=\(keepID?.suffix(12) ?? "none", privacy: .public))")
             await activity.end(nil, dismissalPolicy: .immediate)
@@ -285,13 +304,19 @@ final class MeetingLiveActivityManager {
 
     // MARK: - Building the state
 
-    /// Upcoming meetings in start order, without the duplicates the store can hold.
+    /// Upcoming meetings in start order, one per start time: meetings that start
+    /// together are merged under a combined title, with the first one's details.
     private func upcomingMeetings(after now: Date) -> [TrackedAlarmModel] {
-        var seen = Set<String>()
-        return TrackedAlarmsStore.shared.alarms.values
+        let sorted = TrackedAlarmsStore.shared.alarms.values
             .filter { $0.eventStartDate > now }
+            .sorted { ($0.eventStartDate, $0.eventTitle) < ($1.eventStartDate, $1.eventTitle) }
+        return Dictionary(grouping: sorted, by: \.notificationIdentifier).values
+            .compactMap { group -> TrackedAlarmModel? in
+                guard var merged = group.first else { return nil }
+                merged.eventTitle = AlarmScheduler.combinedTitle(group.map(\.eventTitle))
+                return merged
+            }
             .sorted { $0.eventStartDate < $1.eventStartDate }
-            .filter { seen.insert("\($0.eventTitle)|\(Int($0.eventStartDate.timeIntervalSince1970))").inserted }
     }
 
     #if !targetEnvironment(macCatalyst)
@@ -338,7 +363,8 @@ final class MeetingLiveActivityManager {
         return text.count > 80 ? String(text.prefix(77)) + "…" : text
     }
 
-    private static func rgb(_ color: CGColor?) -> [Double]? {
+    /// sRGB components of a calendar color, as sent to the Live Activities.
+    nonisolated static func rgb(_ color: CGColor?) -> [Double]? {
         guard let color,
               let sRGB = CGColorSpace(name: CGColorSpace.sRGB),
               let components = color.converted(to: sRGB, intent: .defaultIntent, options: nil)?.components,

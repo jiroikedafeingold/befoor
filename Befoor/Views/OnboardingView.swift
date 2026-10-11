@@ -192,7 +192,7 @@ private struct HowItWorksPage: View {
                         icon: "alarm",
                         iconColor: .indigo,
                         title: "A real alarm, even on silent",
-                        detail: "Befoor's alarms are system alarms, like the Clock app's. Each meeting rings three times — 15, 7 and 1 minute before, which you can change — even when your iPhone is on silent or in a Focus, and even if Befoor isn't open."
+                        detail: "Befoor's alarms are system alarms, like the Clock app's. Each meeting rings twice — 15 minutes and 1 minute before, which you can change — even when your iPhone is on silent or in a Focus, and even if Befoor isn't open."
                     )
                     FeatureRow(
                         icon: "arrow.clockwise",
@@ -204,7 +204,7 @@ private struct HowItWorksPage: View {
                         icon: "moon.zzz.fill",
                         iconColor: .purple,
                         title: "Snooze or stop",
-                        detail: "Snooze rings again after your snooze time. Stop ends the alarm and skips that meeting's remaining alerts."
+                        detail: "Snooze rings again after your snooze time. Stop ends the alarm; the meeting's last alert still rings."
                     )
                     FeatureRow(
                         icon: "timer",

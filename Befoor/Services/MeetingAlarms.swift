@@ -146,6 +146,7 @@ final class MeetingAlarms {
     func requestAuthorization() async -> Bool { false }
     func reconcile(_ requests: [MeetingAlarmRequest]) async -> [MeetingAlarmRequest] { requests }
     func cancelAll() {}
+    func hasActiveAlarm(meetingKey: String) -> Bool { false }
     #else
 
     private let manager = AlarmManager.shared
@@ -156,6 +157,18 @@ final class MeetingAlarms {
     var isAuthorized: Bool { manager.authorizationState == .authorized }
     var isDenied: Bool { manager.authorizationState == .denied }
     var isUndetermined: Bool { manager.authorizationState == .notDetermined }
+
+    /// The alarms the last sync asked for, so Stop can turn a meeting's next
+    /// alert into a countdown without rebuilding them from the calendar.
+    private var lastRequests: [MeetingAlarmRequest] = []
+
+    /// Whether one of the meeting's alarms is ringing, snoozed or counting down.
+    /// AlarmKit shows its own Live Activity for it then, so Befoor's countdown
+    /// stays out of the way to keep one per meeting.
+    func hasActiveAlarm(meetingKey: String) -> Bool {
+        let ids = Set((1...2).map { Self.alarmID(meetingKey: meetingKey, slot: $0) })
+        return currentAlarms.contains { ids.contains($0.id) && $0.state != .scheduled }
+    }
 
     @discardableResult
     func requestAuthorization() async -> Bool {
@@ -199,6 +212,7 @@ final class MeetingAlarms {
     /// fall back to a notification.
     func reconcile(_ requests: [MeetingAlarmRequest]) async -> [MeetingAlarmRequest] {
         let now = Date()
+        lastRequests = requests
         var fingerprints = self.fingerprints
         var history = self.history
         var starts = self.starts
@@ -209,6 +223,14 @@ final class MeetingAlarms {
 
         let existing = Dictionary(currentAlarms.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         let wantedByID = Dictionary(requests.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+
+        // Copies of one alarm left by overlapping syncs (4.1 and earlier): cancel
+        // every copy, and the one that's still wanted is rescheduled below.
+        let scheduledCopies = Dictionary(grouping: currentAlarms.filter { $0.state == .scheduled }, by: \.id)
+        for (id, copies) in scheduledCopies where copies.count > 1 {
+            for _ in copies { try? manager.cancel(id: id) }
+            fingerprints[id.uuidString] = nil
+        }
 
         // Cancel scheduled alarms that are no longer wanted or have changed.
         for (id, alarm) in existing where alarm.state == .scheduled {
@@ -274,9 +296,12 @@ final class MeetingAlarms {
         fingerprints = [:]
     }
 
+    /// - Parameter countingDown: start counting down to `ringAt` right away, so
+    ///   the alarm's Live Activity shows the countdown until it rings.
     private func configuration(
         for request: MeetingAlarmRequest,
-        at ringAt: Date
+        at ringAt: Date,
+        countingDown: Bool = false
     ) -> AlarmManager.AlarmConfiguration<MeetingAlarmMetadata> {
         let title: String
         switch request.minutesBefore {
@@ -325,9 +350,12 @@ final class MeetingAlarms {
         }
 
         return AlarmManager.AlarmConfiguration(
-            // postAlert is the snooze length.
-            countdownDuration: Alarm.CountdownDuration(preAlert: nil, postAlert: Double(request.snoozeMinutes) * 60),
-            schedule: .fixed(ringAt),
+            // preAlert is the countdown before it rings; postAlert is the snooze length.
+            countdownDuration: Alarm.CountdownDuration(
+                preAlert: countingDown ? max(ringAt.timeIntervalSinceNow, 1) : nil,
+                postAlert: Double(request.snoozeMinutes) * 60
+            ),
+            schedule: countingDown ? nil : .fixed(ringAt),
             attributes: attributes,
             stopIntent: MeetingAlarmIntent(meetingKey: request.meetingKey, slot: request.slot, action: "stop"),
             secondaryIntent: MeetingAlarmIntent(meetingKey: request.meetingKey, slot: request.slot, action: "snooze"),
@@ -339,17 +367,47 @@ final class MeetingAlarms {
 
     /// Called when the person taps Stop or Snooze on a ringing alarm. Either way
     /// the meeting's last alert still rings.
-    func handleAction() async {
+    func handleAction(meetingKey: String, slot: Int, stopped: Bool) async {
         // Befoor is awake anyway, so use the moment to pick up calendar changes
         // made since it last ran. Awaited so the system doesn't suspend the app
         // mid-sync once the intent returns. Ringing and snoozed alarms are left
         // alone by the sync.
         await AlarmScheduler.shared.sync()
 
-        // Then refresh the countdown with intent rights, which (unlike the sync's
-        // own background refresh) may start an activity and book upcoming ones.
-        // At the last alert this also hands the countdown's removal to the system.
-        await MeetingLiveActivityManager.shared.refresh(allowStart: true)
+        // Snooze already counts down in the alarm's own Live Activity.
+        if stopped {
+            await countDownToNextAlert(meetingKey: meetingKey, after: slot)
+        }
+
+        // Then tidy the countdown. Befoor is in the background here, which iOS
+        // doesn't let start a Live Activity (not even from an alarm's intent), so
+        // once the last alert is stopped the meeting has no card unless Befoor is open.
+        await MeetingLiveActivityManager.shared.refresh()
+    }
+
+    /// After the person stops an alert, reschedules the meeting's next alert as a
+    /// countdown that starts now. AlarmKit then shows the countdown in the
+    /// alarm's Live Activity — the same one that was ringing — and rings the
+    /// next alert from it, so the meeting only ever has one Live Activity.
+    /// It keeps the same alarm ID, so syncs leave it alone while it counts down.
+    private func countDownToNextAlert(meetingKey: String, after slot: Int) async {
+        let now = Date()
+        guard let next = lastRequests
+            .filter({ $0.meetingKey == meetingKey && $0.slot > slot && $0.fireDate > now.addingTimeInterval(5) })
+            .min(by: { $0.slot < $1.slot }),
+              currentAlarms.first(where: { $0.id == next.id })?.state ?? .scheduled == .scheduled
+        else { return }
+
+        try? manager.cancel(id: next.id)
+        do {
+            _ = try await manager.schedule(id: next.id,
+                                           configuration: configuration(for: next, at: next.fireDate, countingDown: true))
+        } catch {
+            // Never lose the alert: put it back as a plain alarm.
+            print("[Befoor] Countdown to next alert failed: \(error)")
+            _ = try? await manager.schedule(id: next.id, configuration: configuration(for: next, at: next.fireDate))
+        }
+        fingerprints[next.id.uuidString] = next.fingerprint
     }
     #endif
 }
@@ -358,7 +416,7 @@ final class MeetingAlarms {
 
 // MARK: - Metadata
 
-/// Meeting details shown in the alarm's Live Activity while it's snoozed.
+/// Meeting details shown in the alarm's Live Activity.
 ///
 /// IMPORTANT: an identical copy lives in BeforeWidget/MeetingAlarmLiveActivity.swift.
 /// ActivityKit matches the two by type name and Codable shape — keep them in sync.
@@ -373,7 +431,6 @@ struct MeetingAlarmMetadata: AlarmMetadata {
 // MARK: - Intent
 
 /// Runs in Befoor when the person taps Stop or Snooze on a meeting alarm.
-/// The parameters are no longer used, but alarms already scheduled carry them.
 struct MeetingAlarmIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Meeting Alarm Action"
     static let isDiscoverable = false
@@ -396,7 +453,10 @@ struct MeetingAlarmIntent: LiveActivityIntent {
     }
 
     func perform() async throws -> some IntentResult {
-        await MeetingAlarms.shared.handleAction()
+        let meetingKey = meetingKey
+        let slot = slot
+        let stopped = action == "stop"
+        await MeetingAlarms.shared.handleAction(meetingKey: meetingKey, slot: slot, stopped: stopped)
         return .result()
     }
 }

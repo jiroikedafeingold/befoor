@@ -66,8 +66,25 @@ final class AlarmScheduler: ObservableObject {
 
     // MARK: - Public API
 
+    /// The sync in progress, if any. Syncs suspend while scheduling, so two
+    /// started together (app launch and becoming active do) would each schedule
+    /// every alarm, and AlarmKit keeps both copies: two rings and two alarm Live
+    /// Activities per alert. A sync that starts while one runs waits for it instead.
+    private var runningSync: Task<Void, Never>?
+
     /// Full sync: rebuilds the meeting alarms (or fallback notifications) from the calendar.
     func sync() async {
+        if let runningSync {
+            await runningSync.value
+            return
+        }
+        let task = Task { await performSync() }
+        runningSync = task
+        await task.value
+        runningSync = nil
+    }
+
+    private func performSync() async {
         guard settings.isEnabled else {
             await cancelAll()
             return

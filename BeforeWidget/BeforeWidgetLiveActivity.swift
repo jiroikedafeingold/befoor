@@ -95,16 +95,16 @@ struct NextMeetingLiveActivity: Widget {
 
 // MARK: - Views
 
-/// Befoor's icon, from a small copy in the widget's assets (a Live Activity may
-/// fail to start if an image is larger than where it's shown).
+/// Befoor's alarm-clock icon, a small cut-out copy in the widget's assets (a Live
+/// Activity may fail to start if an image is larger than where it's shown).
 private struct AppIconView: View {
     let size: CGFloat
 
     var body: some View {
         Image("BefoorIcon")
             .resizable()
+            .scaledToFit()
             .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: size * 0.225, style: .continuous))
     }
 }
 

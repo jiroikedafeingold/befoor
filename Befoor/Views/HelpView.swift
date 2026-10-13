@@ -44,7 +44,7 @@ struct HelpView: View {
                         icon: "timer",
                         iconColor: .red,
                         title: "Countdown to Your Meeting",
-                        detail: "When a meeting's first alert rings, a countdown to it pops up in the Dynamic Island and on the Lock Screen, with its location and calendar. It goes away 10 minutes after the meeting starts. Turn it off under Live Activity in Settings."
+                        detail: "When a meeting's first alert rings, a countdown to it pops up in the Dynamic Island and on the Lock Screen, with its location and calendar. It keeps counting down after you stop the alert, rings again at the last alert, and goes away when you stop that one. There's only ever one per meeting."
                     )
                     HelpRow(
                         icon: "bell.badge.fill",

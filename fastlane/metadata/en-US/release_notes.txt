@@ -1,9 +1,5 @@
-- People and 1:1 tracking have been removed so Befoor can focus on meeting alarms. 1:1 meetings now get alarms like any other meeting.
-- Simpler alarms: each meeting rings at your first alert (15 minutes before by default) and again at your last alert (1 minute before). Both always ring, even if you stop the first one.
-- Meetings that start at the same time now share one alarm and one countdown.
-- The meeting countdown appears with the first alarm, now uses your calendar's color, and goes away 10 minutes after the meeting starts.
-- If a meeting moves to a new time, its countdown and any snoozed alarm for the old time go away.
-- New app icon.
-- Befoor no longer runs on Mac.
+- Fixed: an alert could ring twice and show two cards for the same meeting.
+- Only one card per meeting: the alarm itself now shows the countdown, with the meeting, its location and your calendar's color. After you stop the first alert it keeps counting down and rings again at the last alert, then goes away when you stop that one.
+- New app icon, also shown in the Dynamic Island and on the Lock Screen.
 
 Questions or feedback? apps@feingold5.com

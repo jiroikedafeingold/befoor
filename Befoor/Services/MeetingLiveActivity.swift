@@ -35,17 +35,25 @@ struct NextMeetingAttributes: ActivityAttributes {
 
 // MARK: - Manager
 
-/// Shows a countdown to the next meeting in a Live Activity, from the moment its
-/// first alert rings until 10 minutes after the meeting starts. Meetings that
+/// Shows a countdown to the next meeting in a Live Activity. Meetings that
 /// start at the same time share one activity.
 ///
+/// One Live Activity per meeting: AlarmKit gives every ringing, snoozed or
+/// counting-down alarm its own Live Activity, which Befoor can't turn off. So
+/// while one of the meeting's alarms is active, that activity is the countdown
+/// (Stop on the first alert turns the last alert into a countdown, see
+/// MeetingAlarms), and this one stays away. Once the meeting's alarms are done
+/// (Stop on the last alert) Befoor is in the background, where iOS won't let it
+/// start one, so the meeting has no card after that unless Befoor is open; then
+/// this one shows until 10 minutes in.
+///
 /// Befoor doesn't run in the background, so the activity has to start without it:
-/// - Whenever Befoor runs (app open, alarm Stop/Snooze, background refresh where
-///   allowed), it books an activity for each of the next few meetings that iOS
-///   starts by itself at the first alert. iOS requires an alert when a booked
-///   activity starts; it uses the alarm sound and fires together with the alarm.
-/// - Opening the app, or stopping an alarm, inside a meeting's window starts one
-///   directly if it isn't already showing.
+/// - When alarms aren't in use (not allowed), whenever Befoor runs it books an
+///   activity for each of the next few meetings that iOS starts by itself at the
+///   first alert. iOS requires an alert when a booked activity starts; it uses
+///   the alert sound and fires together with the notification.
+/// - Opening the app inside a meeting's window starts one directly if it isn't
+///   already showing.
 ///
 /// Ending: an activity can't remove itself on a timer, so the first time Befoor
 /// runs after the meeting starts — or from the last alert on while in the
@@ -92,9 +100,7 @@ final class MeetingLiveActivityManager {
     ///   - fromSync: AlarmScheduler passes true. Other callers are ignored while a
     ///     sync is rebuilding the alarm store, because a half-built store would
     ///     look like "no meetings" and end the activity.
-    ///   - allowStart: true when called from a Live Activity intent, which may
-    ///     start or book an activity even though the app isn't in the foreground.
-    func refresh(fromSync: Bool = false, allowStart: Bool = false) async {
+    func refresh(fromSync: Bool = false) async {
         #if !targetEnvironment(macCatalyst)
         if !fromSync && AlarmScheduler.shared.syncInProgress { return }
 
@@ -116,7 +122,8 @@ final class MeetingLiveActivityManager {
 
         let now = Date()
         let meetings = upcomingMeetings(after: now)
-        let canCreate = allowStart || UIApplication.shared.applicationState == .active
+        // iOS only lets Befoor start a Live Activity while it's in the foreground.
+        let canCreate = UIApplication.shared.applicationState == .active
         log.notice("refresh: fromSync=\(fromSync) canCreate=\(canCreate) meetings=\(meetings.count) next=\(meetings.first?.eventTitle ?? "-", privacy: .private) live=\(live.map { $0.content.state.meetingID.suffix(12) }.joined(separator: ","), privacy: .public) pending=\(pending.count)")
 
         // A countdown belongs to the meetings starting at its start time. If they
@@ -131,12 +138,19 @@ final class MeetingLiveActivityManager {
         let handedOff = Set(ended.map(\.content.state.startDate))
 
         // 1. What should be on screen: the next meeting once its first alert has
-        //    rung; otherwise a meeting that started less than 10 minutes ago.
+        //    rung, unless its alarm's own Live Activity is showing it; otherwise a
+        //    meeting that started less than 10 minutes ago.
         //    Activities are matched to meetings by start time, so one counting to a
         //    time no meeting has any more (the meeting moved) is ended below.
+        let alarmsOn = settings.soundEnabled && MeetingAlarms.shared.isAuthorized
         var keepID: String?
         var keepStart: Date?
-        if let next = meetings.first, Self.showAt(next) <= now {
+        if let next = meetings.first, Self.showAt(next) <= now,
+           !(alarmsOn && MeetingAlarms.shared.hasActiveAlarm(meetingKey: next.notificationIdentifier)) {
+            // Befoor may not run again before the meeting, so when it's about to
+            // start and Befoor is in the background, hand removal to the system.
+            let handOffNow = next.eventStartDate.timeIntervalSince(now) <= Self.handOffLead
+                && UIApplication.shared.applicationState != .active
             let content = self.content(for: next, following: meetings.dropFirst().first)
             keepID = content.state.meetingID
             keepStart = next.eventStartDate
@@ -146,17 +160,12 @@ final class MeetingLiveActivityManager {
                 // Already showing this meeting (often a booked one that started by
                 // itself). Picks up title, location or settings changes.
                 if activity.content.state != content.state { await activity.update(content) }
-                // Befoor may not run again before the meeting, so when it's about to
-                // start and Befoor is in the background, hand removal to the system.
-                if next.eventStartDate.timeIntervalSince(now) <= Self.handOffLead,
-                   UIApplication.shared.applicationState != .active {
-                    await handOff(activity, content: content)
-                }
+                if handOffNow { await handOff(activity, content: content) }
             } else if pending.contains(where: { $0.content.state.meetingID == keepID }) {
                 // Its booked activity is starting right now; the app can still see
                 // it as pending for a moment. Leave it be.
-            } else if canCreate {
-                request(content)
+            } else if canCreate, let activity = request(content), handOffNow {
+                await handOff(activity, content: content)
             }
         } else if let started = live.first(where: {
             $0.content.state.startDate <= now && $0.content.state.startDate.addingTimeInterval(Self.linger) > now
@@ -202,9 +211,10 @@ final class MeetingLiveActivityManager {
         canCreate: Bool
     ) async {
         // The booked start needs an alert sound, so only book when alerts make a
-        // sound anyway; it then rings in step with the meeting's first alarm.
+        // sound anyway. Not with alarms: the alarm's own Live Activity is the
+        // countdown then, and a booked one would be a second for the same meeting.
         var targets: [(content: ActivityContent<NextMeetingAttributes.ContentState>, showAt: Date)] = []
-        if AppSettings.shared.soundEnabled {
+        if AppSettings.shared.soundEnabled && !MeetingAlarms.shared.isAuthorized {
             for (index, meeting) in meetings.enumerated() {
                 let showAt = Self.showAt(meeting)
                 guard showAt > now else { continue }
@@ -265,12 +275,13 @@ final class MeetingLiveActivityManager {
         await activity.end(content, dismissalPolicy: .after(removeAt))
     }
 
-    private func request(_ content: ActivityContent<NextMeetingAttributes.ContentState>) {
+    private func request(_ content: ActivityContent<NextMeetingAttributes.ContentState>) -> Activity<NextMeetingAttributes>? {
         log.notice("refresh: starting \(content.state.meetingID.suffix(12), privacy: .public)")
         do {
-            _ = try Activity.request(attributes: NextMeetingAttributes(), content: content)
+            return try Activity.request(attributes: NextMeetingAttributes(), content: content)
         } catch {
             print("[Befoor] Live Activity request failed: \(error)")
+            return nil
         }
     }
 

@@ -25,8 +25,11 @@ private extension AlarmAttributes<MeetingAlarmMetadata> {
 
 // MARK: - Live Activity
 
-/// The Live Activity AlarmKit shows for a meeting alarm outside its ringing
-/// screen — mainly while it's snoozed, counting down to the next ring.
+/// The Live Activity AlarmKit shows for a meeting alarm while it rings, is
+/// snoozed, or counts down to the meeting's next alert. It's the meeting's
+/// countdown during that time (Befoor's own one stays away so there's only one
+/// per meeting), so it looks like it: the meeting, time left until it starts in
+/// the calendar's color, and when the alarm rings next.
 struct MeetingAlarmLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: AlarmAttributes<MeetingAlarmMetadata>.self) { context in
@@ -34,29 +37,41 @@ struct MeetingAlarmLiveActivity: Widget {
                 .activitySystemActionForegroundColor(context.attributes.calendarColor)
         } dynamicIsland: { context in
             let color = context.attributes.calendarColor
+            let metadata = context.attributes.metadata
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Label("Snoozed", systemImage: "zzz")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(color)
-                        .padding(.leading, 4)
+                    HStack(spacing: 6) {
+                        IconView(size: 24)
+                        if let metadata {
+                            Text(metadata.startDate, style: .time)
+                                .monospacedDigit()
+                        }
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    RingCountdown(state: context.state)
+                    MeetingCountdown(metadata: metadata)
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(color)
                         .padding(.trailing, 4)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    MeetingSummary(metadata: context.attributes.metadata)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 4)
+                    VStack(alignment: .leading, spacing: 6) {
+                        if let metadata {
+                            Text(metadata.meetingTitle)
+                                .font(.headline)
+                                .lineLimit(1)
+                        }
+                        AlarmDetails(metadata: metadata, state: context.state)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 4)
                 }
             } compactLeading: {
-                Image(systemName: "alarm")
-                    .foregroundStyle(color)
+                IconView(size: 20)
             } compactTrailing: {
-                RingCountdown(state: context.state)
+                MeetingCountdown(metadata: metadata)
                     .frame(maxWidth: 64)
                     .foregroundStyle(color)
             } minimal: {
@@ -70,44 +85,59 @@ struct MeetingAlarmLiveActivity: Widget {
 
 // MARK: - Views
 
-/// Time until the snoozed alarm rings again.
-private struct RingCountdown: View {
-    let state: AlarmPresentationState
+/// Befoor's alarm-clock icon, from the small cut-out copy in the widget's assets.
+private struct IconView: View {
+    let size: CGFloat
 
     var body: some View {
-        switch state.mode {
-        case .countdown(let countdown) where countdown.fireDate > .now:
-            Text(timerInterval: Date.now...countdown.fireDate, countsDown: true)
+        Image("BefoorIcon")
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+    }
+}
+
+/// Time left until the meeting starts; the system animates it.
+private struct MeetingCountdown: View {
+    let metadata: MeetingAlarmMetadata?
+
+    var body: some View {
+        if let start = metadata?.startDate, start > .now {
+            Text(timerInterval: Date.now...start, countsDown: true)
                 .monospacedDigit()
                 .multilineTextAlignment(.trailing)
-        case .paused:
-            Text("Paused")
-        default:
-            Image(systemName: "alarm.waves.left.and.right")
+        } else {
+            Text("Now")
         }
     }
 }
 
-private struct MeetingSummary: View {
+/// Where the meeting is and what the alarm does next.
+private struct AlarmDetails: View {
     let metadata: MeetingAlarmMetadata?
+    let state: AlarmPresentationState
 
     var body: some View {
-        if let metadata {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(metadata.meetingTitle)
-                    .font(.headline)
-                    .lineLimit(1)
-                HStack(spacing: 10) {
-                    Text("Starts \(metadata.startDate, style: .time)")
-                    if let location = metadata.location {
-                        Label(location, systemImage: "mappin.and.ellipse")
-                    }
+        HStack(spacing: 10) {
+            switch state.mode {
+            case .countdown(let countdown):
+                Label {
+                    Text("Rings at \(countdown.fireDate, style: .time)")
+                } icon: {
+                    Image(systemName: "alarm")
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+            case .paused:
+                Label("Paused", systemImage: "pause")
+            default:
+                Label("Ringing", systemImage: "alarm.waves.left.and.right")
+            }
+            if let location = metadata?.location {
+                Label(location, systemImage: "mappin.and.ellipse")
             }
         }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
     }
 }
 
@@ -117,17 +147,25 @@ private struct AlarmLockScreenView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                Label("Snoozed", systemImage: "zzz")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(attributes.calendarColor)
+            HStack(alignment: .center, spacing: 10) {
+                IconView(size: 36)
+                VStack(alignment: .leading, spacing: 2) {
+                    if let metadata = attributes.metadata {
+                        Text("Next meeting · \(metadata.startDate, style: .time)")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(attributes.calendarColor)
+                        Text(metadata.meetingTitle)
+                            .font(.headline)
+                            .lineLimit(1)
+                    }
+                }
                 Spacer()
-                RingCountdown(state: state)
+                MeetingCountdown(metadata: attributes.metadata)
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(attributes.calendarColor)
                     .frame(maxWidth: 110, alignment: .trailing)
             }
-            MeetingSummary(metadata: attributes.metadata)
+            AlarmDetails(metadata: attributes.metadata, state: state)
         }
         .padding(16)
     }

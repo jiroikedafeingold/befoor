@@ -63,7 +63,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Live Activity")
                 } footer: {
-                    Text("Pops up by itself when a meeting's first alert rings: a countdown in the Dynamic Island and on the Lock Screen, with its location and calendar. It goes away 10 minutes after the meeting starts. Press and hold the Dynamic Island for details. iPhone only.")
+                    Text("Pops up by itself when a meeting's first alert rings: a countdown in the Dynamic Island and on the Lock Screen, with its location and calendar. It keeps counting down after you stop the alert and goes away when you stop the last one. Press and hold the Dynamic Island for details. iPhone only.")
                 }
 
                 // MARK: Calendars

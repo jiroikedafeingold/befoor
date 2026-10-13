@@ -41,7 +41,7 @@ struct MeetingAlarmLiveActivity: Widget {
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     HStack(spacing: 6) {
-                        IconView(size: 24)
+                        IconView(size: 24, asset: "BefoorIslandIcon")
                         if let metadata {
                             Text(metadata.startDate, style: .time)
                                 .monospacedDigit()
@@ -69,7 +69,7 @@ struct MeetingAlarmLiveActivity: Widget {
                     .padding(.horizontal, 4)
                 }
             } compactLeading: {
-                IconView(size: 20)
+                IconView(size: 20, asset: "BefoorIslandIcon")
             } compactTrailing: {
                 MeetingCountdown(metadata: metadata)
                     .frame(maxWidth: 64)
@@ -88,9 +88,11 @@ struct MeetingAlarmLiveActivity: Widget {
 /// Befoor's alarm-clock icon, from the small cut-out copy in the widget's assets.
 private struct IconView: View {
     let size: CGFloat
+    /// The Dynamic Island uses a pixel-art clock; the Lock Screen the smooth one.
+    var asset = "BefoorIcon"
 
     var body: some View {
-        Image("BefoorIcon")
+        Image(asset)
             .resizable()
             .scaledToFit()
             .frame(width: size, height: size)

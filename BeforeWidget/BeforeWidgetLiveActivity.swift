@@ -49,7 +49,7 @@ struct NextMeetingLiveActivity: Widget {
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     HStack(spacing: 6) {
-                        AppIconView(size: 24)
+                        AppIconView(size: 24, asset: "BefoorIslandIcon")
                         Text(state.startDate, style: .time)
                             .monospacedDigit()
                     }
@@ -73,7 +73,7 @@ struct NextMeetingLiveActivity: Widget {
                     .padding(.horizontal, 4)
                 }
             } compactLeading: {
-                AppIconView(size: 20)
+                AppIconView(size: 20, asset: "BefoorIslandIcon")
             } compactTrailing: {
                 CountdownText(startDate: state.startDate, isStale: context.isStale)
                     .frame(maxWidth: 64)
@@ -99,9 +99,11 @@ struct NextMeetingLiveActivity: Widget {
 /// Activity may fail to start if an image is larger than where it's shown).
 private struct AppIconView: View {
     let size: CGFloat
+    /// The Dynamic Island uses a pixel-art clock; the Lock Screen the smooth one.
+    var asset = "BefoorIcon"
 
     var body: some View {
-        Image("BefoorIcon")
+        Image(asset)
             .resizable()
             .scaledToFit()
             .frame(width: size, height: size)

@@ -31,7 +31,7 @@ enum BefoorSound: String, CaseIterable, Codable, Identifiable {
         case .accessGranted: return "Access Granted"
         case .positiveID:    return "Positive ID"
         case .openChannel:   return "Open Channel"
-        case .systemDefault: return "System Default"
+        case .systemDefault: return String(localized: "System Default")
         }
     }
 
@@ -73,7 +73,7 @@ final class AppSettings: ObservableObject {
         Keys.leadTime, Keys.ignoredKeywords, Keys.skipWeekends,
         Keys.isEnabled, Keys.selectedSound, Keys.lookAheadDays,
         Keys.checkInterval, Keys.snoozeDuration, Keys.soundEnabled,
-        Keys.lastAlert,
+        Keys.lastAlert, Keys.skippedMeetings,
     ]
 
     // Each meeting rings twice: at the first alert, when its countdown appears,
@@ -124,6 +124,33 @@ final class AppSettings: ObservableObject {
     // Event title substrings to ignore (case-insensitive)
     @Published var ignoredKeywords: [String] {
         didSet { save(ignoredKeywords, forKey: Keys.ignoredKeywords) }
+    }
+
+    // Meetings the person skipped from the list, as "event identifier|start" keys.
+    // Synced, so a meeting skipped on one device doesn't ring on the others.
+    @Published private(set) var skippedMeetings: Set<String> {
+        didSet { save(Array(skippedMeetings), forKey: Keys.skippedMeetings) }
+    }
+
+    static func skipKey(eventIdentifier: String, start: Date) -> String {
+        "\(eventIdentifier)|\(Int(start.timeIntervalSince1970))"
+    }
+
+    func isSkipped(eventIdentifier: String, start: Date) -> Bool {
+        skippedMeetings.contains(Self.skipKey(eventIdentifier: eventIdentifier, start: start))
+    }
+
+    /// Skips (or un-skips) one occurrence of a meeting, and forgets skips for
+    /// meetings that are long over.
+    func setSkipped(_ skipped: Bool, eventIdentifier: String, start: Date) {
+        let cutoff = Date().addingTimeInterval(-86_400).timeIntervalSince1970
+        var keys = skippedMeetings.filter { key in
+            guard let seconds = key.split(separator: "|").last.flatMap({ Double($0) }) else { return false }
+            return seconds > cutoff
+        }
+        let key = Self.skipKey(eventIdentifier: eventIdentifier, start: start)
+        if skipped { keys.insert(key) } else { keys.remove(key) }
+        skippedMeetings = keys
     }
 
     // Do not create alarms for events on Saturday or Sunday
@@ -184,7 +211,8 @@ final class AppSettings: ObservableObject {
         leadTimeMinutes           = Self.clamp(defaults.object(forKey: Keys.leadTime) as? Int ?? 15, Self.firstAlertRange)
         lastAlertMinutes          = Self.clamp(defaults.object(forKey: Keys.lastAlert) as? Int ?? 1, Self.laterAlertRange)
         excludedCalendarIdentifiers = Set(defaults.stringArray(forKey: Keys.excludedCalendars) ?? [])
-        ignoredKeywords           = defaults.stringArray(forKey: Keys.ignoredKeywords) ?? ["lunch", "Lunch"]
+        ignoredKeywords           = Self.deduped(defaults.stringArray(forKey: Keys.ignoredKeywords) ?? ["lunch"])
+        skippedMeetings           = Set(defaults.stringArray(forKey: Keys.skippedMeetings) ?? [])
         skipWeekends              = defaults.object(forKey: Keys.skipWeekends) as? Bool ?? false
         isEnabled                 = defaults.object(forKey: Keys.isEnabled) as? Bool ?? true
         selectedSound             = BefoorSound(rawValue: defaults.string(forKey: Keys.selectedSound) ?? "") ?? .pebble
@@ -203,6 +231,13 @@ final class AppSettings: ObservableObject {
             object: cloud
         )
         cloud.synchronize()
+    }
+
+    /// Keyword matching ignores case, so "lunch" and "Lunch" are the same keyword.
+    /// Keeps the first spelling of each (older versions defaulted to both).
+    private static func deduped(_ keywords: [String]) -> [String] {
+        var seen = Set<String>()
+        return keywords.filter { seen.insert($0.lowercased()).inserted }
     }
 
     private static func clamp(_ value: Int, _ range: ClosedRange<Int>) -> Int {
@@ -245,7 +280,9 @@ final class AppSettings: ObservableObject {
                 case Keys.lastAlert:
                     if let v = value as? Int { lastAlertMinutes = Self.clamp(v, Self.laterAlertRange) }
                 case Keys.ignoredKeywords:
-                    if let v = value as? [String] { ignoredKeywords = v }
+                    if let v = value as? [String] { ignoredKeywords = Self.deduped(v) }
+                case Keys.skippedMeetings:
+                    if let v = value as? [String] { skippedMeetings = Set(v) }
                 case Keys.skipWeekends:
                     if let v = value as? Bool { skipWeekends = v }
                 case Keys.isEnabled:
@@ -273,6 +310,7 @@ final class AppSettings: ObservableObject {
         static let excludedCalendars  = "bf_excludedCalendarIdentifiers"
         static let ignoredKeywords    = "bf_ignoredKeywords"
         static let skipWeekends       = "bf_skipWeekends"
+        static let skippedMeetings    = "bf_skippedMeetings"
         static let isEnabled          = "bf_isEnabled"
         static let selectedSound      = "bf_selectedSound"
         static let lookAheadDays      = "bf_lookAheadDays"

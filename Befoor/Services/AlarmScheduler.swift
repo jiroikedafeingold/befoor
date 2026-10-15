@@ -2,6 +2,7 @@ import Foundation
 import EventKit
 import BackgroundTasks
 import WidgetKit
+import AppIntents
 
 // MARK: - AlarmScheduler
 
@@ -22,6 +23,9 @@ final class AlarmScheduler: ObservableObject {
     @Published private(set) var lastSyncDate: Date?
     @Published private(set) var syncInProgress = false
     @Published private(set) var scheduledCount = 0
+    /// Meetings whose alerts AlarmKit refused in the last sync (usually its alarm
+    /// limit), so they only get notifications, which don't ring on silent.
+    @Published private(set) var alarmFallbackCount = 0
 
     private static let throttleInterval: TimeInterval = 30
 
@@ -73,18 +77,21 @@ final class AlarmScheduler: ObservableObject {
     private var runningSync: Task<Void, Never>?
 
     /// Full sync: rebuilds the meeting alarms (or fallback notifications) from the calendar.
-    func sync() async {
+    /// - Parameter force: skip the 30-second throttle — for changes the person
+    ///   just made (Sync Now, skipping a meeting) that must take effect right away.
+    func sync(force: Bool = false) async {
         if let runningSync {
             await runningSync.value
-            return
+            // That sync may have read the calendar before this change was made.
+            guard force, self.runningSync == nil else { return }
         }
-        let task = Task { await performSync() }
+        let task = Task { await performSync(force: force) }
         runningSync = task
         await task.value
         runningSync = nil
     }
 
-    private func performSync() async {
+    private func performSync(force: Bool) async {
         guard settings.isEnabled else {
             await cancelAll()
             return
@@ -94,7 +101,7 @@ final class AlarmScheduler: ObservableObject {
 
         // Every device reads its own calendar and rings its own alarms.
         let useAlarms = settings.soundEnabled && MeetingAlarms.shared.isAuthorized
-        if let last = lastSyncDate,
+        if !force, let last = lastSyncDate,
            Date().timeIntervalSince(last) < Self.throttleInterval,
            lastSyncUsedAlarms == useAlarms {
             return
@@ -143,21 +150,27 @@ final class AlarmScheduler: ObservableObject {
             await Task.yield()
 
             // Same order as the countdown, which sorts by title too.
-            let events = events.sorted { ($0.title ?? "Appointment") < ($1.title ?? "Appointment") }
+            let all = events.sorted { ($0.title ?? Self.untitled) < ($1.title ?? Self.untitled) }
             let meetingKey = Self.meetingKey(start: start)
-            let title = Self.combinedTitle(events.map { $0.title ?? "Appointment" })
-            let calName = events.first?.calendar?.title ?? "Calendar"
-            let location = events.compactMap(\.location).first { !$0.isEmpty }
 
-            for event in events {
+            // Skipped meetings stay in the list (so they can be un-skipped) but get no alerts.
+            for event in all {
                 store.upsert(TrackedAlarmModel(
                     eventIdentifier:        event.eventIdentifier,
                     notificationIdentifier: meetingKey,
                     eventStartDate:         event.startDate,
-                    eventTitle:             event.title ?? "Appointment",
-                    calendarIdentifier:     event.calendar?.calendarIdentifier ?? ""
+                    eventTitle:             event.title ?? Self.untitled,
+                    calendarIdentifier:     event.calendar?.calendarIdentifier ?? "",
+                    joinURL:                calendar.joinURL(for: event)
                 ))
             }
+            let events = all.filter { !settings.isSkipped(eventIdentifier: $0.eventIdentifier, start: $0.startDate) }
+            guard !events.isEmpty else { continue }
+
+            let title = Self.combinedTitle(events.map { $0.title ?? Self.untitled })
+            let calName = events.first?.calendar?.title ?? String(localized: "Calendar")
+            let location = events.compactMap(\.location).first { !$0.isEmpty }
+            let joinURL = events.lazy.compactMap { self.calendar.joinURL(for: $0) }.first
 
             let alerts = Self.alertsToSchedule(minutes: alertMinutes, start: start)
             guard !alerts.isEmpty else { continue }
@@ -187,6 +200,7 @@ final class AlarmScheduler: ObservableObject {
                     calendarName:  calName,
                     calendarRGB:   MeetingLiveActivityManager.rgb(events.first?.calendar?.cgColor),
                     location:      location,
+                    joinURL:       joinURL,
                     sound:         settings.selectedSound,
                     snoozeMinutes: settings.snoozeDurationMinutes
                 ))
@@ -197,6 +211,7 @@ final class AlarmScheduler: ObservableObject {
             // Anything AlarmKit refused (for example over its alarm limit) still
             // gets a notification so the meeting isn't missed.
             let failed = await MeetingAlarms.shared.reconcile(alarmRequests)
+            alarmFallbackCount = Set(failed.map(\.meetingKey)).count
             for (meetingKey, requests) in Dictionary(grouping: failed, by: \.meetingKey) {
                 guard let first = requests.first else { continue }
                 await notifications.scheduleAlerts(
@@ -210,6 +225,7 @@ final class AlarmScheduler: ObservableObject {
             }
         } else {
             MeetingAlarms.shared.cancelAll()
+            alarmFallbackCount = 0
         }
 
         store.prunePast()
@@ -222,6 +238,9 @@ final class AlarmScheduler: ObservableObject {
         }
         await MeetingLiveActivityManager.shared.refresh(fromSync: true)
     }
+
+    /// Title for an event that has none.
+    nonisolated static var untitled: String { String(localized: "Appointment") }
 
     /// Meetings that start at the same time share one alarm, notification and
     /// countdown, all keyed by the start time.
@@ -328,5 +347,32 @@ final class AlarmScheduler: ObservableObject {
 
             return true
         }
+    }
+}
+
+// MARK: - Shortcuts
+
+/// Runs a calendar sync from Shortcuts. iOS doesn't wake Befoor when the
+/// calendar changes, so a meeting added while it's closed only gets alarms at
+/// the next background check. An automation (say, "When Calendar is closed")
+/// running this catches it right away.
+struct SyncCalendarIntent: AppIntent {
+    static let title: LocalizedStringResource = "Sync Befoor"
+    static let description = IntentDescription("Checks your calendars and updates Befoor's meeting alarms.")
+
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        await AlarmScheduler.shared.sync(force: true)
+        return .result(dialog: "Befoor's alarms are up to date.")
+    }
+}
+
+struct BefoorShortcuts: AppShortcutsProvider {
+    static var appShortcuts: [AppShortcut] {
+        AppShortcut(
+            intent: SyncCalendarIntent(),
+            phrases: ["Sync \(.applicationName)", "Update \(.applicationName) alarms"],
+            shortTitle: "Sync Calendar",
+            systemImageName: "arrow.clockwise"
+        )
     }
 }

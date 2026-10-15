@@ -28,6 +28,8 @@ struct MeetingAlarmRequest: Sendable {
     /// sRGB components of the calendar color.
     let calendarRGB: [Double]?
     let location: String?
+    /// Video-call link, for the Join button on the alarm's Live Activity.
+    let joinURL: URL?
     let sound: BefoorSound
     let snoozeMinutes: Int
 
@@ -35,7 +37,7 @@ struct MeetingAlarmRequest: Sendable {
 
     /// Everything baked into a scheduled alarm. If it changes, the alarm is rescheduled.
     var fingerprint: String {
-        "\(slot)|\(minutesBefore)|\(Int(fireDate.timeIntervalSince1970))|\(eventTitle)|\(location ?? "")|\(calendarRGB ?? [])|\(sound.rawValue)|\(AlarmTones.isReady(sound))|\(snoozeMinutes)"
+        "\(slot)|\(minutesBefore)|\(Int(fireDate.timeIntervalSince1970))|\(eventTitle)|\(location ?? "")|\(joinURL?.absoluteString ?? "")|\(calendarRGB ?? [])|\(sound.rawValue)|\(AlarmTones.isReady(sound))|\(snoozeMinutes)"
     }
 }
 
@@ -305,9 +307,9 @@ final class MeetingAlarms {
     ) -> AlarmManager.AlarmConfiguration<MeetingAlarmMetadata> {
         let title: String
         switch request.minutesBefore {
-        case 0:  title = "\(request.eventTitle) is starting"
-        case 1:  title = "\(request.eventTitle) in 1 minute"
-        default: title = "\(request.eventTitle) in \(request.minutesBefore) minutes"
+        case 0:  title = String(localized: "\(request.eventTitle) is starting")
+        case 1:  title = String(localized: "\(request.eventTitle) in 1 minute")
+        default: title = String(localized: "\(request.eventTitle) in \(request.minutesBefore) minutes")
         }
 
         let snooze = AlarmButton(text: "Snooze", textColor: .white, systemImageName: "zzz")
@@ -336,7 +338,8 @@ final class MeetingAlarms {
                 meetingTitle: request.eventTitle,
                 startDate: request.eventStart,
                 location: request.location,
-                calendarRGB: request.calendarRGB
+                calendarRGB: request.calendarRGB,
+                joinURL: request.joinURL
             ),
             tintColor: request.calendarRGB.map { Color(.sRGB, red: $0[0], green: $0[1], blue: $0[2]) } ?? .indigo
         )
@@ -426,6 +429,8 @@ struct MeetingAlarmMetadata: AlarmMetadata {
     var location: String?
     /// sRGB components of the calendar color.
     var calendarRGB: [Double]?
+    /// Video-call link for the Join button.
+    var joinURL: URL?
 }
 
 // MARK: - Intent

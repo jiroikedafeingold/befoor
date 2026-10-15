@@ -29,6 +29,8 @@ struct NextMeetingAttributes: ActivityAttributes {
         var attendeeCount: Int
         var nextTitle: String?
         var nextStartDate: Date?
+        /// Video-call link for the Join button.
+        var joinURL: URL?
     }
 }
 #endif
@@ -245,7 +247,7 @@ final class MeetingLiveActivityManager {
 
     private func book(_ content: ActivityContent<NextMeetingAttributes.ContentState>, at date: Date) {
         let state = content.state
-        var body = "Starts at \(state.startDate.formatted(date: .omitted, time: .shortened))"
+        var body = String(localized: "Starts at \(state.startDate.formatted(date: .omitted, time: .shortened))")
         if let location = state.location { body += " · \(location)" }
         let selected = AppSettings.shared.selectedSound
         let sound: AlertConfiguration.AlertSound = selected == .systemDefault
@@ -318,13 +320,16 @@ final class MeetingLiveActivityManager {
     /// Upcoming meetings in start order, one per start time: meetings that start
     /// together are merged under a combined title, with the first one's details.
     private func upcomingMeetings(after now: Date) -> [TrackedAlarmModel] {
+        let settings = AppSettings.shared
         let sorted = TrackedAlarmsStore.shared.alarms.values
             .filter { $0.eventStartDate > now }
+            .filter { !settings.isSkipped(eventIdentifier: $0.eventIdentifier, start: $0.eventStartDate) }
             .sorted { ($0.eventStartDate, $0.eventTitle) < ($1.eventStartDate, $1.eventTitle) }
         return Dictionary(grouping: sorted, by: \.notificationIdentifier).values
             .compactMap { group -> TrackedAlarmModel? in
                 guard var merged = group.first else { return nil }
                 merged.eventTitle = AlarmScheduler.combinedTitle(group.map(\.eventTitle))
+                merged.joinURL = group.lazy.compactMap(\.joinURL).first
                 return merged
             }
             .sorted { $0.eventStartDate < $1.eventStartDate }
@@ -359,7 +364,8 @@ final class MeetingLiveActivityManager {
             location: Self.trimmed(event?.location),
             attendeeCount: event?.attendees?.count ?? 0,
             nextTitle: sameDayFollowing?.eventTitle,
-            nextStartDate: sameDayFollowing?.eventStartDate
+            nextStartDate: sameDayFollowing?.eventStartDate,
+            joinURL: meeting.joinURL
         )
         // Goes stale 10 minutes after the start, when it's due to be removed, so it
         // reads as finished even if Befoor isn't running to remove it right then.

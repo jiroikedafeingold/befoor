@@ -83,9 +83,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             let id = alert.slot <= 1 ? identifier : identifier + "_r\(alert.slot - 1)"
             let subtitle: String
             switch alert.minutesBefore {
-            case 0:  subtitle = "Starting now"
-            case 1:  subtitle = "Starting in 1 minute"
-            default: subtitle = "Starting in \(alert.minutesBefore) minutes"
+            case 0:  subtitle = String(localized: "Starting now")
+            case 1:  subtitle = String(localized: "Starting in 1 minute")
+            default: subtitle = String(localized: "Starting in \(alert.minutesBefore) minutes")
             }
             await schedule(
                 id:             id,
@@ -256,7 +256,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         let snoozeID = base + "_snooze"
 
         let mutable = content.mutableCopy() as! UNMutableNotificationContent
-        mutable.subtitle = "Snoozed reminder"
+        mutable.subtitle = String(localized: "Snoozed reminder")
 
         let trigger = UNTimeIntervalNotificationTrigger(
             timeInterval: snoozeSeconds,

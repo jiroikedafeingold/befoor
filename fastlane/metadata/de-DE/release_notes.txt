@@ -1,0 +1,9 @@
+- Einen einzelnen Termin überspringen: Wische nach links (oder halte ihn gedrückt) und tippe auf „Überspringen“. Er klingelt dann auf keinem deiner Geräte.
+- Videoanrufen beitreten: Termine mit einem Zoom-, Google-Meet-, Teams- oder Webex-Link haben eine Beitreten-Taste in der Liste und im Countdown.
+- Die Liste zeigt jetzt die Termine der nächsten Tage, nicht nur heute.
+- Ein Hinweis erscheint, wenn Wecker aus sind oder manche Termine nur Mitteilungen erhalten, die im Stummmodus nicht klingeln.
+- Neue Kurzbefehle-Aktion „Befoor synchronisieren“: Starte sie per Automation, um Termine zu erfassen, die hinzukommen, während Befoor geschlossen ist.
+- Befoor gibt es jetzt auf Deutsch und in acht weiteren Sprachen.
+- Behoben: „lunch“ erschien zweimal in den ignorierten Stichwörtern.
+
+Fragen oder Feedback? apps@feingold5.com

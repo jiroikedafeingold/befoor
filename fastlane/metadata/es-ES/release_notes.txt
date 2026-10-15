@@ -1,0 +1,9 @@
+- Omite una sola reunión: deslízala hacia la izquierda (o mantenla pulsada) y toca Omitir. No sonará en ninguno de tus dispositivos.
+- Únete a videollamadas: las reuniones con un enlace de Zoom, Google Meet, Teams o Webex tienen un botón Unirse en la lista y en la cuenta atrás.
+- La lista ahora muestra tus reuniones de los próximos días, no solo las de hoy.
+- Aparece un aviso si las alarmas están desactivadas o si algunas reuniones solo reciben notificaciones, que no suenan en silencio.
+- Nueva acción de Atajos «Sincronizar Befoor»: ejecútala desde una automatización para no perderte reuniones añadidas mientras Befoor está cerrado.
+- Befoor ya está disponible en español y en otros ocho idiomas.
+- Corregido: «lunch» aparecía dos veces en las palabras clave ignoradas.
+
+¿Preguntas o comentarios? apps@feingold5.com

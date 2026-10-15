@@ -8,6 +8,8 @@ struct TrackedAlarmModel: Codable, Identifiable {
     var eventStartDate: Date
     var eventTitle: String
     var calendarIdentifier: String
+    /// The meeting's video-call link (Zoom, Meet, Teams…), if it has one.
+    var joinURL: URL?
 
     var id: String { eventIdentifier }
 
@@ -16,12 +18,14 @@ struct TrackedAlarmModel: Codable, Identifiable {
         notificationIdentifier: String,
         eventStartDate: Date,
         eventTitle: String,
-        calendarIdentifier: String
+        calendarIdentifier: String,
+        joinURL: URL? = nil
     ) {
         self.eventIdentifier = eventIdentifier
         self.notificationIdentifier = notificationIdentifier
         self.eventStartDate = eventStartDate
         self.eventTitle = eventTitle
         self.calendarIdentifier = calendarIdentifier
+        self.joinURL = joinURL
     }
 }

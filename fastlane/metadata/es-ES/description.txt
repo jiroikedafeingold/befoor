@@ -1,0 +1,15 @@
+Befoor lee los calendarios que elijas y hace sonar una alarma de verdad antes de cada reunión, para que nunca te pille por sorpresa.
+
+- Alarmas de verdad: Befoor usa las mismas alarmas del sistema que la app Reloj, así que suenan aunque tu iPhone esté en silencio o en un modo de concentración, e incluso si Befoor no está abierto.
+- Dos avisos por reunión: 15 minutos y 1 minuto antes por defecto. Puedes cambiar ambos.
+- Las reuniones que empiezan a la vez comparten una alarma.
+- Pospón o detén directamente desde la alarma.
+- Omite una sola reunión con un gesto: no sonará en ninguno de tus dispositivos.
+- Únete a llamadas de Zoom, Google Meet, Teams o Webex desde la lista o la cuenta atrás.
+- Una cuenta atrás para tu próxima reunión en la Dynamic Island y en la pantalla bloqueada, con el color de tu calendario. Aparece con la primera alarma, sigue hasta la última y desaparece cuando la detienes. Siempre una por reunión.
+- Elige entre varios sonidos de alarma agradables.
+- Ignora reuniones por palabra clave (como «almuerzo»), omite los fines de semana y elige qué calendarios vigilar.
+- Consulta tus reuniones de los próximos días; Befoor se mantiene al día automáticamente. Una acción de Atajos lo sincroniza cuando quieras.
+- Para iPhone y iPad.
+
+Requiere iOS 26.

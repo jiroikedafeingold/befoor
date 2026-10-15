@@ -1,0 +1,1 @@
+alarme,réveil,calendrier,réunion,rappel,rendez-vous,agenda,alerte,ponctuel,zoom,teams

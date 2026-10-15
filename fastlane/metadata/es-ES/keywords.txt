@@ -1,0 +1,1 @@
+alarma,despertador,calendario,reunión,recordatorio,cita,agenda,aviso,puntual,zoom,teams

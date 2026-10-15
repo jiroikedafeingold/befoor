@@ -1,0 +1,110 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Sync ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Sync ${applicationName}",
+              "Update ${applicationName} alarms"
+            ]
+          }
+        },
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName} synchronisieren",
+              "${applicationName}-Wecker aktualisieren"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Synchroniser ${applicationName}",
+              "Mettre à jour les alarmes ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Sincronizar ${applicationName}",
+              "Actualizar las alarmas de ${applicationName}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Sincronizza ${applicationName}",
+              "Aggiorna le sveglie di ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Sincronizar ${applicationName}",
+              "Atualizar os alarmes do ${applicationName}"
+            ]
+          }
+        },
+        "ru" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Синхронизировать ${applicationName}",
+              "Обновить будильники ${applicationName}"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}を同期",
+              "${applicationName}のアラームを更新"
+            ]
+          }
+        },
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName} 동기화",
+              "${applicationName} 알람 업데이트"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "同步${applicationName}",
+              "更新${applicationName}闹钟"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "同步${applicationName}",
+              "更新${applicationName}鬧鐘"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.3"
+}

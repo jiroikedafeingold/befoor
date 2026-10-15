@@ -14,6 +14,7 @@ struct MeetingAlarmMetadata: AlarmMetadata {
     var location: String?
     /// sRGB components of the calendar color.
     var calendarRGB: [Double]?
+    var joinURL: URL?
 }
 
 private extension AlarmAttributes<MeetingAlarmMetadata> {
@@ -51,10 +52,15 @@ struct MeetingAlarmLiveActivity: Widget {
                     .padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    MeetingCountdown(metadata: metadata)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(color)
-                        .padding(.trailing, 4)
+                    HStack(spacing: 8) {
+                        if let joinURL = metadata?.joinURL {
+                            JoinButton(url: joinURL, color: color, compact: true)
+                        }
+                        MeetingCountdown(metadata: metadata)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(color)
+                    }
+                    .padding(.trailing, 4)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: 6) {
@@ -167,9 +173,59 @@ private struct AlarmLockScreenView: View {
                     .foregroundStyle(attributes.calendarColor)
                     .frame(maxWidth: 110, alignment: .trailing)
             }
-            AlarmDetails(metadata: attributes.metadata, state: state)
+            HStack(alignment: .bottom) {
+                AlarmDetails(metadata: attributes.metadata, state: state)
+                Spacer(minLength: 8)
+                if let joinURL = attributes.metadata?.joinURL {
+                    JoinButton(url: joinURL, color: attributes.calendarColor)
+                }
+            }
         }
         .padding(16)
+    }
+}
+// MARK: - Join
+
+/// A Live Activity's links can only open its own app, so Join opens Befoor,
+/// which opens the call (see ContentView's onOpenURL).
+private func joinLink(_ url: URL) -> URL {
+    var components = URLComponents()
+    components.scheme = "befoor"
+    components.host = "join"
+    components.queryItems = [URLQueryItem(name: "url", value: url.absoluteString)]
+    return components.url ?? url
+}
+
+private struct JoinLabelStyle: LabelStyle {
+    let iconOnly: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        if iconOnly {
+            configuration.icon
+        } else {
+            Label(configuration)
+        }
+    }
+}
+
+private struct JoinButton: View {
+    let url: URL
+    let color: Color
+    /// Icon only and no taller than a line of text, for the Dynamic Island.
+    var compact = false
+
+    var body: some View {
+        Link(destination: joinLink(url)) {
+            Label("Join", systemImage: "video.fill")
+                .labelStyle(JoinLabelStyle(iconOnly: compact))
+                .font((compact ? Font.caption2 : .caption).weight(.semibold))
+                .padding(.horizontal, compact ? 8 : 10)
+                .padding(.vertical, compact ? 1 : 4)
+                .background(color.opacity(0.2), in: Capsule())
+                .foregroundStyle(color)
+                .fixedSize()
+        }
+        .accessibilityLabel("Join")
     }
 }
 #endif

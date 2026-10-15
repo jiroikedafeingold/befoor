@@ -1,5 +1,9 @@
-- Fixed: an alert could ring twice and show two cards for the same meeting.
-- Only one card per meeting: the alarm itself now shows the countdown, with the meeting, its location and your calendar's color. After you stop the first alert it keeps counting down and rings again at the last alert, then goes away when you stop that one.
-- New app icon, also shown in the Dynamic Island and on the Lock Screen.
+- Skip a single meeting: swipe left on it (or touch and hold) and tap Skip. It won't ring on any of your devices.
+- Join video calls: meetings with a Zoom, Google Meet, Teams or Webex link get a Join button in the list and on the countdown.
+- The list now shows your meetings for the days ahead, not just today.
+- A warning now appears if alarms are off, or if some meetings can only get notifications, which don't ring on silent.
+- New Sync Befoor action in Shortcuts: run it from an automation to catch meetings added while Befoor is closed.
+- Befoor now speaks Chinese, French, German, Italian, Japanese, Korean, Portuguese, Russian and Spanish.
+- Fixed: "lunch" showed up twice in Ignored Keywords.
 
 Questions or feedback? apps@feingold5.com

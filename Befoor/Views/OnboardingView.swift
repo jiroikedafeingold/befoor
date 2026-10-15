@@ -79,7 +79,7 @@ struct OnboardingView: View {
         }
     }
 
-    private var primaryButtonTitle: String {
+    private var primaryButtonTitle: LocalizedStringKey {
         switch currentPage {
         case .welcome:                return "Get Started"
         case .calendarPermission:     return calendarGranted ? "Next" : "Continue"
@@ -227,8 +227,8 @@ private struct HowItWorksPage: View {
 private struct FeatureRow: View {
     let icon: String
     let iconColor: Color
-    let title: String
-    let detail: String
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
 
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
@@ -389,18 +389,18 @@ private struct OnboardingPageShell<ActionContent: View>: View {
     let iconName: String
     let iconColor: Color
     let backgroundGradient: [Color]
-    let title: String
-    let subtitle: String
-    let description: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
+    let description: LocalizedStringKey
     var actionContent: (() -> ActionContent)?
 
     init(
         iconName: String,
         iconColor: Color,
         backgroundGradient: [Color],
-        title: String,
-        subtitle: String,
-        description: String,
+        title: LocalizedStringKey,
+        subtitle: LocalizedStringKey,
+        description: LocalizedStringKey,
         @ViewBuilder actionContent: @escaping () -> ActionContent
     ) {
         self.iconName = iconName
@@ -473,9 +473,9 @@ extension OnboardingPageShell where ActionContent == EmptyView {
         iconName: String,
         iconColor: Color,
         backgroundGradient: [Color],
-        title: String,
-        subtitle: String,
-        description: String
+        title: LocalizedStringKey,
+        subtitle: LocalizedStringKey,
+        description: LocalizedStringKey
     ) {
         self.init(
             iconName: iconName,
@@ -490,7 +490,7 @@ extension OnboardingPageShell where ActionContent == EmptyView {
 }
 
 private struct PermissionButton: View {
-    let label: String
+    let label: LocalizedStringKey
     let color: Color
     let action: () -> Void
 

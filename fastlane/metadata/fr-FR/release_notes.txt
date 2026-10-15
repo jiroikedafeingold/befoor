@@ -1,0 +1,9 @@
+- Ignorer une seule réunion : balayez-la vers la gauche (ou maintenez-la) et touchez Ignorer. Elle ne sonnera sur aucun de vos appareils.
+- Rejoindre un appel vidéo : les réunions avec un lien Zoom, Google Meet, Teams ou Webex ont un bouton Rejoindre dans la liste et dans le compte à rebours.
+- La liste affiche désormais vos réunions des jours à venir, pas seulement d’aujourd’hui.
+- Un avertissement apparaît si les alarmes sont désactivées ou si certaines réunions ne reçoivent que des notifications, qui ne sonnent pas en silencieux.
+- Nouvelle action Raccourcis « Synchroniser Befoor » : lancez-la depuis une automatisation pour ne pas manquer les réunions ajoutées pendant que Befoor est fermé.
+- Befoor est désormais disponible en français et dans huit autres langues.
+- Correction : « lunch » apparaissait deux fois dans les mots-clés ignorés.
+
+Des questions ou des commentaires ? apps@feingold5.com

@@ -20,6 +20,7 @@ struct NextMeetingAttributes: ActivityAttributes {
         var attendeeCount: Int
         var nextTitle: String?
         var nextStartDate: Date?
+        var joinURL: URL?
     }
 }
 
@@ -57,10 +58,15 @@ struct NextMeetingLiveActivity: Widget {
                     .padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    CountdownText(startDate: state.startDate, isStale: context.isStale)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(state.calendarColor)
-                        .padding(.trailing, 4)
+                    HStack(spacing: 8) {
+                        if let joinURL = state.joinURL {
+                            JoinButton(url: joinURL, color: state.calendarColor, compact: true)
+                        }
+                        CountdownText(startDate: state.startDate, isStale: context.isStale)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(state.calendarColor)
+                    }
+                    .padding(.trailing, 4)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: 6) {
@@ -193,9 +199,60 @@ private struct LockScreenMeetingView: View {
                     .foregroundStyle(state.calendarColor)
                     .frame(maxWidth: 110, alignment: .trailing)
             }
-            MeetingDetailsView(state: state)
+            HStack(alignment: .bottom) {
+                MeetingDetailsView(state: state)
+                Spacer(minLength: 8)
+                if let joinURL = state.joinURL {
+                    JoinButton(url: joinURL, color: state.calendarColor)
+                }
+            }
         }
         .padding(16)
+    }
+}
+
+// MARK: - Join
+
+/// A Live Activity's links can only open its own app, so Join opens Befoor,
+/// which opens the call (see ContentView's onOpenURL).
+private func joinLink(_ url: URL) -> URL {
+    var components = URLComponents()
+    components.scheme = "befoor"
+    components.host = "join"
+    components.queryItems = [URLQueryItem(name: "url", value: url.absoluteString)]
+    return components.url ?? url
+}
+
+private struct JoinLabelStyle: LabelStyle {
+    let iconOnly: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        if iconOnly {
+            configuration.icon
+        } else {
+            Label(configuration)
+        }
+    }
+}
+
+private struct JoinButton: View {
+    let url: URL
+    let color: Color
+    /// Icon only and no taller than a line of text, for the Dynamic Island.
+    var compact = false
+
+    var body: some View {
+        Link(destination: joinLink(url)) {
+            Label("Join", systemImage: "video.fill")
+                .labelStyle(JoinLabelStyle(iconOnly: compact))
+                .font((compact ? Font.caption2 : .caption).weight(.semibold))
+                .padding(.horizontal, compact ? 8 : 10)
+                .padding(.vertical, compact ? 1 : 4)
+                .background(color.opacity(0.2), in: Capsule())
+                .foregroundStyle(color)
+                .fixedSize()
+        }
+        .accessibilityLabel("Join")
     }
 }
 
@@ -213,7 +270,8 @@ private struct LockScreenMeetingView: View {
         location: "Room 4B",
         attendeeCount: 4,
         nextTitle: "Product Sync",
-        nextStartDate: .now.addingTimeInterval(7200)
+        nextStartDate: .now.addingTimeInterval(7200),
+        joinURL: URL(string: "https://zoom.us/j/123456789")
     )
 }
 #endif

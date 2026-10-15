@@ -91,6 +91,24 @@ struct HelpView: View {
                 // MARK: Tips
                 Section("Tips") {
                     HelpRow(
+                        icon: "bell.slash.fill",
+                        iconColor: .orange,
+                        title: "Skip a Meeting",
+                        detail: "Swipe left on a meeting, or touch and hold it, and tap Skip. It won't ring on any of your devices. Tap Ring to undo."
+                    )
+                    HelpRow(
+                        icon: "video.fill",
+                        iconColor: .green,
+                        title: "Join a Call",
+                        detail: "Meetings with a Zoom, Google Meet, Teams or Webex link get a Join button, in the list and on the countdown."
+                    )
+                    HelpRow(
+                        icon: "arrow.clockwise",
+                        iconColor: .blue,
+                        title: "Last-Minute Meetings",
+                        detail: "iOS lets Befoor check your calendar only now and then while it's closed. To catch meetings added at the last minute, create a Shortcuts automation, such as \"When Calendar is closed\", that runs Sync Befoor."
+                    )
+                    HelpRow(
                         icon: "checkmark.shield.fill",
                         iconColor: .yellow,
                         title: "Allow Alarms",
@@ -137,8 +155,8 @@ struct HelpView: View {
 private struct HelpRow: View {
     let icon: String
     let iconColor: Color
-    let title: String
-    let detail: String
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {

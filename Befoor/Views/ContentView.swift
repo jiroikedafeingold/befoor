@@ -7,7 +7,11 @@ struct ContentView: View {
     @ObservedObject private var calService = CalendarService.shared
     @Environment(\.scenePhase) private var scenePhase
 
+    @Environment(\.openURL) private var openURL
+
     @State private var selectedTab = 0
+    @State private var alarmsAllowed = true
+    @State private var alarmsDenied = false
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -35,6 +39,7 @@ struct ContentView: View {
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
             case .active:
+                refreshAlarmStatus()
                 NotificationService.shared.clearBadge()
                 NotificationService.shared.tidyDeliveredNotifications()
                 Task {
@@ -42,6 +47,7 @@ struct ContentView: View {
                     // before it asked for alarms, so ask here, once, while on screen.
                     if settings.hasCompletedOnboarding, MeetingAlarms.shared.isUndetermined {
                         await MeetingAlarms.shared.requestAuthorization()
+                        refreshAlarmStatus()
                     }
                     await AlarmScheduler.shared.sync()
                     // Live Activities can only be started in the foreground, so check here
@@ -54,7 +60,18 @@ struct ContentView: View {
                 break
             }
         }
+        // The Join button on a Live Activity opens Befoor with befoor://join?url=…,
+        // since a Live Activity's links can only open its own app.
+        .onOpenURL { url in
+            guard url.scheme == "befoor", url.host() == "join",
+                  let value = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                    .queryItems?.first(where: { $0.name == "url" })?.value,
+                  let target = URL(string: value),
+                  ["https", "http"].contains(target.scheme?.lowercased() ?? "") else { return }
+            openURL(target)
+        }
         .task {
+            refreshAlarmStatus()
             if settings.hasCompletedOnboarding {
                 await AlarmScheduler.shared.sync()
             }
@@ -82,7 +99,7 @@ struct ContentView: View {
             }
             .navigationTitle("Befoor")
             .toolbar { toolbarContent }
-            .refreshable { await AlarmScheduler.shared.sync() }
+            .refreshable { await AlarmScheduler.shared.sync(force: true) }
         }
     }
 
@@ -104,42 +121,111 @@ struct ContentView: View {
 
     private var alarmsList: some View {
         List {
-            if !settings.isEnabled {
-                Section {
-                    Label("Befoor is paused. Enable it in Settings.", systemImage: "pause.circle")
-                        .foregroundStyle(.orange)
-                        .font(.footnote)
-                }
-                .listRowBackground(Color.orange.opacity(0.1))
-            }
+            statusSections
 
-            Section("Today's Alarms") {
-                ForEach(sortedAlarms) { alarm in
-                    AlarmRow(alarm: alarm)
+            ForEach(meetingsByDay, id: \.day) { day in
+                Section {
+                    ForEach(day.meetings) { meeting in
+                        let skipped = settings.isSkipped(eventIdentifier: meeting.eventIdentifier,
+                                                         start: meeting.eventStartDate)
+                        AlarmRow(alarm: meeting, isSkipped: skipped)
+                            .swipeActions(edge: .trailing) {
+                                skipButton(for: meeting, skipped: skipped)
+                            }
+                            .contextMenu {
+                                skipButton(for: meeting, skipped: skipped)
+                            }
+                    }
+                } header: {
+                    dayTitle(day.day)
                 }
             }
         }
     }
 
+    /// Warnings that matter more than the list: Befoor paused, or meetings that
+    /// won't ring on silent because they only get notifications.
+    @ViewBuilder
+    private var statusSections: some View {
+        if !settings.isEnabled {
+            Section {
+                Label("Befoor is paused. Enable it in Settings.", systemImage: "pause.circle")
+                    .foregroundStyle(.orange)
+                    .font(.footnote)
+            }
+            .listRowBackground(Color.orange.opacity(0.1))
+        } else if settings.soundEnabled && !alarmsAllowed {
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Alarms are off, so meetings won't ring on silent or in a Focus. You'll get notifications instead.",
+                          systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .font(.footnote)
+                    Button(alarmsDenied ? String(localized: "Open Settings") : String(localized: "Allow Alarms")) {
+                        Task { await fixAlarms() }
+                    }
+                    .font(.footnote.weight(.semibold))
+                    .buttonStyle(.borderless)
+                }
+            }
+            .listRowBackground(Color.orange.opacity(0.1))
+        } else if scheduler.alarmFallbackCount > 0 {
+            Section {
+                Label("Some meetings are over iOS's alarm limit, so they get notifications instead, which don't ring on silent. Shorten Look Ahead in Settings to fix this.",
+                      systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                    .font(.footnote)
+            }
+            .listRowBackground(Color.orange.opacity(0.1))
+        }
+    }
+
+    private func skipButton(for meeting: TrackedAlarmModel, skipped: Bool) -> some View {
+        Button {
+            settings.setSkipped(!skipped, eventIdentifier: meeting.eventIdentifier, start: meeting.eventStartDate)
+            Task { await AlarmScheduler.shared.sync(force: true) }
+        } label: {
+            if skipped {
+                Label("Ring", systemImage: "bell")
+            } else {
+                Label("Skip", systemImage: "bell.slash")
+            }
+        }
+        .tint(skipped ? .indigo : .orange)
+    }
+
+    private func dayTitle(_ day: Date) -> Text {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(day) { return Text("Today") }
+        if calendar.isDateInTomorrow(day) { return Text("Tomorrow") }
+        return Text(day, format: .dateTime.weekday(.wide).month(.abbreviated).day())
+    }
+
     private var emptyState: some View {
         VStack(spacing: 20) {
+            if settings.isEnabled && settings.soundEnabled && !alarmsAllowed {
+                List { statusSections }
+                    .frame(maxHeight: 160)
+                    .scrollDisabled(true)
+            }
+
             Image(systemName: "alarm")
                 .font(.system(size: 64))
                 .foregroundStyle(.indigo.opacity(0.5))
 
-            Text("No alarms today")
+            Text("No upcoming meetings")
                 .font(.title3.weight(.semibold))
 
             Text(settings.isEnabled
-                 ? "No appointments found for today in your selected calendars."
-                 : "Befoor is paused. Enable it in Settings.")
+                 ? String(localized: "No appointments found in the next \(settings.lookAheadDays) days in your selected calendars.")
+                 : String(localized: "Befoor is paused. Enable it in Settings."))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
             Button("Sync Calendar") {
-                Task { await AlarmScheduler.shared.sync() }
+                Task { await AlarmScheduler.shared.sync(force: true) }
             }
             .buttonStyle(.borderedProminent)
             .tint(.indigo)
@@ -156,32 +242,51 @@ struct ContentView: View {
                     .tint(.indigo)
             } else {
                 Button {
-                    Task { await AlarmScheduler.shared.sync() }
+                    Task { await AlarmScheduler.shared.sync(force: true) }
                 } label: {
                     Image(systemName: "arrow.clockwise")
                 }
+                .accessibilityLabel("Sync Calendar")
             }
         }
 
         ToolbarItem(placement: .navigationBarLeading) {
             Image(systemName: settings.isEnabled ? "checkmark.circle.fill" : "pause.circle.fill")
                 .foregroundStyle(settings.isEnabled ? .green : .secondary)
-                .accessibilityLabel(settings.isEnabled ? "Active" : "Paused")
+                .accessibilityLabel(settings.isEnabled ? Text("Active") : Text("Paused"))
         }
     }
 
     // MARK: - Helpers
 
-    private var sortedAlarms: [TrackedAlarmModel] {
-        let calendar = Calendar.current
-        let todayAlarms = store.alarms.values
-            .filter { calendar.isDateInToday($0.eventStartDate) }
-            .sorted { $0.eventStartDate < $1.eventStartDate }
+    private func refreshAlarmStatus() {
+        alarmsAllowed = MeetingAlarms.shared.isAuthorized
+        alarmsDenied = MeetingAlarms.shared.isDenied
+    }
 
-        var seen = Set<String>()
-        return todayAlarms.filter { alarm in
-            seen.insert(alarm.eventTitle + "_" + String(Int(alarm.eventStartDate.timeIntervalSince1970))).inserted
+    private func fixAlarms() async {
+        if alarmsDenied {
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                openURL(url)
+            }
+        } else {
+            await MeetingAlarms.shared.requestAuthorization()
+            refreshAlarmStatus()
+            await AlarmScheduler.shared.sync(force: true)
         }
+    }
+
+    /// Upcoming meetings in the look-ahead window, grouped by day, without the
+    /// duplicates the store can hold (the same event in two calendars).
+    private var meetingsByDay: [(day: Date, meetings: [TrackedAlarmModel])] {
+        let calendar = Calendar.current
+        var seen = Set<String>()
+        let meetings = store.alarms.values
+            .sorted { $0.eventStartDate < $1.eventStartDate }
+            .filter { seen.insert($0.eventTitle + "_" + String(Int($0.eventStartDate.timeIntervalSince1970))).inserted }
+        return Dictionary(grouping: meetings) { calendar.startOfDay(for: $0.eventStartDate) }
+            .map { (day: $0.key, meetings: $0.value) }
+            .sorted { $0.day < $1.day }
     }
 
 }
@@ -190,6 +295,7 @@ struct ContentView: View {
 
 private struct AlarmRow: View {
     let alarm: TrackedAlarmModel
+    let isSkipped: Bool
     @ObservedObject private var calService = CalendarService.shared
 
     private var calendarColor: Color {
@@ -204,6 +310,7 @@ private struct AlarmRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(alarm.eventTitle)
                     .font(.body.weight(.medium))
+                    .strikethrough(isSkipped)
                     .lineLimit(1)
 
                 HStack(spacing: 6) {
@@ -211,9 +318,15 @@ private struct AlarmRow: View {
                         .fill(calendarColor)
                         .frame(width: 8, height: 8)
 
-                    Text(alarm.eventStartDate, style: .relative)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if isSkipped {
+                        Text("Skipped")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text(alarm.eventStartDate, style: .relative)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
 
                     Text("·")
                         .foregroundStyle(.secondary)
@@ -226,11 +339,25 @@ private struct AlarmRow: View {
 
             Spacer()
 
-            Image(systemName: "alarm.fill")
-                .foregroundStyle(.indigo.opacity(0.7))
+            if let joinURL = alarm.joinURL {
+                Link(destination: joinURL) {
+                    Label("Join", systemImage: "video.fill")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .tint(calendarColor)
+            }
+
+            Image(systemName: isSkipped ? "bell.slash" : "alarm.fill")
+                .foregroundStyle(isSkipped ? AnyShapeStyle(.secondary) : AnyShapeStyle(.indigo.opacity(0.7)))
                 .font(.caption)
+                .accessibilityLabel(isSkipped ? Text("Skipped") : Text("Alarm set"))
         }
         .padding(.vertical, 2)
+        .opacity(isSkipped ? 0.6 : 1)
+        // Otherwise a row with a Join button gets a separator that starts at the button.
+        .alignmentGuide(.listRowSeparatorLeading) { dimensions in dimensions[.leading] }
     }
 }
 

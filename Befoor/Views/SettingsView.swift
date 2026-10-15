@@ -75,8 +75,8 @@ struct SettingsView: View {
                             Text("Monitored Calendars")
                             Spacer()
                             Text(settings.excludedCalendarIdentifiers.isEmpty
-                                 ? "All"
-                                 : "\(settings.excludedCalendarIdentifiers.count) off")
+                                 ? String(localized: "All")
+                                 : String(localized: "\(settings.excludedCalendarIdentifiers.count) off"))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -152,13 +152,13 @@ struct SettingsView: View {
                 } header: {
                     Text("Background Sync")
                 } footer: {
-                    Text("iOS may delay or batch background checks to preserve battery.")
+                    Text("iOS may delay or batch background checks to preserve battery. To catch meetings added while Befoor is closed, add a Shortcuts automation, such as \"When Calendar is closed\", that runs Sync Befoor.")
                 }
 
                 // MARK: Manual sync
                 Section {
                     Button {
-                        Task { await AlarmScheduler.shared.sync() }
+                        Task { await AlarmScheduler.shared.sync(force: true) }
                     } label: {
                         HStack {
                             Label("Sync Now", systemImage: "arrow.clockwise")
@@ -207,9 +207,9 @@ struct SettingsView: View {
 
     private func alertLabel(_ minutes: Int) -> String {
         switch minutes {
-        case 0:  return "at start"
-        case 1:  return "1 minute before"
-        default: return "\(minutes) minutes before"
+        case 0:  return String(localized: "at start")
+        case 1:  return String(localized: "1 minute before")
+        default: return String(localized: "\(minutes) minutes before")
         }
     }
 
@@ -242,7 +242,9 @@ struct SettingsView: View {
 
     private func addKeyword() {
         let trimmed = newKeyword.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty, !settings.ignoredKeywords.contains(trimmed) else { return }
+        guard !trimmed.isEmpty,
+              !settings.ignoredKeywords.contains(where: { $0.caseInsensitiveCompare(trimmed) == .orderedSame })
+        else { return }
         settings.ignoredKeywords.append(trimmed)
         newKeyword = ""
         showAddKeyword = false

@@ -4,10 +4,12 @@ Befoor reads the calendars you choose and rings a real alarm before each meeting
 - Two alerts per meeting: 15 minutes and 1 minute before by default. Change either one.
 - Meetings that start at the same time share one alarm.
 - Snooze or stop right from the alarm.
+- Skip a single meeting with a swipe; it won't ring on any of your devices.
+- Join Zoom, Google Meet, Teams or Webex calls right from the list or the countdown.
 - A countdown to your next meeting in the Dynamic Island and on the Lock Screen, in your calendar's color. It appears with the first alarm, keeps counting down to the last one, and goes away when you stop it. Only ever one per meeting.
 - Choose from a set of pleasant alarm sounds.
 - Ignore meetings by keyword (like "lunch"), skip weekends, and pick which calendars to watch.
-- Keeps up with your calendar automatically.
-- Works on iPhone and iPad.
+- See your meetings for the days ahead, and keep up with your calendar automatically. A Shortcuts action can sync it any time.
+- Works on iPhone and iPad, in English, Chinese, French, German, Italian, Japanese, Korean, Portuguese, Russian and Spanish.
 
 Requires iOS 26.

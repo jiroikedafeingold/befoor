@@ -1,0 +1,15 @@
+Befoor legge i calendari che scegli e fa suonare una vera sveglia prima di ogni riunione, così non sarai mai colto di sorpresa.
+
+- Vere sveglie: Befoor usa le stesse sveglie di sistema dell’app Orologio, quindi suonano anche quando l’iPhone è in silenzioso o in una modalità Full immersion, e anche se Befoor non è aperto.
+- Due avvisi per riunione: 15 minuti e 1 minuto prima di default. Puoi cambiarli entrambi.
+- Le riunioni che iniziano alla stessa ora condividono una sveglia.
+- Posticipa o ferma direttamente dalla sveglia.
+- Salta una singola riunione con uno scorrimento: non suonerà su nessuno dei tuoi dispositivi.
+- Partecipa alle chiamate Zoom, Google Meet, Teams o Webex dall’elenco o dal conto alla rovescia.
+- Un conto alla rovescia per la prossima riunione nella Dynamic Island e nella schermata di blocco, nel colore del tuo calendario. Compare con la prima sveglia, prosegue fino all’ultima e scompare quando la fermi. Sempre uno solo per riunione.
+- Scegli tra suoni di sveglia piacevoli.
+- Ignora le riunioni per parola chiave (come «pranzo»), salta i fine settimana e scegli i calendari da controllare.
+- Vedi le riunioni dei prossimi giorni; Befoor si aggiorna da solo. Un’azione di Comandi Rapidi lo sincronizza quando vuoi.
+- Per iPhone e iPad.
+
+Richiede iOS 26.

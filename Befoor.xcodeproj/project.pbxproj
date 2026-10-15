@@ -16,6 +16,9 @@
 		13A747022FA28DA000071DA6 /* TrackedAlarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000006 /* TrackedAlarm.swift */; };
 		13BE59BA30745A3100F41ECA /* MeetingLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13BE59B930745A3100F41ECA /* MeetingLiveActivity.swift */; };
 		13BE59EB307562CD00F41ECA /* MeetingAlarms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13BE59EA307562CD00F41ECA /* MeetingAlarms.swift */; };
+		13E5A68F308030DB00CD0C89 /* AppShortcuts.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 13E5A68C308030DB00CD0C89 /* AppShortcuts.xcstrings */; };
+		13E5A690308030DB00CD0C89 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 13E5A68D308030DB00CD0C89 /* InfoPlist.xcstrings */; };
+		13E5A691308030DB00CD0C89 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 13E5A68E308030DB00CD0C89 /* Localizable.xcstrings */; };
 		BB0000000000000000000001 /* BefoorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000001 /* BefoorApp.swift */; };
 		BB0000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000002 /* ContentView.swift */; };
 		BB0000000000000000000003 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000003 /* SettingsView.swift */; };
@@ -76,6 +79,9 @@
 		13A747032FA28DB900071DA6 /* BeforeWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BeforeWidgetExtension.entitlements; sourceTree = "<group>"; };
 		13BE59B930745A3100F41ECA /* MeetingLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingLiveActivity.swift; sourceTree = "<group>"; };
 		13BE59EA307562CD00F41ECA /* MeetingAlarms.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingAlarms.swift; sourceTree = "<group>"; };
+		13E5A68C308030DB00CD0C89 /* AppShortcuts.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = AppShortcuts.xcstrings; sourceTree = "<group>"; };
+		13E5A68D308030DB00CD0C89 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
+		13E5A68E308030DB00CD0C89 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		AA0000000000000000000001 /* BefoorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BefoorApp.swift; sourceTree = "<group>"; };
 		AA0000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000003 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -172,6 +178,9 @@
 		CC0000000000000000000002 /* Befoor */ = {
 			isa = PBXGroup;
 			children = (
+				13E5A68C308030DB00CD0C89 /* AppShortcuts.xcstrings */,
+				13E5A68D308030DB00CD0C89 /* InfoPlist.xcstrings */,
+				13E5A68E308030DB00CD0C89 /* Localizable.xcstrings */,
 				AA0000000000000000000001 /* BefoorApp.swift */,
 				AA000000000000000000000A /* Assets.xcassets */,
 				AA000000000000000000000B /* Info.plist */,
@@ -313,6 +322,16 @@
 			knownRegions = (
 				en,
 				Base,
+				de,
+				fr,
+				es,
+				it,
+				"pt-BR",
+				ja,
+				ko,
+				"zh-Hans",
+				"zh-Hant",
+				ru,
 			);
 			mainGroup = CC0000000000000000000001;
 			productRefGroup = CC0000000000000000000007 /* Products */;
@@ -348,6 +367,9 @@
 				BB0000000000000000000013 /* access_granted.caf in Resources */,
 				BB0000000000000000000014 /* positive_id.caf in Resources */,
 				BB0000000000000000000015 /* open_channel.caf in Resources */,
+				13E5A68F308030DB00CD0C89 /* AppShortcuts.xcstrings in Resources */,
+				13E5A690308030DB00CD0C89 /* InfoPlist.xcstrings in Resources */,
+				13E5A691308030DB00CD0C89 /* Localizable.xcstrings in Resources */,
 				BB0000000000000000000016 /* notification_icon.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -406,7 +428,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = BeforeWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BeforeWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = BefoorWidget;
@@ -418,7 +440,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 4.2;
+				MARKETING_VERSION = 4.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.befoor.app.BeforeWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -440,7 +462,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = BeforeWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BeforeWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = BefoorWidget;
@@ -452,7 +474,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 4.2;
+				MARKETING_VERSION = 4.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.befoor.app.BeforeWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -595,7 +617,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Befoor/Befoor.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Befoor/Info.plist;
@@ -605,7 +627,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 4.2;
+				MARKETING_VERSION = 4.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.befoor.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -624,7 +646,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Befoor/Befoor.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Befoor/Info.plist;
@@ -634,7 +656,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 4.2;
+				MARKETING_VERSION = 4.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.befoor.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

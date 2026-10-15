@@ -1,0 +1,9 @@
+- Pule uma única reunião: deslize para a esquerda (ou mantenha pressionado) e toque em Pular. Ela não vai tocar em nenhum dos seus dispositivos.
+- Entre em videochamadas: reuniões com um link do Zoom, Google Meet, Teams ou Webex ganham um botão Entrar na lista e na contagem regressiva.
+- A lista agora mostra suas reuniões dos próximos dias, não só as de hoje.
+- Um aviso aparece se os alarmes estiverem desativados ou se algumas reuniões só recebem notificações, que não tocam no silencioso.
+- Nova ação do Atalhos “Sincronizar Befoor”: execute-a em uma automação para não perder reuniões adicionadas enquanto o Befoor está fechado.
+- O Befoor agora está disponível em português e em mais oito idiomas.
+- Corrigido: “lunch” aparecia duas vezes nas palavras-chave ignoradas.
+
+Dúvidas ou sugestões? apps@feingold5.com

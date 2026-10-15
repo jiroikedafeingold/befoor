@@ -92,6 +92,31 @@ final class CalendarService: ObservableObject {
         }
     }
 
+    // MARK: Video calls
+
+    /// Services whose links are meeting joins rather than ordinary web pages.
+    private static let videoCallHosts = [
+        "zoom.us", "zoomgov.com", "meet.google.com", "teams.microsoft.com", "teams.live.com",
+        "webex.com", "facetime.apple.com", "whereby.com", "gotomeeting.com", "chime.aws",
+    ]
+
+    private static let linkDetector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+
+    /// The event's video-call link, from its URL field, location or notes.
+    func joinURL(for event: EKEvent) -> URL? {
+        func isVideoCall(_ url: URL) -> Bool {
+            guard let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http",
+                  let host = url.host()?.lowercased() else { return false }
+            return Self.videoCallHosts.contains { host == $0 || host.hasSuffix("." + $0) }
+        }
+        if let url = event.url, isVideoCall(url) { return url }
+        let text = [event.location, event.notes].compactMap { $0 }.joined(separator: "\n")
+        guard !text.isEmpty, let detector = Self.linkDetector else { return nil }
+        return detector.matches(in: text, range: NSRange(text.startIndex..., in: text))
+            .compactMap(\.url)
+            .first(where: isVideoCall)
+    }
+
     // MARK: Change Observation
 
     var onStoreChanged: (() -> Void)?

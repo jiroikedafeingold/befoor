@@ -10,6 +10,10 @@ struct TrackedAlarmModel: Codable, Identifiable {
     var calendarIdentifier: String
     /// The meeting's video-call link (Zoom, Meet, Teams…), if it has one.
     var joinURL: URL?
+    /// "removed" or "changed" when the meeting's link changed since Befoor first saw it.
+    var linkChange: String?
+    /// Skipped from the list, the widget or Siri; shown, but gets no alarms.
+    var isSkipped: Bool = false
 
     var id: String { eventIdentifier }
 
@@ -19,7 +23,9 @@ struct TrackedAlarmModel: Codable, Identifiable {
         eventStartDate: Date,
         eventTitle: String,
         calendarIdentifier: String,
-        joinURL: URL? = nil
+        joinURL: URL? = nil,
+        linkChange: String? = nil,
+        isSkipped: Bool = false
     ) {
         self.eventIdentifier = eventIdentifier
         self.notificationIdentifier = notificationIdentifier
@@ -27,5 +33,7 @@ struct TrackedAlarmModel: Codable, Identifiable {
         self.eventTitle = eventTitle
         self.calendarIdentifier = calendarIdentifier
         self.joinURL = joinURL
+        self.linkChange = linkChange
+        self.isSkipped = isSkipped
     }
 }

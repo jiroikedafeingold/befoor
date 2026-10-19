@@ -15,6 +15,7 @@ struct MeetingAlarmMetadata: AlarmMetadata {
     /// sRGB components of the calendar color.
     var calendarRGB: [Double]?
     var joinURL: URL?
+    var linkChange: String?
 }
 
 private extension AlarmAttributes<MeetingAlarmMetadata> {
@@ -139,7 +140,9 @@ private struct AlarmDetails: View {
             default:
                 Label("Ringing", systemImage: "alarm.waves.left.and.right")
             }
-            if let location = metadata?.location {
+            if metadata?.linkChange != nil {
+                LinkChangeNotice(change: metadata?.linkChange)
+            } else if let location = metadata?.location {
                 Label(location, systemImage: "mappin.and.ellipse")
             }
         }
@@ -184,6 +187,20 @@ private struct AlarmLockScreenView: View {
         .padding(16)
     }
 }
+/// Warns that the meeting's video-call link was removed or replaced since
+/// Befoor first saw it — check the invite before joining.
+private struct LinkChangeNotice: View {
+    let change: String?
+
+    var body: some View {
+        if let change {
+            Label(change == "removed" ? "Link removed" : "Link changed",
+                  systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+        }
+    }
+}
+
 // MARK: - Join
 
 /// A Live Activity's links can only open its own app, so Join opens Befoor,

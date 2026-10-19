@@ -1,9 +1,11 @@
-- Pule uma única reunião: deslize para a esquerda (ou mantenha pressionado) e toque em Pular. Ela não vai tocar em nenhum dos seus dispositivos.
-- Entre em videochamadas: reuniões com um link do Zoom, Google Meet, Teams ou Webex ganham um botão Entrar na lista e na contagem regressiva.
-- A lista agora mostra suas reuniões dos próximos dias, não só as de hoje.
-- Um aviso aparece se os alarmes estiverem desativados ou se algumas reuniões só recebem notificações, que não tocam no silencioso.
-- Nova ação do Atalhos “Sincronizar Befoor”: execute-a em uma automação para não perder reuniões adicionadas enquanto o Befoor está fechado.
-- O Befoor agora está disponível em português e em mais oito idiomas.
-- Corrigido: “lunch” aparecia duas vezes nas palavras-chave ignoradas.
+- Pausa para as férias: Ajustes → Pausa desativa os alarmes até a data escolhida, e depois eles voltam sozinhos.
+- Avisos de link de vídeo: se o link do Zoom, Meet ou Teams de uma reunião for removido ou alterado, você vê isso na lista e na contagem regressiva, com uma notificação se faltarem menos de duas horas.
+- Reuniões seguidas: um alerta que chega durante outra reunião vibra primeiro e só toca o som depois de 15 segundos.
+- Pergunte à Siri “Quando é minha próxima reunião no Befoor”, “Entrar na minha próxima reunião com o Befoor” ou “Pular minha próxima reunião no Befoor”.
+- O widget da Tela de Início agora tem botões Entrar e Pular.
+- Resumo da manhã: uma notificação silenciosa opcional com quantas reuniões você tem e quando começa a primeira.
+- “Testar alerta”, no fim dos Ajustes, toca um alarme de teste em 10 segundos.
+- Mais palavras-chave ignoradas de fábrica: OOO, Out of office, Focus time, Do not book, Commute e Travel time.
+- Corrigido: notificações que chegavam com o Befoor aberto não ficavam na Central de Notificações.
 
 Dúvidas ou sugestões? apps@feingold5.com

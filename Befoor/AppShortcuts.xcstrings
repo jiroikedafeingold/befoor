@@ -1,18 +1,217 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Sync ${applicationName}" : {
+    "Join my next meeting with ${applicationName}" : {
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringSet" : {
             "state" : "new",
             "values" : [
-              "Sync ${applicationName}",
-              "Update ${applicationName} alarms"
+              "Join my next meeting with ${applicationName}",
+              "Join my next ${applicationName} meeting"
             ]
           }
         },
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Meinem nächsten Termin mit ${applicationName} beitreten",
+              "Nächstem ${applicationName}-Termin beitreten"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Rejoindre ma prochaine réunion avec ${applicationName}",
+              "Rejoindre ma prochaine réunion ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Unirme a mi próxima reunión con ${applicationName}",
+              "Unirme a mi próxima reunión de ${applicationName}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Partecipa alla mia prossima riunione con ${applicationName}",
+              "Partecipa alla prossima riunione di ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Entrar na minha próxima reunião com o ${applicationName}",
+              "Entrar na próxima reunião do ${applicationName}"
+            ]
+          }
+        },
+        "ru" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Войти в следующую встречу через ${applicationName}",
+              "Подключиться к следующей встрече в ${applicationName}"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}で次のミーティングに参加",
+              "${applicationName}の次のミーティングに参加"
+            ]
+          }
+        },
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}로 다음 회의 참여",
+              "${applicationName} 다음 회의 참여"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "用${applicationName}加入下一个会议",
+              "加入${applicationName}的下一个会议"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "用${applicationName}加入下一個會議",
+              "加入${applicationName}的下一個會議"
+            ]
+          }
+        }
+      }
+    },
+    "Skip my next meeting in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Skip my next meeting in ${applicationName}",
+              "Skip my next ${applicationName} meeting"
+            ]
+          }
+        },
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Meinen nächsten Termin in ${applicationName} überspringen",
+              "Nächsten ${applicationName}-Termin überspringen"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Ignorer ma prochaine réunion dans ${applicationName}",
+              "Ignorer ma prochaine réunion ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Omitir mi próxima reunión en ${applicationName}",
+              "Omitir mi próxima reunión de ${applicationName}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Salta la mia prossima riunione in ${applicationName}",
+              "Salta la prossima riunione di ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Pular minha próxima reunião no ${applicationName}",
+              "Pular a próxima reunião do ${applicationName}"
+            ]
+          }
+        },
+        "ru" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Пропустить следующую встречу в ${applicationName}",
+              "Пропусти следующую встречу в ${applicationName}"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}で次のミーティングをスキップ",
+              "${applicationName}の次のミーティングをスキップ"
+            ]
+          }
+        },
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}에서 다음 회의 건너뛰기",
+              "${applicationName} 다음 회의 건너뛰기"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "在${applicationName}中跳过下一个会议",
+              "跳过${applicationName}的下一个会议"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "在${applicationName}中略過下一個會議",
+              "略過${applicationName}的下一個會議"
+            ]
+          }
+        }
+      }
+    },
+    "Sync ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
         "de" : {
           "stringSet" : {
             "state" : "translated",
@@ -22,12 +221,12 @@
             ]
           }
         },
-        "fr" : {
+        "en" : {
           "stringSet" : {
-            "state" : "translated",
+            "state" : "new",
             "values" : [
-              "Synchroniser ${applicationName}",
-              "Mettre à jour les alarmes ${applicationName}"
+              "Sync ${applicationName}",
+              "Update ${applicationName} alarms"
             ]
           }
         },
@@ -40,30 +239,21 @@
             ]
           }
         },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Synchroniser ${applicationName}",
+              "Mettre à jour les alarmes ${applicationName}"
+            ]
+          }
+        },
         "it" : {
           "stringSet" : {
             "state" : "translated",
             "values" : [
               "Sincronizza ${applicationName}",
               "Aggiorna le sveglie di ${applicationName}"
-            ]
-          }
-        },
-        "pt-BR" : {
-          "stringSet" : {
-            "state" : "translated",
-            "values" : [
-              "Sincronizar ${applicationName}",
-              "Atualizar os alarmes do ${applicationName}"
-            ]
-          }
-        },
-        "ru" : {
-          "stringSet" : {
-            "state" : "translated",
-            "values" : [
-              "Синхронизировать ${applicationName}",
-              "Обновить будильники ${applicationName}"
             ]
           }
         },
@@ -85,6 +275,24 @@
             ]
           }
         },
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Sincronizar ${applicationName}",
+              "Atualizar os alarmes do ${applicationName}"
+            ]
+          }
+        },
+        "ru" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Синхронизировать ${applicationName}",
+              "Обновить будильники ${applicationName}"
+            ]
+          }
+        },
         "zh-Hans" : {
           "stringSet" : {
             "state" : "translated",
@@ -100,6 +308,110 @@
             "values" : [
               "同步${applicationName}",
               "更新${applicationName}鬧鐘"
+            ]
+          }
+        }
+      }
+    },
+    "When's my next meeting in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "When's my next meeting in ${applicationName}",
+              "What's my next ${applicationName} meeting"
+            ]
+          }
+        },
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Wann ist mein nächster Termin in ${applicationName}",
+              "Was ist mein nächster ${applicationName}-Termin"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Quelle est ma prochaine réunion dans ${applicationName}",
+              "Ma prochaine réunion ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Cuándo es mi próxima reunión en ${applicationName}",
+              "Cuál es mi próxima reunión de ${applicationName}"
+            ]
+          }
+        },
+        "it" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Quando è la mia prossima riunione in ${applicationName}",
+              "Qual è la mia prossima riunione su ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Quando é minha próxima reunião no ${applicationName}",
+              "Qual é minha próxima reunião do ${applicationName}"
+            ]
+          }
+        },
+        "ru" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Когда моя следующая встреча в ${applicationName}",
+              "Какая у меня следующая встреча в ${applicationName}"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}で次のミーティングは",
+              "${applicationName}の次のミーティング"
+            ]
+          }
+        },
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}에서 다음 회의 언제야",
+              "${applicationName} 다음 회의 알려 줘"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}里我的下一个会议是什么时候",
+              "${applicationName}下一个会议"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}裡我的下一個會議是什麼時候",
+              "${applicationName}下一個會議"
             ]
           }
         }

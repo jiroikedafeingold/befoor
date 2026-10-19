@@ -8,6 +8,10 @@ struct SettingsView: View {
     @State private var newKeyword = ""
     @State private var showAddKeyword = false
     @State private var alarmsAllowed = false
+    @State private var testPending = false
+
+    /// How long after tapping Test Alert it rings.
+    private static let testDelay: TimeInterval = 10
 
     var body: some View {
         NavigationStack {
@@ -52,6 +56,50 @@ struct SettingsView: View {
                 } footer: {
                     Text("Each meeting rings at the first alert, when its countdown appears, and again at the last alert. Meetings that start at the same time share one alarm.")
                 }
+
+                // MARK: Pause
+                Section {
+                    Toggle("Pause Until", isOn: Binding(
+                        get: { settings.pausedUntil != nil },
+                        set: { settings.pausedUntil = $0 ? Self.defaultPauseEnd : nil }
+                    ))
+                    .tint(.indigo)
+                    if let until = settings.pausedUntil {
+                        DatePicker("Resume", selection: Binding(
+                            get: { until },
+                            set: { settings.pausedUntil = $0 }
+                        ), in: Date()...)
+                    }
+                } header: {
+                    Text("Pause")
+                } footer: {
+                    Text("No alarms for meetings before this date, for a vacation or a day off. Alarms come back on their own afterwards.")
+                }
+                .onChange(of: settings.pausedUntil) { _, _ in
+                    Task { await AlarmScheduler.shared.sync(force: true) }
+                }
+
+                // MARK: Morning summary
+                Section {
+                    Toggle("Morning Summary", isOn: $settings.morningSummaryEnabled)
+                        .tint(.indigo)
+                    if settings.morningSummaryEnabled {
+                        DatePicker("Time", selection: Binding(
+                            get: { Calendar.current.startOfDay(for: .now).addingTimeInterval(Double(settings.morningSummaryMinutes) * 60) },
+                            set: {
+                                let parts = Calendar.current.dateComponents([.hour, .minute], from: $0)
+                                settings.morningSummaryMinutes = (parts.hour ?? 7) * 60 + (parts.minute ?? 30)
+                            }
+                        ), displayedComponents: .hourAndMinute)
+                    }
+                } footer: {
+                    Text("A quiet notification each morning with how many meetings you have and when the first one starts.")
+                }
+                .onChange(of: settings.morningSummaryEnabled) { _, on in
+                    if on { Task { await NotificationService.shared.requestPermission() } }
+                    AlarmScheduler.shared.requestResync()
+                }
+                .onChange(of: settings.morningSummaryMinutes) { _, _ in AlarmScheduler.shared.requestResync() }
 
                 // MARK: Live Activity
                 Section {
@@ -187,6 +235,26 @@ struct SettingsView: View {
                         Label("Restart Onboarding", systemImage: "arrow.counterclockwise")
                     }
                 }
+
+                // MARK: Test
+                Section {
+                    Button {
+                        Task { await testAlert() }
+                    } label: {
+                        HStack {
+                            Label("Test Alert", systemImage: "bell.badge")
+                            Spacer()
+                            if testPending {
+                                Text("Rings in 10 seconds")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .disabled(testPending)
+                } footer: {
+                    Text("Rings a test alert in 10 seconds with your current sound and settings. Lock your iPhone or switch it to silent to check that alerts get through.")
+                }
             }
             .navigationTitle("Settings")
             // These are baked into the scheduled alarms, so reschedule after a change.
@@ -204,6 +272,28 @@ struct SettingsView: View {
     }
 
     // MARK: Helpers
+
+    /// A real alarm when alarms are in use, otherwise the notification a
+    /// meeting would get.
+    private func testAlert() async {
+        testPending = true
+        var rang = false
+        if settings.soundEnabled && MeetingAlarms.shared.isAuthorized {
+            rang = await MeetingAlarms.shared.scheduleTest(in: Self.testDelay)
+        }
+        if !rang {
+            NotificationService.shared.sendTest(in: Self.testDelay)
+        }
+        try? await Task.sleep(for: .seconds(Self.testDelay + 2))
+        testPending = false
+    }
+
+    /// A pause starts out ending tomorrow at 8 AM.
+    private static var defaultPauseEnd: Date {
+        let calendar = Calendar.current
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: .now)) ?? .now
+        return calendar.date(bySettingHour: 8, minute: 0, second: 0, of: tomorrow) ?? tomorrow
+    }
 
     private func alertLabel(_ minutes: Int) -> String {
         switch minutes {

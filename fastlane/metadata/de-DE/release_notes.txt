@@ -1,9 +1,11 @@
-- Einen einzelnen Termin überspringen: Wische nach links (oder halte ihn gedrückt) und tippe auf „Überspringen“. Er klingelt dann auf keinem deiner Geräte.
-- Videoanrufen beitreten: Termine mit einem Zoom-, Google-Meet-, Teams- oder Webex-Link haben eine Beitreten-Taste in der Liste und im Countdown.
-- Die Liste zeigt jetzt die Termine der nächsten Tage, nicht nur heute.
-- Ein Hinweis erscheint, wenn Wecker aus sind oder manche Termine nur Mitteilungen erhalten, die im Stummmodus nicht klingeln.
-- Neue Kurzbefehle-Aktion „Befoor synchronisieren“: Starte sie per Automation, um Termine zu erfassen, die hinzukommen, während Befoor geschlossen ist.
-- Befoor gibt es jetzt auf Deutsch und in acht weiteren Sprachen.
-- Behoben: „lunch“ erschien zweimal in den ignorierten Stichwörtern.
+- Pause für den Urlaub: Einstellungen → Pause schaltet die Wecker bis zum gewählten Datum aus, danach sind sie von selbst wieder da.
+- Warnungen zu Videolinks: Wird der Zoom-, Meet- oder Teams-Link eines Termins entfernt oder geändert, siehst du es in der Liste und im Countdown – und bekommst eine Mitteilung, wenn der Termin weniger als zwei Stunden entfernt ist.
+- Termine direkt hintereinander: Ein Hinweis, der während eines laufenden Termins kommt, vibriert zuerst und spielt den Ton erst nach 15 Sekunden.
+- Frag Siri: „Wann ist mein nächster Termin in Befoor“, „Meinem nächsten Termin mit Befoor beitreten“ oder „Meinen nächsten Termin in Befoor überspringen“.
+- Das Widget auf dem Home-Bildschirm hat jetzt Tasten zum Beitreten und Überspringen.
+- Morgenübersicht: eine optionale leise Mitteilung mit der Anzahl deiner Termine und wann der erste beginnt.
+- „Hinweis testen“ ganz unten in den Einstellungen lässt in 10 Sekunden einen Testwecker klingeln.
+- Mehr ignorierte Stichwörter von Anfang an: OOO, Out of office, Focus time, Do not book, Commute und Travel time.
+- Behoben: Mitteilungen, die bei geöffnetem Befoor ankamen, blieben nicht in der Mitteilungszentrale.
 
 Fragen oder Feedback? apps@feingold5.com

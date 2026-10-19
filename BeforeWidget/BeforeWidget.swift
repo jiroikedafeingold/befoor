@@ -1,5 +1,6 @@
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 // MARK: - Data
 
@@ -7,6 +8,8 @@ struct UpcomingAlarm: Identifiable {
     let id: String
     let title: String
     let startDate: Date
+    var joinURL: URL?
+    var isSkipped = false
 }
 
 struct AlarmEntry: TimelineEntry {
@@ -70,7 +73,9 @@ struct AlarmTimelineProvider: TimelineProvider {
                 alarms.append(UpcomingAlarm(
                     id: model.eventIdentifier,
                     title: model.eventTitle,
-                    startDate: model.eventStartDate
+                    startDate: model.eventStartDate,
+                    joinURL: model.joinURL,
+                    isSkipped: model.isSkipped ?? false
                 ))
             }
         }
@@ -89,6 +94,46 @@ private struct WidgetAlarmModel: Codable {
     let eventIdentifier: String
     let eventTitle: String
     let eventStartDate: Date
+    let joinURL: URL?
+    let isSkipped: Bool?
+}
+
+// MARK: - Actions
+
+/// IMPORTANT: copy of the intent in Befoor/Services/AlarmScheduler.swift, with
+/// the same name and parameters, so the widget's buttons can create it. It's a
+/// Live Activity intent, so the system runs Befoor's copy; this perform() isn't called.
+struct SetMeetingSkippedIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Skip Meeting"
+    static let isDiscoverable = false
+
+    @Parameter(title: "Meeting")
+    var eventIdentifier: String
+
+    @Parameter(title: "Start")
+    var start: Date
+
+    @Parameter(title: "Skipped")
+    var skipped: Bool
+
+    init() {}
+
+    init(eventIdentifier: String, start: Date, skipped: Bool) {
+        self.eventIdentifier = eventIdentifier
+        self.start = start
+        self.skipped = skipped
+    }
+
+    func perform() async throws -> some IntentResult { .result() }
+}
+
+/// The widget's links can only open Befoor, which then opens the call.
+private func joinLink(_ url: URL) -> URL {
+    var components = URLComponents()
+    components.scheme = "befoor"
+    components.host = "join"
+    components.queryItems = [URLQueryItem(name: "url", value: url.absoluteString)]
+    return components.url ?? url
 }
 
 // MARK: - Views
@@ -139,12 +184,40 @@ struct BeforeWidgetEntryView: View {
                         Text(alarm.title)
                             .font(.body)
                             .fontWeight(.bold)
+                            .strikethrough(alarm.isSkipped)
                             .lineLimit(1)
                         Spacer()
-                        Text(alarm.startDate, style: .relative)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        if alarm.isSkipped {
+                            Text("Skipped")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text(alarm.startDate, style: .relative)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        if let joinURL = alarm.joinURL, !alarm.isSkipped {
+                            Link(destination: joinLink(joinURL)) {
+                                Image(systemName: "video.fill")
+                                    .font(.caption)
+                                    .frame(width: 28, height: 24)
+                                    .background(.indigo.opacity(0.15), in: Capsule())
+                                    .foregroundStyle(.indigo)
+                            }
+                            .accessibilityLabel("Join")
+                        }
+                        Button(intent: SetMeetingSkippedIntent(eventIdentifier: alarm.id, start: alarm.startDate,
+                                                               skipped: !alarm.isSkipped)) {
+                            Image(systemName: alarm.isSkipped ? "bell" : "bell.slash")
+                                .font(.caption)
+                                .frame(width: 28, height: 24)
+                                .background(Color.secondary.opacity(0.15), in: Capsule())
+                                .foregroundStyle(alarm.isSkipped ? Color.indigo : Color.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(alarm.isSkipped ? Text("Ring") : Text("Skip"))
                     }
+                    .opacity(alarm.isSkipped ? 0.6 : 1)
                 }
             }
             .padding(.vertical, 4)

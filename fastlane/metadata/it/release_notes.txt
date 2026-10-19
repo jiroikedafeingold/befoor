@@ -1,9 +1,11 @@
-- Salta una singola riunione: scorri a sinistra (o tienila premuta) e tocca Salta. Non suonerà su nessuno dei tuoi dispositivi.
-- Partecipa alle videochiamate: le riunioni con un link Zoom, Google Meet, Teams o Webex hanno un pulsante Partecipa nell’elenco e nel conto alla rovescia.
-- L’elenco ora mostra le riunioni dei prossimi giorni, non solo di oggi.
-- Compare un avviso se le sveglie sono disattivate o se alcune riunioni ricevono solo notifiche, che non suonano in silenzioso.
-- Nuova azione di Comandi Rapidi «Sincronizza Befoor»: eseguila da un’automazione per non perdere le riunioni aggiunte mentre Befoor è chiuso.
-- Befoor ora è disponibile in italiano e in altre otto lingue.
-- Corretto: «lunch» compariva due volte nelle parole chiave ignorate.
+- Pausa per le vacanze: Impostazioni → Pausa disattiva le sveglie fino alla data scelta, poi tornano da sole.
+- Avvisi sui link video: se il link Zoom, Meet o Teams di una riunione viene rimosso o cambiato, lo vedi nell’elenco e nel conto alla rovescia, con una notifica se mancano meno di due ore.
+- Riunioni una dopo l’altra: un avviso che arriva durante un’altra riunione prima vibra e riproduce il suono solo dopo 15 secondi.
+- Chiedi a Siri «Quando è la mia prossima riunione in Befoor», «Partecipa alla mia prossima riunione con Befoor» o «Salta la mia prossima riunione in Befoor».
+- Il widget della schermata Home ora ha i pulsanti Partecipa e Salta.
+- Riepilogo mattutino: una notifica silenziosa facoltativa con quante riunioni hai e quando inizia la prima.
+- «Prova avviso», in fondo alle Impostazioni, fa suonare una sveglia di prova tra 10 secondi.
+- Più parole chiave ignorate di serie: OOO, Out of office, Focus time, Do not book, Commute e Travel time.
+- Corretto: le notifiche arrivate con Befoor aperto non restavano nel Centro Notifiche.
 
 Domande o suggerimenti? apps@feingold5.com

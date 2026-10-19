@@ -1,9 +1,11 @@
-- Skip a single meeting: swipe left on it (or touch and hold) and tap Skip. It won't ring on any of your devices.
-- Join video calls: meetings with a Zoom, Google Meet, Teams or Webex link get a Join button in the list and on the countdown.
-- The list now shows your meetings for the days ahead, not just today.
-- A warning now appears if alarms are off, or if some meetings can only get notifications, which don't ring on silent.
-- New Sync Befoor action in Shortcuts: run it from an automation to catch meetings added while Befoor is closed.
-- Befoor now speaks Chinese, French, German, Italian, Japanese, Korean, Portuguese, Russian and Spanish.
-- Fixed: "lunch" showed up twice in Ignored Keywords.
+- Pause for a vacation: Settings → Pause turns alarms off until the date you pick, then they come back on their own.
+- Video link warnings: if a meeting's Zoom, Meet or Teams link is removed or changed, you see it in the list and on the countdown, plus a notification when the meeting is less than two hours away.
+- Back-to-back meetings: an alert that comes while another meeting is still going vibrates first and only plays its sound after 15 seconds.
+- Ask Siri "When's my next meeting in Befoor", "Join my next Befoor meeting" or "Skip my next meeting in Befoor".
+- The Home Screen widget now has Join and Skip buttons.
+- Morning summary: an optional quiet notification with how many meetings you have and when the first one starts.
+- Test Alert at the bottom of Settings rings a test alarm in 10 seconds.
+- More ignored keywords out of the box: OOO, Out of office, Focus time, Do not book, Commute and Travel time.
+- Fixed: notifications that arrived while Befoor was open didn't stay in Notification Center.
 
 Questions or feedback? apps@feingold5.com

@@ -1,9 +1,11 @@
-- Ignorer une seule réunion : balayez-la vers la gauche (ou maintenez-la) et touchez Ignorer. Elle ne sonnera sur aucun de vos appareils.
-- Rejoindre un appel vidéo : les réunions avec un lien Zoom, Google Meet, Teams ou Webex ont un bouton Rejoindre dans la liste et dans le compte à rebours.
-- La liste affiche désormais vos réunions des jours à venir, pas seulement d’aujourd’hui.
-- Un avertissement apparaît si les alarmes sont désactivées ou si certaines réunions ne reçoivent que des notifications, qui ne sonnent pas en silencieux.
-- Nouvelle action Raccourcis « Synchroniser Befoor » : lancez-la depuis une automatisation pour ne pas manquer les réunions ajoutées pendant que Befoor est fermé.
-- Befoor est désormais disponible en français et dans huit autres langues.
-- Correction : « lunch » apparaissait deux fois dans les mots-clés ignorés.
+- Pause pour les vacances : Réglages → Pause coupe les alarmes jusqu’à la date choisie, puis elles reviennent d’elles-mêmes.
+- Alertes de lien vidéo : si le lien Zoom, Meet ou Teams d’une réunion est supprimé ou modifié, vous le voyez dans la liste et dans le compte à rebours, avec une notification si la réunion est dans moins de deux heures.
+- Réunions enchaînées : une alerte qui arrive pendant une autre réunion vibre d’abord et ne joue son son qu’après 15 secondes.
+- Demandez à Siri « Quelle est ma prochaine réunion dans Befoor », « Rejoindre ma prochaine réunion avec Befoor » ou « Ignorer ma prochaine réunion dans Befoor ».
+- Le widget de l’écran d’accueil a désormais des boutons Rejoindre et Ignorer.
+- Résumé du matin : une notification discrète facultative avec le nombre de réunions et l’heure de la première.
+- « Tester une alerte », tout en bas des Réglages, fait sonner une alarme de test dans 10 secondes.
+- Plus de mots-clés ignorés par défaut : OOO, Out of office, Focus time, Do not book, Commute et Travel time.
+- Correction : les notifications reçues pendant que Befoor était ouvert ne restaient pas dans le centre de notifications.
 
 Des questions ou des commentaires ? apps@feingold5.com

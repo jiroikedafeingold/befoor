@@ -10,6 +10,7 @@ Befoor legge i calendari che scegli e fa suonare una vera sveglia prima di ogni 
 - Scegli tra suoni di sveglia piacevoli.
 - Ignora le riunioni per parola chiave (come «pranzo»), salta i fine settimana e scegli i calendari da controllare.
 - Vedi le riunioni dei prossimi giorni; Befoor si aggiorna da solo. Un’azione di Comandi Rapidi lo sincronizza quando vuoi.
+- Metti in pausa durante le vacanze, ricevi un riepilogo mattutino, partecipa o salta una riunione con Siri o il widget, e ricevi un avviso se cambia il link video di una riunione.
 - Per iPhone e iPad.
 
 Richiede iOS 26.

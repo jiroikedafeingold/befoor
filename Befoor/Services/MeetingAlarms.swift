@@ -30,14 +30,19 @@ struct MeetingAlarmRequest: Sendable {
     let location: String?
     /// Video-call link, for the Join button on the alarm's Live Activity.
     let joinURL: URL?
+    /// "removed" or "changed" if the meeting's link changed (see LinkWatch).
+    let linkChange: String?
     let sound: BefoorSound
+    /// Rings while another meeting is under way: the alarm vibrates first and
+    /// its sound comes in after AlarmTones.quietLead.
+    let quiet: Bool
     let snoozeMinutes: Int
 
     var id: UUID { MeetingAlarms.alarmID(meetingKey: meetingKey, slot: slot) }
 
     /// Everything baked into a scheduled alarm. If it changes, the alarm is rescheduled.
     var fingerprint: String {
-        "\(slot)|\(minutesBefore)|\(Int(fireDate.timeIntervalSince1970))|\(eventTitle)|\(location ?? "")|\(joinURL?.absoluteString ?? "")|\(calendarRGB ?? [])|\(sound.rawValue)|\(AlarmTones.isReady(sound))|\(snoozeMinutes)"
+        "\(slot)|\(minutesBefore)|\(Int(fireDate.timeIntervalSince1970))|\(eventTitle)|\(location ?? "")|\(joinURL?.absoluteString ?? "")|\(linkChange ?? "")|\(calendarRGB ?? [])|\(sound.rawValue)|\(quiet)|\(AlarmTones.isReady(sound, quiet: quiet))|\(snoozeMinutes)"
     }
 }
 
@@ -47,37 +52,48 @@ struct MeetingAlarmRequest: Sendable {
 /// To have an alert sound just once, each tone gets a copy in Library/Sounds
 /// (where the system also looks for alert sounds) followed by enough silence
 /// that the loop never comes back around.
+///
+/// A second, quiet copy starts with `quietLead` of silence, for alerts that
+/// land during another meeting: the alarm vibrates first and the sound only
+/// comes in if it hasn't been stopped by then.
 enum AlarmTones {
     /// AlarmKit's longest ring, plus a margin.
     private static let paddedLength: TimeInterval = 905
 
-    static func fileName(for sound: BefoorSound) -> String { sound.rawValue + "_once.caf" }
+    /// Silence before the sound in the quiet copy.
+    static let quietLead: TimeInterval = 15
+
+    static func fileName(for sound: BefoorSound, quiet: Bool = false) -> String {
+        sound.rawValue + (quiet ? "_quiet.caf" : "_once.caf")
+    }
 
     private static var directory: URL {
         URL.libraryDirectory.appending(path: "Sounds", directoryHint: .isDirectory)
     }
 
-    private static func url(for sound: BefoorSound) -> URL {
-        directory.appending(path: fileName(for: sound))
+    private static func url(for sound: BefoorSound, quiet: Bool) -> URL {
+        directory.appending(path: fileName(for: sound, quiet: quiet))
     }
 
-    static func isReady(_ sound: BefoorSound) -> Bool {
-        sound != .systemDefault && FileManager.default.fileExists(atPath: url(for: sound).path)
+    static func isReady(_ sound: BefoorSound, quiet: Bool = false) -> Bool {
+        sound != .systemDefault && FileManager.default.fileExists(atPath: url(for: sound, quiet: quiet).path)
     }
 
-    /// Builds the padded copy of `sound` if it doesn't exist yet.
+    /// Builds the padded copies of `sound` if they don't exist yet.
     static func prepare(_ sound: BefoorSound) async {
-        guard sound != .systemDefault, !isReady(sound) else { return }
-        await Task.detached(priority: .utility) {
-            do {
-                try build(sound)
-            } catch {
-                print("[Befoor] Building ring-once tone failed: \(error)")
-            }
-        }.value
+        guard sound != .systemDefault else { return }
+        for quiet in [false, true] where !isReady(sound, quiet: quiet) {
+            await Task.detached(priority: .utility) {
+                do {
+                    try build(sound, quiet: quiet)
+                } catch {
+                    print("[Befoor] Building ring-once tone failed: \(error)")
+                }
+            }.value
+        }
     }
 
-    private static func build(_ sound: BefoorSound) throws {
+    private static func build(_ sound: BefoorSound, quiet: Bool) throws {
         guard let source = Bundle.main.url(forResource: sound.rawValue, withExtension: "caf") else { return }
         let input = try AVAudioFile(forReading: source)
         let format = input.processingFormat
@@ -100,22 +116,30 @@ enum AlarmTones {
                 commonFormat: format.commonFormat,
                 interleaved: format.isInterleaved
             )
+            func silence(seconds: TimeInterval) -> AVAudioPCMBuffer? {
+                let frames = AVAudioFrameCount(format.sampleRate * seconds)
+                guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames) else { return nil }
+                buffer.frameLength = frames
+                for channel in UnsafeMutableAudioBufferListPointer(buffer.mutableAudioBufferList) {
+                    if let data = channel.mData { memset(data, 0, Int(channel.mDataByteSize)) }
+                }
+                return buffer
+            }
+
+            if quiet, let lead = silence(seconds: quietLead) {
+                try output.write(from: lead)
+            }
             try output.write(from: tone)
 
-            let chunk = AVAudioFrameCount(format.sampleRate * 10)
-            guard let silence = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: chunk) else { return }
-            silence.frameLength = chunk
-            for buffer in UnsafeMutableAudioBufferListPointer(silence.mutableAudioBufferList) {
-                if let data = buffer.mData { memset(data, 0, Int(buffer.mDataByteSize)) }
-            }
-            var remaining = paddedLength - Double(input.length) / format.sampleRate
+            guard let chunk = silence(seconds: 10) else { return }
+            var remaining = paddedLength - Double(input.length) / format.sampleRate - (quiet ? quietLead : 0)
             while remaining > 0 {
-                try output.write(from: silence)
+                try output.write(from: chunk)
                 remaining -= 10
             }
         } // Closing the file finishes the AAC stream before it's moved into place.
 
-        try FileManager.default.moveItem(at: temp, to: url(for: sound))
+        try FileManager.default.moveItem(at: temp, to: url(for: sound, quiet: quiet))
     }
 }
 
@@ -149,6 +173,7 @@ final class MeetingAlarms {
     func reconcile(_ requests: [MeetingAlarmRequest]) async -> [MeetingAlarmRequest] { requests }
     func cancelAll() {}
     func hasActiveAlarm(meetingKey: String) -> Bool { false }
+    func scheduleTest(in seconds: TimeInterval) async -> Bool { false }
     #else
 
     private let manager = AlarmManager.shared
@@ -188,6 +213,9 @@ final class MeetingAlarms {
     /// Alarm ID → start of the meeting it's for. Lets a sync recognise a ringing
     /// or snoozed alarm whose meeting has since moved or been cancelled.
     private static let startsKey = "MeetingAlarmStarts"
+    /// Alarm ID → ring time of a countdown Befoor started itself (Stop on the
+    /// first alert), so it can be rebuilt if the meeting's details change.
+    private static let chainsKey = "MeetingAlarmChains"
 
     private var fingerprints: [String: String] {
         get { UserDefaults.standard.dictionary(forKey: Self.fingerprintsKey) as? [String: String] ?? [:] }
@@ -200,6 +228,10 @@ final class MeetingAlarms {
     private var starts: [String: Double] {
         get { UserDefaults.standard.dictionary(forKey: Self.startsKey) as? [String: Double] ?? [:] }
         set { UserDefaults.standard.set(newValue, forKey: Self.startsKey) }
+    }
+    private var chains: [String: Double] {
+        get { UserDefaults.standard.dictionary(forKey: Self.chainsKey) as? [String: Double] ?? [:] }
+        set { UserDefaults.standard.set(newValue, forKey: Self.chainsKey) }
     }
 
     // MARK: Scheduling
@@ -236,6 +268,7 @@ final class MeetingAlarms {
 
         // Cancel scheduled alarms that are no longer wanted or have changed.
         for (id, alarm) in existing where alarm.state == .scheduled {
+            if id == Self.testAlarmID { continue }   // the test from Settings isn't a meeting
             let key = id.uuidString
             if let request = wantedByID[id], fingerprints[key] == request.fingerprint { continue }
             try? manager.cancel(id: id)
@@ -250,6 +283,22 @@ final class MeetingAlarms {
             print("[Befoor] Meeting moved; taking down its \(alarm.state) alarm")
             try? manager.cancel(id: id)
             fingerprints[id.uuidString] = nil
+        }
+
+        // Befoor's own countdowns whose meeting changed (a new title, location or
+        // video link): rebuilt to the same ring time so the card shows it.
+        let chains = self.chains
+        for (id, alarm) in existing where alarm.state == .countdown {
+            let key = id.uuidString
+            guard let target = chains[key], let request = wantedByID[id],
+                  target == request.fireDate.timeIntervalSince1970,
+                  request.fireDate > now.addingTimeInterval(30),
+                  fingerprints[key] != request.fingerprint else { continue }
+            try? manager.cancel(id: id)
+            if (try? await manager.schedule(id: id, configuration: configuration(for: request, at: request.fireDate,
+                                                                                    countingDown: true))) != nil {
+                fingerprints[key] = request.fingerprint
+            }
         }
 
         var failed: [MeetingAlarmRequest] = []
@@ -284,6 +333,7 @@ final class MeetingAlarms {
         let liveIDs = Set(currentAlarms.map(\.id.uuidString))
         self.history = history.filter { $0.value > cutoff }
         self.starts = starts.filter { $0.value > cutoff }
+        self.chains = chains.filter { $0.value > cutoff }
         self.fingerprints = fingerprints.filter { liveIDs.contains($0.key) }
 
         return failed
@@ -339,13 +389,16 @@ final class MeetingAlarms {
                 startDate: request.eventStart,
                 location: request.location,
                 calendarRGB: request.calendarRGB,
-                joinURL: request.joinURL
+                joinURL: request.joinURL,
+                linkChange: request.linkChange
             ),
             tintColor: request.calendarRGB.map { Color(.sRGB, red: $0[0], green: $0[1], blue: $0[2]) } ?? .indigo
         )
         let sound: AlertConfiguration.AlertSound
         if request.sound == .systemDefault {
             sound = .default
+        } else if AlarmTones.isReady(request.sound, quiet: request.quiet) {
+            sound = .named(AlarmTones.fileName(for: request.sound, quiet: request.quiet))
         } else if AlarmTones.isReady(request.sound) {
             sound = .named(AlarmTones.fileName(for: request.sound))
         } else {
@@ -367,6 +420,34 @@ final class MeetingAlarms {
     }
 
     // MARK: Alarm actions
+
+    // MARK: Test alert
+
+    /// The test alert from Settings; syncs leave it alone.
+    private static let testAlarmID = alarmID(meetingKey: "befoor_test", slot: 1)
+
+    /// Rings a real alarm in `seconds`, set up like a meeting's first alert
+    /// (title, sound, snooze and countdown card), so the person can check it
+    /// gets through on silent, in a Focus, or with the phone locked.
+    func scheduleTest(in seconds: TimeInterval) async -> Bool {
+        let settings = AppSettings.shared
+        await AlarmTones.prepare(settings.selectedSound)
+        let ringAt = Date().addingTimeInterval(seconds)
+        let request = MeetingAlarmRequest(
+            meetingKey: "befoor_test", slot: 1, minutesBefore: 5, fireDate: ringAt,
+            eventTitle: String(localized: "Test meeting"), eventStart: ringAt.addingTimeInterval(5 * 60),
+            calendarName: "", calendarRGB: nil, location: nil, joinURL: nil, linkChange: nil,
+            sound: settings.selectedSound, quiet: false, snoozeMinutes: settings.snoozeDurationMinutes
+        )
+        try? manager.cancel(id: Self.testAlarmID)
+        do {
+            _ = try await manager.schedule(id: Self.testAlarmID, configuration: configuration(for: request, at: ringAt))
+            return true
+        } catch {
+            print("[Befoor] Test alarm failed: \(error)")
+            return false
+        }
+    }
 
     /// Called when the person taps Stop or Snooze on a ringing alarm. Either way
     /// the meeting's last alert still rings.
@@ -405,6 +486,7 @@ final class MeetingAlarms {
         do {
             _ = try await manager.schedule(id: next.id,
                                            configuration: configuration(for: next, at: next.fireDate, countingDown: true))
+            chains[next.id.uuidString] = next.fireDate.timeIntervalSince1970
         } catch {
             // Never lose the alert: put it back as a plain alarm.
             print("[Befoor] Countdown to next alert failed: \(error)")
@@ -431,6 +513,8 @@ struct MeetingAlarmMetadata: AlarmMetadata {
     var calendarRGB: [Double]?
     /// Video-call link for the Join button.
     var joinURL: URL?
+    /// "removed" or "changed" if the meeting's link changed.
+    var linkChange: String?
 }
 
 // MARK: - Intent

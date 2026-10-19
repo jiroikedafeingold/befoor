@@ -10,6 +10,7 @@ Befoor liest die Kalender deiner Wahl und lässt vor jedem Termin einen echten W
 - Wähle aus angenehmen Wecktönen.
 - Termine per Stichwort ignorieren (etwa „Mittagessen“), Wochenenden überspringen und Kalender auswählen.
 - Sieh deine Termine der nächsten Tage – Befoor bleibt automatisch aktuell. Eine Kurzbefehle-Aktion synchronisiert jederzeit.
+- Pausiere für den Urlaub, erhalte eine Morgenübersicht, tritt Terminen per Siri oder Widget bei oder überspringe sie, und werde gewarnt, wenn sich der Videolink eines Termins ändert.
 - Für iPhone und iPad.
 
 Erfordert iOS 26.

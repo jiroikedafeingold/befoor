@@ -103,6 +103,30 @@ struct HelpView: View {
                         detail: "Meetings with a Zoom, Google Meet, Teams or Webex link get a Join button, in the list and on the countdown."
                     )
                     HelpRow(
+                        icon: "speaker.wave.1.fill",
+                        iconColor: .indigo,
+                        title: "Back-to-Back Meetings",
+                        detail: "When an alert comes while another meeting is still going, it vibrates first and only plays its sound after 15 seconds, so you can stop it quietly."
+                    )
+                    HelpRow(
+                        icon: "exclamationmark.triangle.fill",
+                        iconColor: .orange,
+                        title: "Video Link Warnings",
+                        detail: "If a meeting's Zoom, Meet or Teams link is removed or changed, Befoor flags it in the list and on the countdown, and sends a notification when the meeting is less than two hours away."
+                    )
+                    HelpRow(
+                        icon: "pause.circle.fill",
+                        iconColor: .orange,
+                        title: "Pause for a Vacation",
+                        detail: "In Settings → Pause, choose when to resume. Meetings before then don't ring; alarms come back on their own afterwards."
+                    )
+                    HelpRow(
+                        icon: "mic.fill",
+                        iconColor: .purple,
+                        title: "Ask Siri",
+                        detail: "Say \"When's my next meeting in Befoor\", \"Join my next Befoor meeting\" or \"Skip my next meeting in Befoor\". The same actions are in the Shortcuts app."
+                    )
+                    HelpRow(
                         icon: "arrow.clockwise",
                         iconColor: .blue,
                         title: "Last-Minute Meetings",

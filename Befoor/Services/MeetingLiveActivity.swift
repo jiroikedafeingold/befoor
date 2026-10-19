@@ -31,6 +31,8 @@ struct NextMeetingAttributes: ActivityAttributes {
         var nextStartDate: Date?
         /// Video-call link for the Join button.
         var joinURL: URL?
+        /// "removed" or "changed" if the meeting's link changed.
+        var linkChange: String?
     }
 }
 #endif
@@ -324,12 +326,14 @@ final class MeetingLiveActivityManager {
         let sorted = TrackedAlarmsStore.shared.alarms.values
             .filter { $0.eventStartDate > now }
             .filter { !settings.isSkipped(eventIdentifier: $0.eventIdentifier, start: $0.eventStartDate) }
+            .filter { !settings.isPaused(at: $0.eventStartDate) }
             .sorted { ($0.eventStartDate, $0.eventTitle) < ($1.eventStartDate, $1.eventTitle) }
         return Dictionary(grouping: sorted, by: \.notificationIdentifier).values
             .compactMap { group -> TrackedAlarmModel? in
                 guard var merged = group.first else { return nil }
                 merged.eventTitle = AlarmScheduler.combinedTitle(group.map(\.eventTitle))
                 merged.joinURL = group.lazy.compactMap(\.joinURL).first
+                merged.linkChange = group.lazy.compactMap(\.linkChange).first
                 return merged
             }
             .sorted { $0.eventStartDate < $1.eventStartDate }
@@ -365,7 +369,8 @@ final class MeetingLiveActivityManager {
             attendeeCount: event?.attendees?.count ?? 0,
             nextTitle: sameDayFollowing?.eventTitle,
             nextStartDate: sameDayFollowing?.eventStartDate,
-            joinURL: meeting.joinURL
+            joinURL: meeting.joinURL,
+            linkChange: meeting.linkChange
         )
         // Goes stale 10 minutes after the start, when it's due to be removed, so it
         // reads as finished even if Befoor isn't running to remove it right then.

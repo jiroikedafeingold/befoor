@@ -1,5 +1,6 @@
 import UserNotifications
 import Foundation
+import OSLog
 
 // MARK: - Action / Category identifiers
 
@@ -15,6 +16,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationService()
 
     private let center = UNUserNotificationCenter.current()
+    private let log = Logger(subsystem: "com.befoor.app", category: "Notifications")
 
     private override init() {
         super.init()
@@ -98,6 +100,82 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             )
         }
         return identifier
+    }
+
+    // MARK: Link changes
+
+    /// Right away: a meeting's video-call link was removed or replaced.
+    func notifyLinkChange(identifier: String, title: String, start: Date, removed: Bool) {
+        let content = UNMutableNotificationContent()
+        content.title = removed ? String(localized: "Video link removed") : String(localized: "Video link changed")
+        content.body = String(localized: "\(title) at \(start.formatted(date: .omitted, time: .shortened)). Check the invite before you join.")
+        content.sound = AppSettings.shared.soundEnabled ? .default : nil
+        content.interruptionLevel = .timeSensitive
+        let request = UNNotificationRequest(identifier: "befoor_link_" + identifier, content: content, trigger: nil)
+        let log = log
+        center.add(request) { error in
+            if let error { log.error("link-change notification failed: \(error, privacy: .public)") }
+        }
+    }
+
+    // MARK: Test alert
+
+    /// The test from Settings when alarms aren't in use: the notification a
+    /// meeting would get, in `seconds`.
+    func sendTest(in seconds: TimeInterval) {
+        let content = UNMutableNotificationContent()
+        content.title = String(localized: "Test meeting")
+        content.subtitle = String(localized: "Starting in 5 minutes")
+        content.sound = AppSettings.shared.soundEnabled ? AppSettings.shared.selectedSound.notificationSound : nil
+        content.interruptionLevel = .timeSensitive
+        let request = UNNotificationRequest(
+            identifier: "befoor_test",
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
+        )
+        let log = log
+        center.add(request) { error in
+            if let error { log.error("test notification failed: \(error, privacy: .public)") }
+        }
+    }
+
+    // MARK: Morning summary
+
+    /// One quiet notification per day with meetings: how many, and the first one.
+    /// Rebuilt on every sync (which clears pending notifications first), so it
+    /// reflects the calendar as of the last sync.
+    func scheduleMorningSummaries(meetings: [(title: String, start: Date)], enabled: Bool, minutesAfterMidnight: Int) async {
+        guard enabled else { return }
+        let calendar = Calendar.current
+        let now = Date()
+        let byDay = Dictionary(grouping: meetings) { calendar.startOfDay(for: $0.start) }
+        for (day, todays) in byDay.sorted(by: { $0.key < $1.key }).prefix(7) {
+            guard let fireAt = calendar.date(byAdding: .minute, value: minutesAfterMidnight, to: day),
+                  fireAt > now else { continue }
+            // Meetings that start before the summary arrives aren't news any more.
+            let upcoming = todays.filter { $0.start > fireAt }.sorted { $0.start < $1.start }
+            guard let first = upcoming.first else { continue }
+
+            let content = UNMutableNotificationContent()
+            content.title = String(localized: "Meetings today: \(upcoming.count)")
+            content.body = String(localized: "First: \(first.title) at \(first.start.formatted(date: .omitted, time: .shortened))")
+            // No sound, so it arrives quietly. (A .passive level is rejected:
+            // UNErrorDomain 2003, "Source is not authorized".)
+            content.interruptionLevel = .active
+            content.threadIdentifier = "befoor_summary"
+            let comps = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fireAt)
+            let request = UNNotificationRequest(
+                identifier: "befoor_summary_\(Int(day.timeIntervalSince1970))",
+                content: content,
+                trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+            )
+            do {
+                try await center.add(request)
+                log.notice("morning summary scheduled for \(fireAt, privacy: .public): \(upcoming.count) meetings")
+            } catch {
+                log.error("morning summary failed: \(error, privacy: .public)")
+            }
+        }
     }
 
     // MARK: Cancel
@@ -202,7 +280,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
         // Alarm notifications (fallback when AlarmKit isn't used). The sound is
         // already silenced in the content when Sound is off.
-        completionHandler([.banner, .sound])
+        completionHandler([.banner, .list, .sound])
     }
 
     /// Handle Snooze / Dismiss tap.

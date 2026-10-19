@@ -128,7 +128,8 @@ struct ContentView: View {
                     ForEach(day.meetings) { meeting in
                         let skipped = settings.isSkipped(eventIdentifier: meeting.eventIdentifier,
                                                          start: meeting.eventStartDate)
-                        AlarmRow(alarm: meeting, isSkipped: skipped)
+                        AlarmRow(alarm: meeting, isSkipped: skipped,
+                                 isPaused: settings.isPaused(at: meeting.eventStartDate))
                             .swipeActions(edge: .trailing) {
                                 skipButton(for: meeting, skipped: skipped)
                             }
@@ -152,6 +153,26 @@ struct ContentView: View {
                 Label("Befoor is paused. Enable it in Settings.", systemImage: "pause.circle")
                     .foregroundStyle(.orange)
                     .font(.footnote)
+            }
+            .listRowBackground(Color.orange.opacity(0.1))
+        } else if settings.isPausedNow, let until = settings.pausedUntil {
+            Section {
+                HStack {
+                    Label {
+                        Text("Paused until \(until.formatted(date: .abbreviated, time: .shortened))")
+                    } icon: {
+                        Image(systemName: "pause.circle")
+                    }
+                    .foregroundStyle(.orange)
+                    .font(.footnote)
+                    Spacer()
+                    Button("Resume") {
+                        settings.pausedUntil = nil
+                        Task { await AlarmScheduler.shared.sync(force: true) }
+                    }
+                    .font(.footnote.weight(.semibold))
+                    .buttonStyle(.borderless)
+                }
             }
             .listRowBackground(Color.orange.opacity(0.1))
         } else if settings.soundEnabled && !alarmsAllowed {
@@ -296,7 +317,10 @@ struct ContentView: View {
 private struct AlarmRow: View {
     let alarm: TrackedAlarmModel
     let isSkipped: Bool
+    var isPaused = false
     @ObservedObject private var calService = CalendarService.shared
+
+    private var silenced: Bool { isSkipped || isPaused }
 
     private var calendarColor: Color {
         if let cal = calService.calendar(for: alarm.calendarIdentifier) {
@@ -313,6 +337,13 @@ private struct AlarmRow: View {
                     .strikethrough(isSkipped)
                     .lineLimit(1)
 
+                if let change = alarm.linkChange {
+                    Label(change == "removed" ? "Video link removed" : "Video link changed",
+                          systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.orange)
+                }
+
                 HStack(spacing: 6) {
                     Circle()
                         .fill(calendarColor)
@@ -320,6 +351,10 @@ private struct AlarmRow: View {
 
                     if isSkipped {
                         Text("Skipped")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else if isPaused {
+                        Text("Paused")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
@@ -349,13 +384,13 @@ private struct AlarmRow: View {
                 .tint(calendarColor)
             }
 
-            Image(systemName: isSkipped ? "bell.slash" : "alarm.fill")
-                .foregroundStyle(isSkipped ? AnyShapeStyle(.secondary) : AnyShapeStyle(.indigo.opacity(0.7)))
+            Image(systemName: silenced ? "bell.slash" : "alarm.fill")
+                .foregroundStyle(silenced ? AnyShapeStyle(.secondary) : AnyShapeStyle(.indigo.opacity(0.7)))
                 .font(.caption)
-                .accessibilityLabel(isSkipped ? Text("Skipped") : Text("Alarm set"))
+                .accessibilityLabel(isSkipped ? Text("Skipped") : isPaused ? Text("Paused") : Text("Alarm set"))
         }
         .padding(.vertical, 2)
-        .opacity(isSkipped ? 0.6 : 1)
+        .opacity(silenced ? 0.6 : 1)
         // Otherwise a row with a Join button gets a separator that starts at the button.
         .alignmentGuide(.listRowSeparatorLeading) { dimensions in dimensions[.leading] }
     }

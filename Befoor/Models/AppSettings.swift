@@ -73,7 +73,8 @@ final class AppSettings: ObservableObject {
         Keys.leadTime, Keys.ignoredKeywords, Keys.skipWeekends,
         Keys.isEnabled, Keys.selectedSound, Keys.lookAheadDays,
         Keys.checkInterval, Keys.snoozeDuration, Keys.soundEnabled,
-        Keys.lastAlert, Keys.skippedMeetings,
+        Keys.lastAlert, Keys.skippedMeetings, Keys.pausedUntil,
+        Keys.morningSummary, Keys.morningSummaryMinutes,
     ]
 
     // Each meeting rings twice: at the first alert, when its countdown appears,
@@ -153,6 +154,38 @@ final class AppSettings: ObservableObject {
         skippedMeetings = keys
     }
 
+    /// Phrases that mark calendar blocks rather than meetings. Kept specific:
+    /// matching is by substring, so a word like "busy" would also catch "business".
+    static let defaultIgnoredKeywords = [
+        "lunch", "OOO", "Out of office", "Focus time", "Do not book", "Commute", "Travel time",
+    ]
+
+    // No alarms for meetings that start before this date (vacation, a day off).
+    // Meetings after it keep their alarms, so nothing depends on Befoor running
+    // when the pause ends. Synced.
+    @Published var pausedUntil: Date? {
+        didSet { save(pausedUntil?.timeIntervalSince1970 ?? 0, forKey: Keys.pausedUntil) }
+    }
+
+    /// Whether `start` falls inside the pause.
+    func isPaused(at start: Date) -> Bool {
+        guard let pausedUntil else { return false }
+        return start < pausedUntil
+    }
+
+    /// Paused right now.
+    var isPausedNow: Bool { pausedUntil.map { $0 > Date() } ?? false }
+
+    // A quiet notification each morning listing the day's meetings.
+    @Published var morningSummaryEnabled: Bool {
+        didSet { save(morningSummaryEnabled, forKey: Keys.morningSummary) }
+    }
+
+    // When the morning summary arrives, in minutes after midnight (default 7:30).
+    @Published var morningSummaryMinutes: Int {
+        didSet { save(morningSummaryMinutes, forKey: Keys.morningSummaryMinutes) }
+    }
+
     // Do not create alarms for events on Saturday or Sunday
     @Published var skipWeekends: Bool {
         didSet { save(skipWeekends, forKey: Keys.skipWeekends) }
@@ -211,9 +244,19 @@ final class AppSettings: ObservableObject {
         leadTimeMinutes           = Self.clamp(defaults.object(forKey: Keys.leadTime) as? Int ?? 15, Self.firstAlertRange)
         lastAlertMinutes          = Self.clamp(defaults.object(forKey: Keys.lastAlert) as? Int ?? 1, Self.laterAlertRange)
         excludedCalendarIdentifiers = Set(defaults.stringArray(forKey: Keys.excludedCalendars) ?? [])
-        ignoredKeywords           = Self.deduped(defaults.stringArray(forKey: Keys.ignoredKeywords) ?? ["lunch"])
+        var keywords = defaults.stringArray(forKey: Keys.ignoredKeywords) ?? Self.defaultIgnoredKeywords
+        // 4.4 added more default phrases; give them to existing lists once.
+        if !defaults.bool(forKey: Keys.keywordsMigratedV2) {
+            let have = Set(keywords.map { $0.lowercased() })
+            keywords += Self.defaultIgnoredKeywords.filter { $0 != "lunch" && !have.contains($0.lowercased()) }
+            defaults.set(true, forKey: Keys.keywordsMigratedV2)
+        }
+        ignoredKeywords           = Self.deduped(keywords)
         skippedMeetings           = Set(defaults.stringArray(forKey: Keys.skippedMeetings) ?? [])
         skipWeekends              = defaults.object(forKey: Keys.skipWeekends) as? Bool ?? false
+        pausedUntil               = Self.date(defaults.double(forKey: Keys.pausedUntil))
+        morningSummaryEnabled     = defaults.object(forKey: Keys.morningSummary) as? Bool ?? false
+        morningSummaryMinutes     = defaults.object(forKey: Keys.morningSummaryMinutes) as? Int ?? 7 * 60 + 30
         isEnabled                 = defaults.object(forKey: Keys.isEnabled) as? Bool ?? true
         selectedSound             = BefoorSound(rawValue: defaults.string(forKey: Keys.selectedSound) ?? "") ?? .pebble
         lookAheadDays             = defaults.object(forKey: Keys.lookAheadDays) as? Int ?? 7
@@ -238,6 +281,11 @@ final class AppSettings: ObservableObject {
     private static func deduped(_ keywords: [String]) -> [String] {
         var seen = Set<String>()
         return keywords.filter { seen.insert($0.lowercased()).inserted }
+    }
+
+    /// Stored pause dates; 0 (or one in the past) means not paused.
+    private static func date(_ seconds: Double) -> Date? {
+        seconds > Date().timeIntervalSince1970 ? Date(timeIntervalSince1970: seconds) : nil
     }
 
     private static func clamp(_ value: Int, _ range: ClosedRange<Int>) -> Int {
@@ -283,6 +331,12 @@ final class AppSettings: ObservableObject {
                     if let v = value as? [String] { ignoredKeywords = Self.deduped(v) }
                 case Keys.skippedMeetings:
                     if let v = value as? [String] { skippedMeetings = Set(v) }
+                case Keys.pausedUntil:
+                    if let v = value as? Double { pausedUntil = Self.date(v) }
+                case Keys.morningSummary:
+                    if let v = value as? Bool { morningSummaryEnabled = v }
+                case Keys.morningSummaryMinutes:
+                    if let v = value as? Int { morningSummaryMinutes = v }
                 case Keys.skipWeekends:
                     if let v = value as? Bool { skipWeekends = v }
                 case Keys.isEnabled:
@@ -311,6 +365,10 @@ final class AppSettings: ObservableObject {
         static let ignoredKeywords    = "bf_ignoredKeywords"
         static let skipWeekends       = "bf_skipWeekends"
         static let skippedMeetings    = "bf_skippedMeetings"
+        static let keywordsMigratedV2 = "bf_keywordsMigratedV2"
+        static let pausedUntil        = "bf_pausedUntil"
+        static let morningSummary     = "bf_morningSummary"
+        static let morningSummaryMinutes = "bf_morningSummaryMinutes"
         static let isEnabled          = "bf_isEnabled"
         static let selectedSound      = "bf_selectedSound"
         static let lookAheadDays      = "bf_lookAheadDays"

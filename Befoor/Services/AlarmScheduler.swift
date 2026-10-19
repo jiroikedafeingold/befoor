@@ -129,6 +129,7 @@ final class AlarmScheduler: ObservableObject {
             excludedIdentifiers: settings.excludedCalendarIdentifiers
         )
         let filtered = filter(events)
+        let linkChanges = LinkWatch.update(events: filtered, calendar: calendar, notifications: notifications)
 
         // Meetings ring as AlarmKit alarms, which play through silent mode and
         // Focus. With Sound off, or if alarms aren't allowed, Befoor falls back to
@@ -153,7 +154,8 @@ final class AlarmScheduler: ObservableObject {
             let all = events.sorted { ($0.title ?? Self.untitled) < ($1.title ?? Self.untitled) }
             let meetingKey = Self.meetingKey(start: start)
 
-            // Skipped meetings stay in the list (so they can be un-skipped) but get no alerts.
+            // Skipped and paused meetings stay in the list (so they can be
+            // un-skipped) but get no alerts.
             for event in all {
                 store.upsert(TrackedAlarmModel(
                     eventIdentifier:        event.eventIdentifier,
@@ -161,11 +163,17 @@ final class AlarmScheduler: ObservableObject {
                     eventStartDate:         event.startDate,
                     eventTitle:             event.title ?? Self.untitled,
                     calendarIdentifier:     event.calendar?.calendarIdentifier ?? "",
-                    joinURL:                calendar.joinURL(for: event)
+                    joinURL:                calendar.joinURL(for: event),
+                    linkChange:             linkChanges[LinkWatch.key(event)],
+                    isSkipped:              settings.isSkipped(eventIdentifier: event.eventIdentifier, start: event.startDate)
                 ))
             }
-            let events = all.filter { !settings.isSkipped(eventIdentifier: $0.eventIdentifier, start: $0.startDate) }
+            let events = all.filter {
+                !settings.isSkipped(eventIdentifier: $0.eventIdentifier, start: $0.startDate)
+                    && !settings.isPaused(at: $0.startDate)
+            }
             guard !events.isEmpty else { continue }
+            let linkChange = events.lazy.compactMap { linkChanges[LinkWatch.key($0)] }.first
 
             let title = Self.combinedTitle(events.map { $0.title ?? Self.untitled })
             let calName = events.first?.calendar?.title ?? String(localized: "Calendar")
@@ -201,7 +209,10 @@ final class AlarmScheduler: ObservableObject {
                     calendarRGB:   MeetingLiveActivityManager.rgb(events.first?.calendar?.cgColor),
                     location:      location,
                     joinURL:       joinURL,
+                    linkChange:    linkChange,
                     sound:         settings.selectedSound,
+                    // Ringing during another meeting: vibrate first, sound after 15 s.
+                    quiet:         Self.inAnotherMeeting(at: alert.date, start: start, events: filtered),
                     snoozeMinutes: settings.snoozeDurationMinutes
                 ))
             }
@@ -228,6 +239,15 @@ final class AlarmScheduler: ObservableObject {
             alarmFallbackCount = 0
         }
 
+        await notifications.scheduleMorningSummaries(
+            meetings: filtered.filter {
+                !settings.isSkipped(eventIdentifier: $0.eventIdentifier, start: $0.startDate)
+                    && !settings.isPaused(at: $0.startDate)
+            }.map { (title: $0.title ?? Self.untitled, start: $0.startDate) },
+            enabled: settings.isEnabled && settings.morningSummaryEnabled,
+            minutesAfterMidnight: settings.morningSummaryMinutes
+        )
+
         store.prunePast()
         store.saveSnapshot()
         let signature = alarmSignature()
@@ -237,6 +257,14 @@ final class AlarmScheduler: ObservableObject {
             WidgetCenter.shared.reloadAllTimelines()
         }
         await MeetingLiveActivityManager.shared.refresh(fromSync: true)
+    }
+
+    /// Whether an alert at `date` lands while another meeting (one not starting
+    /// at `start`) is under way — back to back, or overlapping.
+    static func inAnotherMeeting(at date: Date, start: Date, events: [EKEvent]) -> Bool {
+        events.contains { other in
+            other.startDate != start && other.startDate <= date && other.endDate > date
+        }
     }
 
     /// Title for an event that has none.
@@ -277,7 +305,7 @@ final class AlarmScheduler: ObservableObject {
     /// whether the widget actually needs reloading.
     private func alarmSignature() -> Set<String> {
         Set(store.alarms.values.map {
-            "\($0.eventIdentifier)|\($0.notificationIdentifier)|\($0.eventTitle)|\($0.calendarIdentifier)|\(Int($0.eventStartDate.timeIntervalSince1970))"
+            "\($0.eventIdentifier)|\($0.notificationIdentifier)|\($0.eventTitle)|\($0.calendarIdentifier)|\(Int($0.eventStartDate.timeIntervalSince1970))|\($0.joinURL?.absoluteString ?? "")|\($0.isSkipped)"
         })
     }
 
@@ -350,6 +378,67 @@ final class AlarmScheduler: ObservableObject {
     }
 }
 
+// MARK: - Link changes
+
+/// Remembers each upcoming meeting's video-call link so a removed or changed
+/// link can be flagged: organizers sometimes re-send an invite at the last
+/// minute without it, and the alarm would otherwise point at the old call.
+enum LinkWatch {
+    /// Event key → last link seen ("" for none).
+    private static let linksKey = "bf_meetingLinks"
+    /// Event key → "removed" or "changed", kept until the meeting is over.
+    private static let changesKey = "bf_meetingLinkChanges"
+    /// Event keys whose change has already been notified.
+    private static let notifiedKey = "bf_meetingLinkNotified"
+
+    /// Changes this close to the start also get a notification.
+    private static let notifyWithin: TimeInterval = 2 * 3600
+
+    static func key(_ event: EKEvent) -> String {
+        AppSettings.skipKey(eventIdentifier: event.eventIdentifier, start: event.startDate)
+    }
+
+    /// Compares each meeting's link with the last one seen and returns the
+    /// meetings whose link was removed or changed (event key → change).
+    @MainActor
+    static func update(events: [EKEvent], calendar: CalendarService, notifications: NotificationService) -> [String: String] {
+        let defaults = UserDefaults.standard
+        var links = defaults.dictionary(forKey: linksKey) as? [String: String] ?? [:]
+        var changes = defaults.dictionary(forKey: changesKey) as? [String: String] ?? [:]
+        var notified = Set(defaults.stringArray(forKey: notifiedKey) ?? [])
+        let now = Date()
+        var current = Set<String>()
+
+        for event in events where event.endDate > now {
+            let key = key(event)
+            current.insert(key)
+            let link = calendar.joinURL(for: event)?.absoluteString ?? ""
+            if let old = links[key], !old.isEmpty, old != link {
+                changes[key] = link.isEmpty ? "removed" : "changed"
+                notified.remove(key)          // a new change is worth a new notification
+            }
+            links[key] = link
+            if let change = changes[key], !notified.contains(key),
+               event.startDate.timeIntervalSince(now) < notifyWithin {
+                notifications.notifyLinkChange(
+                    identifier: key,
+                    title: event.title ?? AlarmScheduler.untitled,
+                    start: event.startDate,
+                    removed: change == "removed"
+                )
+                notified.insert(key)
+            }
+        }
+
+        // Forget meetings that are over or gone from the calendar.
+        defaults.set(links.filter { current.contains($0.key) }, forKey: linksKey)
+        let kept = changes.filter { current.contains($0.key) }
+        defaults.set(kept, forKey: changesKey)
+        defaults.set(Array(notified.intersection(current)), forKey: notifiedKey)
+        return kept
+    }
+}
+
 // MARK: - Shortcuts
 
 /// Runs a calendar sync from Shortcuts. iOS doesn't wake Befoor when the
@@ -366,8 +455,123 @@ struct SyncCalendarIntent: AppIntent {
     }
 }
 
+/// The next meeting that hasn't started, isn't skipped or paused, and (for
+/// Join) has a video link. Syncs first so a just-launched app has meetings.
+@MainActor
+private func nextMeeting(withLink: Bool = false) async -> TrackedAlarmModel? {
+    let store = TrackedAlarmsStore.shared
+    if store.alarms.isEmpty { await AlarmScheduler.shared.sync() }
+    let settings = AppSettings.shared
+    let now = Date()
+    return store.alarms.values
+        .filter { $0.eventStartDate > now && !$0.isSkipped && !settings.isPaused(at: $0.eventStartDate) }
+        .filter { !withLink || $0.joinURL != nil }
+        .min { $0.eventStartDate < $1.eventStartDate }
+}
+
+private func timeText(_ date: Date) -> String {
+    Calendar.current.isDateInToday(date)
+        ? date.formatted(date: .omitted, time: .shortened)
+        : date.formatted(.dateTime.weekday(.wide).hour().minute())
+}
+
+/// "When's my next meeting?"
+struct NextMeetingIntent: AppIntent {
+    static let title: LocalizedStringResource = "Next Meeting"
+    static let description = IntentDescription("Tells you your next meeting and when it starts.")
+
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        guard let meeting = await nextMeeting() else {
+            return .result(dialog: "You have no upcoming meetings.")
+        }
+        return .result(dialog: "\(meeting.eventTitle), \(timeText(meeting.eventStartDate)).")
+    }
+}
+
+/// "Skip my next meeting" — the same as Skip in the list.
+struct SkipNextMeetingIntent: AppIntent {
+    static let title: LocalizedStringResource = "Skip Next Meeting"
+    static let description = IntentDescription("Turns off the alarms for your next meeting on all your devices.")
+
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        guard let meeting = await nextMeeting() else {
+            return .result(dialog: "You have no upcoming meetings.")
+        }
+        await MainActor.run {
+            AppSettings.shared.setSkipped(true, eventIdentifier: meeting.eventIdentifier, start: meeting.eventStartDate)
+        }
+        await AlarmScheduler.shared.sync(force: true)
+        return .result(dialog: "Skipped \(meeting.eventTitle) at \(timeText(meeting.eventStartDate)).")
+    }
+}
+
+/// "Join my next meeting" — opens the next meeting's video call.
+struct JoinNextMeetingIntent: AppIntent {
+    static let title: LocalizedStringResource = "Join Next Meeting"
+    static let description = IntentDescription("Opens the video call for your next meeting that has one.")
+
+    func perform() async throws -> some IntentResult & ProvidesDialog & OpensIntent {
+        guard let meeting = await nextMeeting(withLink: true), let url = meeting.joinURL else {
+            return .result(dialog: "None of your upcoming meetings has a video link.")
+        }
+        return .result(opensIntent: OpenURLIntent(url), dialog: "Joining \(meeting.eventTitle).")
+    }
+}
+
+/// Skip or Ring from the Home Screen widget. A Live Activity intent, so the
+/// system runs it in Befoor rather than the widget extension.
+///
+/// IMPORTANT: a copy with the same name and parameters lives in
+/// BeforeWidget/BeforeWidget.swift for the widget's buttons.
+struct SetMeetingSkippedIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Skip Meeting"
+    static let isDiscoverable = false
+
+    @Parameter(title: "Meeting")
+    var eventIdentifier: String
+
+    @Parameter(title: "Start")
+    var start: Date
+
+    @Parameter(title: "Skipped")
+    var skipped: Bool
+
+    init() {}
+
+    init(eventIdentifier: String, start: Date, skipped: Bool) {
+        self.eventIdentifier = eventIdentifier
+        self.start = start
+        self.skipped = skipped
+    }
+
+    func perform() async throws -> some IntentResult {
+        let id = eventIdentifier, start = start, skipped = skipped
+        await MainActor.run { AppSettings.shared.setSkipped(skipped, eventIdentifier: id, start: start) }
+        await AlarmScheduler.shared.sync(force: true)
+        return .result()
+    }
+}
+
 struct BefoorShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
+        AppShortcut(
+            intent: NextMeetingIntent(),
+            phrases: ["When's my next meeting in \(.applicationName)", "What's my next \(.applicationName) meeting"],
+            shortTitle: "Next Meeting",
+            systemImageName: "calendar"
+        )
+        AppShortcut(
+            intent: JoinNextMeetingIntent(),
+            phrases: ["Join my next meeting with \(.applicationName)", "Join my next \(.applicationName) meeting"],
+            shortTitle: "Join Next Meeting",
+            systemImageName: "video"
+        )
+        AppShortcut(
+            intent: SkipNextMeetingIntent(),
+            phrases: ["Skip my next meeting in \(.applicationName)", "Skip my next \(.applicationName) meeting"],
+            shortTitle: "Skip Next Meeting",
+            systemImageName: "bell.slash"
+        )
         AppShortcut(
             intent: SyncCalendarIntent(),
             phrases: ["Sync \(.applicationName)", "Update \(.applicationName) alarms"],

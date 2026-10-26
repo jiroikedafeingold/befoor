@@ -1,6 +1,6 @@
-Befoor liest die Kalender deiner Wahl und lässt vor jedem Termin einen echten Wecker klingeln – damit dich nichts überrascht.
+Dingly liest die Kalender deiner Wahl und lässt vor jedem Termin einen echten Wecker klingeln – damit dich nichts überrascht.
 
-- Echte Wecker: Befoor nutzt dieselben Systemwecker wie die Uhr-App. Sie klingeln auch, wenn dein iPhone stumm ist oder ein Fokus aktiv ist, und sogar wenn Befoor nicht geöffnet ist.
+- Echte Wecker: Dingly nutzt dieselben Systemwecker wie die Uhr-App. Sie klingeln auch, wenn dein iPhone stumm ist oder ein Fokus aktiv ist, und sogar wenn Dingly nicht geöffnet ist.
 - Zwei Hinweise pro Termin: standardmäßig 15 Minuten und 1 Minute vorher. Beides lässt sich ändern.
 - Termine, die gleichzeitig beginnen, teilen sich einen Wecker.
 - Schlummern oder beenden direkt am Wecker.
@@ -9,7 +9,7 @@ Befoor liest die Kalender deiner Wahl und lässt vor jedem Termin einen echten W
 - Ein Countdown bis zum nächsten Termin in der Dynamic Island und auf dem Sperrbildschirm, in der Farbe deines Kalenders. Er erscheint mit dem ersten Wecker, zählt bis zum letzten herunter und verschwindet, wenn du ihn beendest. Pro Termin immer nur einer.
 - Wähle aus angenehmen Wecktönen.
 - Termine per Stichwort ignorieren (etwa „Mittagessen“), Wochenenden überspringen und Kalender auswählen.
-- Sieh deine Termine der nächsten Tage – Befoor bleibt automatisch aktuell. Eine Kurzbefehle-Aktion synchronisiert jederzeit.
+- Sieh deine Termine der nächsten Tage – Dingly bleibt automatisch aktuell. Eine Kurzbefehle-Aktion synchronisiert jederzeit.
 - Pausiere für den Urlaub, erhalte eine Morgenübersicht, tritt Terminen per Siri oder Widget bei oder überspringe sie, und werde gewarnt, wenn sich der Videolink eines Termins ändert.
 - Füge einem Termin eine kurze Notiz hinzu; sie erscheint hervorgehoben auf seinem Wecker und im Countdown.
 - Für iPhone und iPad.

@@ -1,6 +1,6 @@
-O Befoor lê os calendários que você escolher e toca um alarme de verdade antes de cada reunião, para você nunca ser pego de surpresa.
+O Dingly lê os calendários que você escolher e toca um alarme de verdade antes de cada reunião, para você nunca ser pego de surpresa.
 
-- Alarmes de verdade: o Befoor usa os mesmos alarmes do sistema que o app Relógio, então eles tocam mesmo com o iPhone no silencioso ou em um Foco, e mesmo se o Befoor não estiver aberto.
+- Alarmes de verdade: o Dingly usa os mesmos alarmes do sistema que o app Relógio, então eles tocam mesmo com o iPhone no silencioso ou em um Foco, e mesmo se o Dingly não estiver aberto.
 - Dois alertas por reunião: 15 minutos e 1 minuto antes, por padrão. Dá para mudar os dois.
 - Reuniões que começam ao mesmo tempo compartilham um alarme.
 - Adie ou pare direto no alarme.
@@ -9,7 +9,7 @@ O Befoor lê os calendários que você escolher e toca um alarme de verdade ante
 - Uma contagem regressiva para a próxima reunião na Dynamic Island e na Tela Bloqueada, na cor do seu calendário. Ela aparece com o primeiro alarme, continua até o último e some quando você o para. Sempre só uma por reunião.
 - Escolha entre sons de alarme agradáveis.
 - Ignore reuniões por palavra-chave (como “almoço”), pule fins de semana e escolha quais calendários acompanhar.
-- Veja suas reuniões dos próximos dias; o Befoor se mantém atualizado sozinho. Uma ação do Atalhos sincroniza quando você quiser.
+- Veja suas reuniões dos próximos dias; o Dingly se mantém atualizado sozinho. Uma ação do Atalhos sincroniza quando você quiser.
 - Pause durante as férias, receba um resumo da manhã, entre ou pule reuniões com a Siri ou o widget, e seja avisado se o link de vídeo de uma reunião mudar.
 - Adicione uma nota curta a qualquer reunião; ela aparece destacada no alarme e na contagem regressiva.
 - Para iPhone e iPad.

@@ -7,7 +7,7 @@
 		<string>com.befoor.calendar-refresh</string>
 	</array>
 	<key>CFBundleDisplayName</key>
-	<string>Befoor</string>
+	<string>Dingly</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -34,11 +34,11 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAlarmKitUsageDescription</key>
-	<string>Befoor sets an alarm before each meeting so it rings even when your iPhone is on silent or in a Focus.</string>
+	<string>Dingly sets an alarm before each meeting so it rings even when your iPhone is on silent or in a Focus.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Befoor reads your calendar to schedule gentle alarms before your appointments.</string>
+	<string>Dingly reads your calendar to schedule gentle alarms before your appointments.</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>Befoor reads your calendar to schedule gentle alarms before your appointments.</string>
+	<string>Dingly reads your calendar to schedule gentle alarms before your appointments.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

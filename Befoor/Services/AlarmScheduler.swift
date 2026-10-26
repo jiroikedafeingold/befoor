@@ -450,12 +450,12 @@ enum LinkWatch {
 /// the next background check. An automation (say, "When Calendar is closed")
 /// running this catches it right away.
 struct SyncCalendarIntent: AppIntent {
-    static let title: LocalizedStringResource = "Sync Befoor"
-    static let description = IntentDescription("Checks your calendars and updates Befoor's meeting alarms.")
+    static let title: LocalizedStringResource = "Sync Dingly"
+    static let description = IntentDescription("Checks your calendars and updates Dingly's meeting alarms.")
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         await AlarmScheduler.shared.sync(force: true)
-        return .result(dialog: "Befoor's alarms are up to date.")
+        return .result(dialog: "Dingly's alarms are up to date.")
     }
 }
 

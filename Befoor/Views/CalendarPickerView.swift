@@ -8,7 +8,7 @@ struct CalendarPickerView: View {
     var body: some View {
         List {
             Section {
-                Text("Befoor watches every checked calendar. Uncheck any you want it to ignore. Calendars you add later are watched automatically.")
+                Text("Dingly watches every checked calendar. Uncheck any you want it to ignore. Calendars you add later are watched automatically.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

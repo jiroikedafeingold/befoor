@@ -110,7 +110,7 @@ struct ContentView: View {
                     alarmsList
                 }
             }
-            .navigationTitle("Befoor")
+            .navigationTitle("Dingly")
             .toolbar { toolbarContent }
             .refreshable { await AlarmScheduler.shared.sync(force: true) }
         }
@@ -246,7 +246,7 @@ struct ContentView: View {
     private var statusSections: some View {
         if !settings.isEnabled {
             Section {
-                Label("Befoor is paused. Enable it in Settings.", systemImage: "pause.circle")
+                Label("Dingly is paused. Enable it in Settings.", systemImage: "pause.circle")
                     .foregroundStyle(.orange)
                     .font(.footnote)
             }
@@ -335,7 +335,7 @@ struct ContentView: View {
 
             Text(settings.isEnabled
                  ? String(localized: "No appointments found in the next \(settings.lookAheadDays) days in your selected calendars.")
-                 : String(localized: "Befoor is paused. Enable it in Settings."))
+                 : String(localized: "Dingly is paused. Enable it in Settings."))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

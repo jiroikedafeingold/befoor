@@ -10,7 +10,7 @@ struct HelpView: View {
                         icon: "calendar",
                         iconColor: .indigo,
                         title: "Reads Your Calendar",
-                        detail: "Befoor scans your calendars for upcoming appointments and automatically schedules alarms before each one."
+                        detail: "Dingly scans your calendars for upcoming appointments and automatically schedules alarms before each one."
                     )
                     HelpRow(
                         icon: "alarm.fill",
@@ -22,7 +22,7 @@ struct HelpView: View {
                         icon: "arrow.clockwise",
                         iconColor: .indigo,
                         title: "Stays in Sync",
-                        detail: "Alarms are updated whenever you open Befoor and periodically in the background. You can also pull to refresh or tap the sync button on the Alarms tab."
+                        detail: "Alarms are updated whenever you open Dingly and periodically in the background. You can also pull to refresh or tap the sync button on the Alarms tab."
                     )
                 }
 
@@ -32,7 +32,7 @@ struct HelpView: View {
                         icon: "alarm.waves.left.and.right.fill",
                         iconColor: .orange,
                         title: "Real Alarms, Even on Silent",
-                        detail: "Befoor's alarms are system alarms, like the Clock app's. They ring even when your iPhone is on silent or in a Focus, and even if Befoor isn't open or was swiped away."
+                        detail: "Dingly's alarms are system alarms, like the Clock app's. They ring even when your iPhone is on silent or in a Focus, and even if Dingly isn't open or was swiped away."
                     )
                     HelpRow(
                         icon: "moon.zzz.fill",
@@ -50,7 +50,7 @@ struct HelpView: View {
                         icon: "bell.badge.fill",
                         iconColor: .pink,
                         title: "When Alarms Are Off",
-                        detail: "With Sound turned off, or if alarms aren't allowed, Befoor sends notifications instead. Those follow your ringer switch and Focus. Only the newest one stays in Notification Center, and it clears itself after 30 minutes."
+                        detail: "With Sound turned off, or if alarms aren't allowed, Dingly sends notifications instead. Those follow your ringer switch and Focus. Only the newest one stays in Notification Center, and it clears itself after 30 minutes."
                     )
                 }
 
@@ -72,7 +72,7 @@ struct HelpView: View {
                         icon: "building.2",
                         iconColor: .indigo,
                         title: "Monitored Calendars",
-                        detail: "Befoor watches all your calendars. Uncheck any you want it to ignore. Calendars you add later are watched automatically."
+                        detail: "Dingly watches all your calendars. Uncheck any you want it to ignore. Calendars you add later are watched automatically."
                     )
                     HelpRow(
                         icon: "speaker.wave.2.fill",
@@ -124,7 +124,7 @@ struct HelpView: View {
                         icon: "exclamationmark.triangle.fill",
                         iconColor: .orange,
                         title: "Video Link Warnings",
-                        detail: "If a meeting's Zoom, Meet or Teams link is removed or changed, Befoor flags it in the list and on the countdown, and sends a notification when the meeting is less than two hours away."
+                        detail: "If a meeting's Zoom, Meet or Teams link is removed or changed, Dingly flags it in the list and on the countdown, and sends a notification when the meeting is less than two hours away."
                     )
                     HelpRow(
                         icon: "pause.circle.fill",
@@ -136,31 +136,31 @@ struct HelpView: View {
                         icon: "mic.fill",
                         iconColor: .purple,
                         title: "Ask Siri",
-                        detail: "Say \"When's my next meeting in Befoor\", \"Join my next Befoor meeting\" or \"Skip my next meeting in Befoor\". The same actions are in the Shortcuts app."
+                        detail: "Say \"When's my next meeting in Dingly\", \"Join my next Dingly meeting\" or \"Skip my next meeting in Dingly\". The same actions are in the Shortcuts app."
                     )
                     HelpRow(
                         icon: "arrow.clockwise",
                         iconColor: .blue,
                         title: "Last-Minute Meetings",
-                        detail: "iOS lets Befoor check your calendar only now and then while it's closed. To catch meetings added at the last minute, create a Shortcuts automation, such as \"When Calendar is closed\", that runs Sync Befoor."
+                        detail: "iOS lets Dingly check your calendar only now and then while it's closed. To catch meetings added at the last minute, create a Shortcuts automation, such as \"When Calendar is closed\", that runs Sync Dingly."
                     )
                     HelpRow(
                         icon: "checkmark.shield.fill",
                         iconColor: .yellow,
                         title: "Allow Alarms",
-                        detail: "If alarms aren't ringing, check Settings → Alarm Sound in Befoor. If it says alarms are off, turn them back on for Befoor in iOS Settings."
+                        detail: "If alarms aren't ringing, check Settings → Alarm Sound in Dingly. If it says alarms are off, turn them back on for Dingly in iOS Settings."
                     )
                     HelpRow(
                         icon: "iphone.radiowaves.left.and.right",
                         iconColor: .yellow,
                         title: "Allow Background App Refresh",
-                        detail: "Enable Background App Refresh for Befoor in iOS Settings so calendar changes are picked up even when you haven't opened the app."
+                        detail: "Enable Background App Refresh for Dingly in iOS Settings so calendar changes are picked up even when you haven't opened the app."
                     )
                     HelpRow(
                         icon: "bolt.fill",
                         iconColor: .yellow,
                         title: "Grant Time Sensitive Notifications",
-                        detail: "In iOS Settings → Notifications → Befoor, enable Time Sensitive Notifications so meeting notifications can break through Focus modes when alarms are off."
+                        detail: "In iOS Settings → Notifications → Dingly, enable Time Sensitive Notifications so meeting notifications can break through Focus modes when alarms are off."
                     )
                 }
 
@@ -169,7 +169,7 @@ struct HelpView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Alert Sounds")
                             .font(.body.weight(.medium))
-                        Text("The ringtone sounds included in Befoor were created by **Jeff Essex** and **Joel Hladecek**.")
+                        Text("The ringtone sounds included in Dingly were created by **Jeff Essex** and **Joel Hladecek**.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                         Link(destination: URL(string: "https://www.theinteractivist.com/free-ringtones-iringpro/")!) {

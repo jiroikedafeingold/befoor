@@ -143,9 +143,9 @@ private struct WelcomePage: View {
             iconName: "alarm.fill",
             iconColor: .indigo,
             backgroundGradient: [Color.indigo.opacity(0.08), Color.clear],
-            title: "Welcome to Befoor",
+            title: "Welcome to Dingly",
             subtitle: "The alarm clock for your calendar",
-            description: "Befoor reads your upcoming meetings and sets alarms in advance — so you're never scrambling to join at the last second."
+            description: "Dingly reads your upcoming meetings and sets alarms in advance — so you're never scrambling to join at the last second."
         )
     }
 }
@@ -176,7 +176,7 @@ private struct HowItWorksPage: View {
                         }
                         .padding(.top, 60)
 
-                        Text("How Befoor Works")
+                        Text("How Dingly Works")
                             .font(.title.bold())
                     }
                 }
@@ -186,19 +186,19 @@ private struct HowItWorksPage: View {
                         icon: "calendar",
                         iconColor: .green,
                         title: "Reads your calendar",
-                        detail: "Befoor looks at your calendars and sets an alarm before each meeting."
+                        detail: "Dingly looks at your calendars and sets an alarm before each meeting."
                     )
                     FeatureRow(
                         icon: "alarm",
                         iconColor: .indigo,
                         title: "A real alarm, even on silent",
-                        detail: "Befoor's alarms are system alarms, like the Clock app's. Each meeting rings twice — 15 minutes and 1 minute before, which you can change — even when your iPhone is on silent or in a Focus, and even if Befoor isn't open."
+                        detail: "Dingly's alarms are system alarms, like the Clock app's. Each meeting rings twice — 15 minutes and 1 minute before, which you can change — even when your iPhone is on silent or in a Focus, and even if Dingly isn't open."
                     )
                     FeatureRow(
                         icon: "arrow.clockwise",
                         iconColor: .orange,
                         title: "Always up to date",
-                        detail: "Add, move, or cancel a meeting and Befoor updates your alarms the next time it opens or checks in the background."
+                        detail: "Add, move, or cancel a meeting and Dingly updates your alarms the next time it opens or checks in the background."
                     )
                     FeatureRow(
                         icon: "moon.zzz.fill",
@@ -270,8 +270,8 @@ private struct CalendarPermissionPage: View {
             iconColor: .green,
             backgroundGradient: [Color.green.opacity(0.10), Color.clear],
             title: "Connect Your Calendar",
-            subtitle: granted ? "Access granted!" : "Befoor needs to read your events",
-            description: "Your calendar data stays private on your device. Befoor only reads event titles, times, and calendars — nothing is sent anywhere.\n\nTapping Continue will show a system dialog asking for calendar access."
+            subtitle: granted ? "Access granted!" : "Dingly needs to read your events",
+            description: "Your calendar data stays private on your device. Dingly only reads event titles, times, and calendars — nothing is sent anywhere.\n\nTapping Continue will show a system dialog asking for calendar access."
         ) {
             if !granted {
                 PermissionButton(label: "Continue", color: .green) {
@@ -298,7 +298,7 @@ private struct AlarmPermissionPage: View {
             backgroundGradient: [Color.orange.opacity(0.10), Color.clear],
             title: "Alarms",
             subtitle: granted ? "Alarms allowed!" : "Rings even on silent",
-            description: "Befoor sets a real alarm before each meeting — the same kind the Clock app uses — so it rings even when your iPhone is on silent or in a Focus, and even if Befoor isn't open.\n\nIf you don't allow alarms, Befoor uses notifications instead, which follow your ringer switch.\n\nTapping Continue will show a system dialog asking to allow alarms."
+            description: "Dingly sets a real alarm before each meeting — the same kind the Clock app uses — so it rings even when your iPhone is on silent or in a Focus, and even if Dingly isn't open.\n\nIf you don't allow alarms, Dingly uses notifications instead, which follow your ringer switch.\n\nTapping Continue will show a system dialog asking to allow alarms."
         ) {
             if granted {
                 GrantedBadge()
@@ -318,8 +318,8 @@ private struct NotificationPermissionPage: View {
             iconColor: .indigo,
             backgroundGradient: [Color.indigo.opacity(0.10), Color.clear],
             title: "Notifications",
-            subtitle: granted ? "Notifications enabled!" : "How Befoor reaches you",
-            description: "Befoor uses notifications for meeting alerts if alarms are off. For the best experience, also enable Time Sensitive Notifications in iOS Settings → Notifications → Befoor.\n\nTapping Continue will show a system dialog asking for notification access."
+            subtitle: granted ? "Notifications enabled!" : "How Dingly reaches you",
+            description: "Dingly uses notifications for meeting alerts if alarms are off. For the best experience, also enable Time Sensitive Notifications in iOS Settings → Notifications → Dingly.\n\nTapping Continue will show a system dialog asking for notification access."
         ) {
             if !granted {
                 PermissionButton(label: "Continue", color: .indigo) {
@@ -364,7 +364,7 @@ private struct AllSetPage: View {
                     .font(.largeTitle.bold())
                     .padding(.top, 32)
 
-                Text("Befoor is ready to keep you on time.")
+                Text("Dingly is ready to keep you on time.")
                     .font(.title3)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -374,7 +374,7 @@ private struct AllSetPage: View {
             Spacer()
 
             Button(action: onFinish) {
-                Text("Start Using Befoor")
+                Text("Start Using Dingly")
                     .font(.body.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)

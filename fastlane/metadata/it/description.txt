@@ -1,6 +1,6 @@
-Befoor legge i calendari che scegli e fa suonare una vera sveglia prima di ogni riunione, così non sarai mai colto di sorpresa.
+Dingly legge i calendari che scegli e fa suonare una vera sveglia prima di ogni riunione, così non sarai mai colto di sorpresa.
 
-- Vere sveglie: Befoor usa le stesse sveglie di sistema dell’app Orologio, quindi suonano anche quando l’iPhone è in silenzioso o in una modalità Full immersion, e anche se Befoor non è aperto.
+- Vere sveglie: Dingly usa le stesse sveglie di sistema dell’app Orologio, quindi suonano anche quando l’iPhone è in silenzioso o in una modalità Full immersion, e anche se Dingly non è aperto.
 - Due avvisi per riunione: 15 minuti e 1 minuto prima di default. Puoi cambiarli entrambi.
 - Le riunioni che iniziano alla stessa ora condividono una sveglia.
 - Posticipa o ferma direttamente dalla sveglia.
@@ -9,7 +9,7 @@ Befoor legge i calendari che scegli e fa suonare una vera sveglia prima di ogni 
 - Un conto alla rovescia per la prossima riunione nella Dynamic Island e nella schermata di blocco, nel colore del tuo calendario. Compare con la prima sveglia, prosegue fino all’ultima e scompare quando la fermi. Sempre uno solo per riunione.
 - Scegli tra suoni di sveglia piacevoli.
 - Ignora le riunioni per parola chiave (come «pranzo»), salta i fine settimana e scegli i calendari da controllare.
-- Vedi le riunioni dei prossimi giorni; Befoor si aggiorna da solo. Un’azione di Comandi Rapidi lo sincronizza quando vuoi.
+- Vedi le riunioni dei prossimi giorni; Dingly si aggiorna da solo. Un’azione di Comandi Rapidi lo sincronizza quando vuoi.
 - Metti in pausa durante le vacanze, ricevi un riepilogo mattutino, partecipa o salta una riunione con Siri o il widget, e ricevi un avviso se cambia il link video di una riunione.
 - Aggiungi una breve nota a una riunione: compare evidenziata sulla sua sveglia e nel conto alla rovescia.
 - Per iPhone e iPad.

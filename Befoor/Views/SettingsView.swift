@@ -18,7 +18,7 @@ struct SettingsView: View {
             Form {
                 // MARK: Master switch
                 Section {
-                    Toggle("Enable Befoor", isOn: $settings.isEnabled)
+                    Toggle("Enable Dingly", isOn: $settings.isEnabled)
                         .tint(.indigo)
                 } footer: {
                     Text("When disabled, all scheduled alarms are cancelled.")
@@ -186,7 +186,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Alarm Sound")
                 } footer: {
-                    Text("Befoor rings a real alarm before each meeting, so it sounds even when your iPhone is on silent or in a Focus, and works even if Befoor isn't open. With Sound off, or if alarms aren't allowed, you get notifications instead, which follow your ringer switch.")
+                    Text("Dingly rings a real alarm before each meeting, so it sounds even when your iPhone is on silent or in a Focus, and works even if Dingly isn't open. With Sound off, or if alarms aren't allowed, you get notifications instead, which follow your ringer switch.")
                 }
 
                 // MARK: Background refresh
@@ -200,7 +200,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Background Sync")
                 } footer: {
-                    Text("iOS may delay or batch background checks to preserve battery. To catch meetings added while Befoor is closed, add a Shortcuts automation, such as \"When Calendar is closed\", that runs Sync Befoor.")
+                    Text("iOS may delay or batch background checks to preserve battery. To catch meetings added while Dingly is closed, add a Shortcuts automation, such as \"When Calendar is closed\", that runs Sync Dingly.")
                 }
 
                 // MARK: Manual sync

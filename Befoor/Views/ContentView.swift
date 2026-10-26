@@ -140,9 +140,11 @@ struct ContentView: View {
                         let skipped = settings.isSkipped(eventIdentifier: meeting.eventIdentifier,
                                                          start: meeting.eventStartDate)
                         let note = settings.note(eventIdentifier: meeting.eventIdentifier, start: meeting.eventStartDate)
+                        let firstAlert = settings.chosenFirstAlert(eventIdentifier: meeting.eventIdentifier,
+                                                                   start: meeting.eventStartDate)
                         AlarmRow(alarm: meeting, isSkipped: skipped,
                                  isPaused: settings.isPaused(at: meeting.eventStartDate),
-                                 note: note)
+                                 note: note, firstAlert: firstAlert)
                             .swipeActions(edge: .trailing) {
                                 skipButton(for: meeting, skipped: skipped)
                             }
@@ -154,6 +156,7 @@ struct ContentView: View {
                                 } label: {
                                     Label(note == nil ? "Add Note" : "Edit Note", systemImage: "note.text")
                                 }
+                                firstAlertMenu(for: meeting, chosen: firstAlert)
                             }
                     }
                 } header: {
@@ -177,6 +180,28 @@ struct ContentView: View {
             Button("Cancel", role: .cancel) {}
         } message: { meeting in
             Text("Shows on \(meeting.eventTitle)'s alarm and countdown.")
+        }
+    }
+
+    /// Picks when this one meeting's first alert rings, instead of First Alert.
+    private func firstAlertMenu(for meeting: TrackedAlarmModel, chosen: Int?) -> some View {
+        Menu {
+            Picker("First Alert", selection: Binding(
+                get: { chosen },
+                set: { minutes in
+                    settings.setFirstAlert(minutes, eventIdentifier: meeting.eventIdentifier,
+                                           start: meeting.eventStartDate)
+                    Task { await AlarmScheduler.shared.sync(force: true) }
+                }
+            )) {
+                Text("Usual (\(settings.leadTimeMinutes) min before)").tag(Int?.none)
+                // Only times before the last alert, so this stays the first one.
+                ForEach(AppSettings.meetingFirstAlertChoices.filter { $0 > settings.lastAlertMinutes }, id: \.self) { minutes in
+                    Text("\(minutes) min before").tag(Int?.some(minutes))
+                }
+            }
+        } label: {
+            Label("First Alert", systemImage: "alarm")
         }
     }
 
@@ -373,6 +398,8 @@ private struct AlarmRow: View {
     let isSkipped: Bool
     var isPaused = false
     var note: String?
+    /// This meeting's own first-alert time, if one was picked.
+    var firstAlert: Int?
     @ObservedObject private var calService = CalendarService.shared
 
     private var silenced: Bool { isSkipped || isPaused }
@@ -438,6 +465,15 @@ private struct AlarmRow: View {
                     Text(alarm.eventStartDate, style: .time)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    if let firstAlert, !silenced {
+                        Text("·")
+                            .foregroundStyle(.secondary)
+                        Label("\(firstAlert) min before", systemImage: "alarm")
+                            .font(.caption)
+                            .foregroundStyle(.indigo)
+                            .labelStyle(.titleAndIcon)
+                    }
                 }
             }
 

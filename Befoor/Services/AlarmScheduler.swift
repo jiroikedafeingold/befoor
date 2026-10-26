@@ -141,7 +141,6 @@ final class AlarmScheduler: ObservableObject {
         // The notification fallback keeps to 2 per meeting time within the iOS
         // limit of 64, leaving room for snoozes.
         let maxMeetingTimes = useAlarms ? 100 : 20
-        let alertMinutes = settings.alertMinutes
 
         // Meetings that start at the same time share one set of alerts.
         let byStart = Dictionary(grouping: filtered.filter { $0.startDate > Date() }, by: \.startDate)
@@ -183,7 +182,7 @@ final class AlarmScheduler: ObservableObject {
             let location = events.compactMap(\.location).first { !$0.isEmpty }
             let joinURL = events.lazy.compactMap { self.calendar.joinURL(for: $0) }.first
 
-            let alerts = Self.alertsToSchedule(minutes: alertMinutes, start: start)
+            let alerts = Self.alertsToSchedule(minutes: settings.alertMinutes(start: start), start: start)
             guard !alerts.isEmpty else { continue }
 
             guard useAlarms else {

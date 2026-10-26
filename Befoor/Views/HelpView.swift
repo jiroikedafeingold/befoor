@@ -109,6 +109,12 @@ struct HelpView: View {
                         detail: "Touch and hold a meeting and tap Add Note. The note shows highlighted on its row, its alarm and the countdown — handy for follow-ups or things to bring up."
                     )
                     HelpRow(
+                        icon: "alarm",
+                        iconColor: .indigo,
+                        title: "First Alert for One Meeting",
+                        detail: "Touch and hold a meeting and pick First Alert to ring earlier or later for just that meeting — say, 30 minutes before an interview. Its row shows the time you picked."
+                    )
+                    HelpRow(
                         icon: "speaker.wave.1.fill",
                         iconColor: .indigo,
                         title: "Back-to-Back Meetings",

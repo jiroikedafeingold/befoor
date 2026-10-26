@@ -212,6 +212,12 @@ private struct HowItWorksPage: View {
                         title: "Countdown to your meeting",
                         detail: "When a meeting's first alert rings, a countdown to it pops up in the Dynamic Island and on the Lock Screen."
                     )
+                    FeatureRow(
+                        icon: "hand.point.right.fill",
+                        iconColor: .yellow,
+                        title: "Notes for your meetings",
+                        detail: "Touch and hold a meeting in the Alarms list to add a short note, like a follow-up or something to bring up. It shows highlighted on the meeting's alarm and countdown."
+                    )
                 }
                 .padding(.horizontal, 32)
                 .frame(maxWidth: 600, alignment: .leading)

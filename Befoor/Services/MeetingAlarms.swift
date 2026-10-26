@@ -488,6 +488,7 @@ final class MeetingAlarms {
         // calendar or a cold launch could run out of time before getting here.
         if stopped {
             await countDownToNextAlert(meetingKey: meetingKey, after: slot)
+            AppSettings.shared.recordAlarmStopped()   // for the review prompt
         }
 
         // Then use the moment to pick up calendar changes made since Befoor

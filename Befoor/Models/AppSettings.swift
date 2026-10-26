@@ -291,6 +291,9 @@ final class AppSettings: ObservableObject {
         soundEnabled              = defaults.object(forKey: Keys.soundEnabled) as? Bool ?? true
         liveActivityEnabled       = defaults.object(forKey: Keys.liveActivityEnabled) as? Bool ?? true
         hasCompletedOnboarding    = defaults.object(forKey: Keys.hasCompletedOnboarding) as? Bool ?? false
+        if defaults.object(forKey: Keys.firstUseDate) == nil {
+            defaults.set(Date(), forKey: Keys.firstUseDate)
+        }
 
         // Start observing iCloud KV store changes from other devices
         NotificationCenter.default.addObserver(
@@ -312,6 +315,33 @@ final class AppSettings: ObservableObject {
     /// Stored pause dates; 0 (or one in the past) means not paused.
     private static func date(_ seconds: Double) -> Date? {
         seconds > Date().timeIntervalSince1970 ? Date(timeIntervalSince1970: seconds) : nil
+    }
+
+    // MARK: Review prompt (device-specific — NOT synced)
+
+    /// Ask for an App Store rating once someone has relied on Befoor for a
+    /// while: at least this many alarms stopped…
+    private static let reviewAfterAlarms = 10
+    /// …and at least this long since first use. Once per app version.
+    private static let reviewAfterDays: TimeInterval = 7 * 86_400
+
+    func recordAlarmStopped() {
+        defaults.set(defaults.integer(forKey: Keys.alarmsStopped) + 1, forKey: Keys.alarmsStopped)
+    }
+
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+    }
+
+    var shouldAskForReview: Bool {
+        guard defaults.integer(forKey: Keys.alarmsStopped) >= Self.reviewAfterAlarms,
+              let firstUse = defaults.object(forKey: Keys.firstUseDate) as? Date,
+              Date().timeIntervalSince(firstUse) >= Self.reviewAfterDays else { return false }
+        return defaults.string(forKey: Keys.reviewPromptVersion) != appVersion
+    }
+
+    func markReviewAsked() {
+        defaults.set(appVersion, forKey: Keys.reviewPromptVersion)
     }
 
     private static func clamp(_ value: Int, _ range: ClosedRange<Int>) -> Int {
@@ -395,6 +425,9 @@ final class AppSettings: ObservableObject {
         static let skippedMeetings    = "bf_skippedMeetings"
         static let keywordsMigratedV2 = "bf_keywordsMigratedV2"
         static let meetingNotes       = "bf_meetingNotes"
+        static let alarmsStopped      = "bf_alarmsStopped"
+        static let firstUseDate       = "bf_firstUseDate"
+        static let reviewPromptVersion = "bf_reviewPromptVersion"
         static let pausedUntil        = "bf_pausedUntil"
         static let morningSummary     = "bf_morningSummary"
         static let morningSummaryMinutes = "bf_morningSummaryMinutes"

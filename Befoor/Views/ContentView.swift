@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 
 struct ContentView: View {
     @ObservedObject private var scheduler  = AlarmScheduler.shared
@@ -8,6 +9,7 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     @Environment(\.openURL) private var openURL
+    @Environment(\.requestReview) private var requestReview
 
     @State private var selectedTab = 0
     @State private var alarmsAllowed = true
@@ -43,6 +45,7 @@ struct ContentView: View {
             switch newPhase {
             case .active:
                 refreshAlarmStatus()
+                askForReviewIfEarned()
                 NotificationService.shared.clearBadge()
                 NotificationService.shared.tidyDeliveredNotifications()
                 Task {
@@ -319,6 +322,18 @@ struct ContentView: View {
     }
 
     // MARK: - Helpers
+
+    /// The system rating prompt, once Befoor has proved itself (see
+    /// AppSettings.shouldAskForReview). iOS decides whether it actually shows.
+    private func askForReviewIfEarned() {
+        guard settings.hasCompletedOnboarding, settings.shouldAskForReview else { return }
+        settings.markReviewAsked()
+        Task {
+            // A moment after opening, so it doesn't interrupt.
+            try? await Task.sleep(for: .seconds(2))
+            requestReview()
+        }
+    }
 
     private func refreshAlarmStatus() {
         alarmsAllowed = MeetingAlarms.shared.isAuthorized

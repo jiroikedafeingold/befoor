@@ -112,7 +112,7 @@ struct HelpView: View {
                         icon: "alarm",
                         iconColor: .indigo,
                         title: "First Alert for One Meeting",
-                        detail: "Touch and hold a meeting and pick First Alert to ring earlier or later for just that meeting — say, 30 minutes before an interview. Its row shows the time you picked."
+                        detail: "Touch and hold a meeting and pick First Alert to ring earlier or later for just that meeting — say, 30 minutes before an interview. For a repeating meeting, choose just that one or the whole series. Its row shows the time you picked."
                     )
                     HelpRow(
                         icon: "speaker.wave.1.fill",

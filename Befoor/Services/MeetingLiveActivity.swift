@@ -93,7 +93,16 @@ final class MeetingLiveActivityManager {
 
     /// When a meeting's countdown appears: the moment its first alert rings.
     private static func showAt(_ meeting: TrackedAlarmModel) -> Date {
-        meeting.eventStartDate.addingTimeInterval(-Double(AppSettings.shared.alertMinutes(start: meeting.eventStartDate).first ?? 0) * 60)
+        meeting.eventStartDate.addingTimeInterval(-Double(firstAlertMinutes(meeting)) * 60)
+    }
+
+    /// Minutes before the meeting its first alert rings, counting every
+    /// meeting that starts with it (they share the alarm).
+    private static func firstAlertMinutes(_ meeting: TrackedAlarmModel) -> Int {
+        let ids = TrackedAlarmsStore.shared.alarms.values
+            .filter { $0.notificationIdentifier == meeting.notificationIdentifier }
+            .map(\.eventIdentifier)
+        return AppSettings.shared.alertMinutes(start: meeting.eventStartDate, eventIdentifiers: ids).first ?? 0
     }
 
     private var advanceTimer: Timer?
@@ -359,7 +368,7 @@ final class MeetingLiveActivityManager {
             Calendar.current.isDate($0.eventStartDate, inSameDayAs: meeting.eventStartDate) ? $0 : nil
         }
 
-        let firstAlert = settings.alertMinutes(start: meeting.eventStartDate).first ?? 0
+        let firstAlert = Self.firstAlertMinutes(meeting)
         let state = NextMeetingAttributes.ContentState(
             // Includes the alert timing and sound, which are baked into a booked
             // activity's start time and alert; changing either rebooks it.

@@ -17,6 +17,8 @@ struct ContentView: View {
     /// The meeting whose note is being edited, and the text so far.
     @State private var noteMeeting: TrackedAlarmModel?
     @State private var noteDraft = ""
+    /// A First Alert pick for a repeating meeting, waiting on "this one or all?".
+    @State private var pendingFirstAlert: PendingFirstAlert?
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -164,6 +166,27 @@ struct ContentView: View {
                 }
             }
         })
+        .confirmationDialog("This is a repeating meeting.", isPresented: Binding(
+            get: { pendingFirstAlert != nil },
+            set: { if !$0 { pendingFirstAlert = nil } }
+        ), titleVisibility: .visible, presenting: pendingFirstAlert) { pending in
+            Button("Just This Meeting") { applyFirstAlert(pending, wholeSeries: false) }
+            Button("All Meetings in the Series") { applyFirstAlert(pending, wholeSeries: true) }
+            Button("Cancel", role: .cancel) {}
+        } message: { _ in
+            Text("Change the first alert for just this meeting, or for every meeting in the series?")
+        }
+    }
+
+    private struct PendingFirstAlert {
+        let meeting: TrackedAlarmModel
+        let minutes: Int?
+    }
+
+    private func applyFirstAlert(_ pending: PendingFirstAlert, wholeSeries: Bool) {
+        settings.setFirstAlert(pending.minutes, eventIdentifier: pending.meeting.eventIdentifier,
+                               start: pending.meeting.eventStartDate, wholeSeries: wholeSeries)
+        Task { await AlarmScheduler.shared.sync(force: true) }
     }
 
     /// A short note for one meeting: shown on its row, alarm and countdown.
@@ -189,9 +212,15 @@ struct ContentView: View {
             Picker("First Alert", selection: Binding(
                 get: { chosen },
                 set: { minutes in
-                    settings.setFirstAlert(minutes, eventIdentifier: meeting.eventIdentifier,
-                                           start: meeting.eventStartDate)
-                    Task { await AlarmScheduler.shared.sync(force: true) }
+                    let pending = PendingFirstAlert(meeting: meeting, minutes: minutes)
+                    let event = CalendarService.shared.event(identifier: meeting.eventIdentifier,
+                                                             startingAt: meeting.eventStartDate)
+                    // Repeating meetings ask whether the change is for this one or all.
+                    if event?.hasRecurrenceRules == true {
+                        pendingFirstAlert = pending
+                    } else {
+                        applyFirstAlert(pending, wholeSeries: false)
+                    }
                 }
             )) {
                 Text("Usual (\(settings.leadTimeMinutes) min before)").tag(Int?.none)

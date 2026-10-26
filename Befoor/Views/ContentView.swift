@@ -142,8 +142,7 @@ struct ContentView: View {
                         let note = settings.note(eventIdentifier: meeting.eventIdentifier, start: meeting.eventStartDate)
                         AlarmRow(alarm: meeting, isSkipped: skipped,
                                  isPaused: settings.isPaused(at: meeting.eventStartDate),
-                                 note: note,
-                                 alarmLater: meeting.eventStartDate > AlarmScheduler.alarmCutoff(lookAhead: settings.lookAheadDays))
+                                 note: note)
                             .swipeActions(edge: .trailing) {
                                 skipButton(for: meeting, skipped: skipped)
                             }
@@ -281,7 +280,7 @@ struct ContentView: View {
                 .font(.title3.weight(.semibold))
 
             Text(settings.isEnabled
-                 ? String(localized: "No appointments found in the next \(AlarmScheduler.listDays(lookAhead: settings.lookAheadDays)) days in your selected calendars.")
+                 ? String(localized: "No appointments found in the next \(settings.lookAheadDays) days in your selected calendars.")
                  : String(localized: "Befoor is paused. Enable it in Settings."))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -374,8 +373,6 @@ private struct AlarmRow: View {
     let isSkipped: Bool
     var isPaused = false
     var note: String?
-    /// Beyond Look Ahead: listed, but its alarms are set nearer the day.
-    var alarmLater = false
     @ObservedObject private var calService = CalendarService.shared
 
     private var silenced: Bool { isSkipped || isPaused }
@@ -456,11 +453,10 @@ private struct AlarmRow: View {
                 .tint(calendarColor)
             }
 
-            Image(systemName: silenced ? "bell.slash" : alarmLater ? "clock" : "alarm.fill")
-                .foregroundStyle(silenced || alarmLater ? AnyShapeStyle(.secondary) : AnyShapeStyle(.indigo.opacity(0.7)))
+            Image(systemName: silenced ? "bell.slash" : "alarm.fill")
+                .foregroundStyle(silenced ? AnyShapeStyle(.secondary) : AnyShapeStyle(.indigo.opacity(0.7)))
                 .font(.caption)
-                .accessibilityLabel(isSkipped ? Text("Skipped") : isPaused ? Text("Paused")
-                                    : alarmLater ? Text("Alarm set closer to the day") : Text("Alarm set"))
+                .accessibilityLabel(isSkipped ? Text("Skipped") : isPaused ? Text("Paused") : Text("Alarm set"))
         }
         .padding(.vertical, 2)
         .opacity(silenced ? 0.6 : 1)

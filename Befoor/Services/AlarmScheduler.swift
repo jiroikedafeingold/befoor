@@ -124,13 +124,10 @@ final class AlarmScheduler: ObservableObject {
         store.removeAll()
 
         settings.migrateCalendarSelectionIfNeeded(allCalendarIdentifiers: calendar.allCalendarIdentifiers)
-        // The list covers at least two weeks; alarms only the Look Ahead window
-        // (meetings further out get theirs as the window moves forward).
         let events  = calendar.fetchUpcomingEvents(
-            lookAheadDays: Self.listDays(lookAhead: settings.lookAheadDays),
+            lookAheadDays: settings.lookAheadDays,
             excludedIdentifiers: settings.excludedCalendarIdentifiers
         )
-        let alarmCutoff = Self.alarmCutoff(lookAhead: settings.lookAheadDays)
         let filtered = filter(events)
         let linkChanges = LinkWatch.update(events: filtered, calendar: calendar, notifications: notifications)
 
@@ -150,8 +147,7 @@ final class AlarmScheduler: ObservableObject {
         let byStart = Dictionary(grouping: filtered.filter { $0.startDate > Date() }, by: \.startDate)
             .sorted { $0.key < $1.key }
 
-        var alarmedTimes = 0
-        for (start, events) in byStart {
+        for (start, events) in byStart.prefix(maxMeetingTimes) {
             await Task.yield()
 
             // Same order as the countdown, which sorts by title too.
@@ -177,8 +173,7 @@ final class AlarmScheduler: ObservableObject {
                 !settings.isSkipped(eventIdentifier: $0.eventIdentifier, start: $0.startDate)
                     && !settings.isPaused(at: $0.startDate)
             }
-            guard !events.isEmpty, start <= alarmCutoff, alarmedTimes < maxMeetingTimes else { continue }
-            alarmedTimes += 1
+            guard !events.isEmpty else { continue }
             let linkChange = events.lazy.compactMap { linkChanges[LinkWatch.key($0)] }.first
             let notes = events.compactMap { settings.note(eventIdentifier: $0.eventIdentifier, start: $0.startDate) }
             let note = notes.isEmpty ? nil : notes.joined(separator: " · ")
@@ -274,16 +269,6 @@ final class AlarmScheduler: ObservableObject {
         events.contains { other in
             other.startDate != start && other.startDate <= date && other.endDate > date
         }
-    }
-
-    /// The meetings list always shows at least this many days.
-    static let minimumListDays = 14
-
-    static func listDays(lookAhead: Int) -> Int { max(lookAhead, minimumListDays) }
-
-    /// Meetings starting after this get no alarms yet (outside Look Ahead).
-    static func alarmCutoff(lookAhead: Int, from now: Date = Date()) -> Date {
-        Calendar.current.date(byAdding: .day, value: lookAhead, to: now) ?? now
     }
 
     /// Title for an event that has none.

@@ -1,5 +1,6 @@
+- O Befoor agora se chama Dingly. O mesmo app, com novo nome.
 - Notas de reunião: mantenha uma reunião pressionada e toque em Adicionar nota. A nota aparece destacada na lista, no alarme e na contagem regressiva — útil para pendências ou assuntos para levantar.
-- A lista agora mostra as próximas duas semanas. Reuniões além do período de antecipação mostram um relógio e ganham seus alarmes conforme o dia se aproxima.
+- Toque mais cedo nas reuniões que precisam: mantenha uma reunião pressionada e escolha Primeiro alerta só para ela ou para a série inteira, ou defina Alertas por palavra-chave nos Ajustes (por exemplo, “buscar as crianças” toca 45 minutos antes).
 - Corrigido: depois de parar o primeiro alarme, às vezes a contagem regressiva não aparecia.
 
 Dúvidas ou sugestões? apps@feingold5.com

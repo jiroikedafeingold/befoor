@@ -12,6 +12,7 @@ Dingly liest die Kalender deiner Wahl und lässt vor jedem Termin einen echten W
 - Sieh deine Termine der nächsten Tage – Dingly bleibt automatisch aktuell. Eine Kurzbefehle-Aktion synchronisiert jederzeit.
 - Pausiere für den Urlaub, erhalte eine Morgenübersicht, tritt Terminen per Siri oder Widget bei oder überspringe sie, und werde gewarnt, wenn sich der Videolink eines Termins ändert.
 - Füge einem Termin eine kurze Notiz hinzu; sie erscheint hervorgehoben auf seinem Wecker und im Countdown.
+- Früher klingeln, wo es nötig ist: Wähle einen ersten Hinweis für einen Termin, eine ganze Serie oder alle Termine mit einem Stichwort wie „Kinder abholen“.
 - Für iPhone und iPad.
 
 Erfordert iOS 26.

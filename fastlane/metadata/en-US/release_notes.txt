@@ -1,5 +1,6 @@
+- Befoor is now Dingly. Same app, new name.
 - Meeting notes: touch and hold a meeting and tap Add Note. Your note shows highlighted on its row, its alarm and the countdown — handy for follow-ups or things to bring up.
-- The Alarms list now shows the next two weeks. Meetings beyond Look Ahead show a clock and get their alarms as the day gets closer.
+- Ring earlier for the meetings that need it: touch and hold a meeting and pick First Alert for just that meeting or its whole series, or set Keyword Alerts in Settings (for example, "kid pickup" rings 45 minutes before).
 - Fixed: after you stopped the first alarm, the countdown sometimes didn't appear.
 
 Questions or feedback? apps@feingold5.com

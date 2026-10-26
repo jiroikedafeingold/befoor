@@ -500,10 +500,12 @@ private struct AlarmRow: View {
                     if let firstAlert, !silenced {
                         Text("·")
                             .foregroundStyle(.secondary)
-                        Label("\(firstAlert) min before", systemImage: "alarm")
-                            .font(.caption)
-                            .foregroundStyle(.indigo)
-                            .labelStyle(.titleAndIcon)
+                        HStack(spacing: 2) {
+                            Image(systemName: "alarm")
+                            Text("\(firstAlert) min before")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.indigo)
                     }
                 }
             }

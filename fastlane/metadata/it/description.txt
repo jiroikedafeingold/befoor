@@ -12,6 +12,7 @@ Dingly legge i calendari che scegli e fa suonare una vera sveglia prima di ogni 
 - Vedi le riunioni dei prossimi giorni; Dingly si aggiorna da solo. Un’azione di Comandi Rapidi lo sincronizza quando vuoi.
 - Metti in pausa durante le vacanze, ricevi un riepilogo mattutino, partecipa o salta una riunione con Siri o il widget, e ricevi un avviso se cambia il link video di una riunione.
 - Aggiungi una breve nota a una riunione: compare evidenziata sulla sua sveglia e nel conto alla rovescia.
+- Suona prima per le riunioni che lo richiedono: scegli un primo avviso per una riunione, un’intera serie o ogni riunione con una parola chiave come «prendere i bambini».
 - Per iPhone e iPad.
 
 Richiede iOS 26.

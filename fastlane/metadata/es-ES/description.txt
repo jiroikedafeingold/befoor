@@ -12,6 +12,7 @@ Dingly lee los calendarios que elijas y hace sonar una alarma de verdad antes de
 - Consulta tus reuniones de los próximos días; Dingly se mantiene al día automáticamente. Una acción de Atajos lo sincroniza cuando quieras.
 - Pausa durante las vacaciones, recibe un resumen matinal, únete u omite reuniones con Siri o el widget, y recibe un aviso si cambia el enlace de vídeo de una reunión.
 - Añade una nota breve a cualquier reunión; aparece resaltada en su alarma y su cuenta atrás.
+- Suena antes en las reuniones que lo necesitan: elige un primer aviso para una reunión, toda una serie o cada reunión con una palabra clave como «recoger a los niños».
 - Para iPhone y iPad.
 
 Requiere iOS 26.

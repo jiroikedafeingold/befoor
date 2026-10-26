@@ -379,10 +379,13 @@ final class MeetingAlarms {
         countingDown: Bool = false
     ) -> AlarmManager.AlarmConfiguration<MeetingAlarmMetadata> {
         let title: String
-        switch request.minutesBefore {
+        // From when it actually rings: a meeting found late rings right away, and
+        // shouldn't say "in 15 minutes" when it's 10 minutes off.
+        let minutesBefore = max(0, Int((request.eventStart.timeIntervalSince(ringAt) / 60).rounded()))
+        switch minutesBefore {
         case 0:  title = String(localized: "\(request.eventTitle) is starting")
         case 1:  title = String(localized: "\(request.eventTitle) in 1 minute")
-        default: title = String(localized: "\(request.eventTitle) in \(request.minutesBefore) minutes")
+        default: title = String(localized: "\(request.eventTitle) in \(minutesBefore) minutes")
         }
 
         let snooze = AlarmButton(text: "Snooze", textColor: .white, systemImageName: "zzz")

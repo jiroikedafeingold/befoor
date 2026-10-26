@@ -85,6 +85,11 @@ struct ContentView: View {
         )) {
             OnboardingView()
         }
+        // Onboarding asks for alarms after this screen first checked, so check
+        // again when it finishes (else "Alarms are off" shows until a relaunch).
+        .onChange(of: settings.hasCompletedOnboarding) { _, done in
+            if done { refreshAlarmStatus() }
+        }
     }
 
     // MARK: - Alarms Tab

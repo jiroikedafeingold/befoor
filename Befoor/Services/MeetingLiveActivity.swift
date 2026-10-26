@@ -33,6 +33,8 @@ struct NextMeetingAttributes: ActivityAttributes {
         var joinURL: URL?
         /// "removed" or "changed" if the meeting's link changed.
         var linkChange: String?
+        /// The person's short note, shown highlighted at the top.
+        var note: String?
     }
 }
 #endif
@@ -334,6 +336,8 @@ final class MeetingLiveActivityManager {
                 merged.eventTitle = AlarmScheduler.combinedTitle(group.map(\.eventTitle))
                 merged.joinURL = group.lazy.compactMap(\.joinURL).first
                 merged.linkChange = group.lazy.compactMap(\.linkChange).first
+                let notes = group.compactMap(\.note)
+                merged.note = notes.isEmpty ? nil : notes.joined(separator: " · ")
                 return merged
             }
             .sorted { $0.eventStartDate < $1.eventStartDate }
@@ -370,7 +374,8 @@ final class MeetingLiveActivityManager {
             nextTitle: sameDayFollowing?.eventTitle,
             nextStartDate: sameDayFollowing?.eventStartDate,
             joinURL: meeting.joinURL,
-            linkChange: meeting.linkChange
+            linkChange: meeting.linkChange,
+            note: meeting.note
         )
         // Goes stale 10 minutes after the start, when it's due to be removed, so it
         // reads as finished even if Befoor isn't running to remove it right then.

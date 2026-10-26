@@ -33,6 +33,8 @@ struct MeetingAlarmRequest: Sendable, Codable {
     let joinURL: URL?
     /// "removed" or "changed" if the meeting's link changed (see LinkWatch).
     let linkChange: String?
+    /// The person's short note, shown highlighted at the top of the card.
+    let note: String?
     let sound: BefoorSound
     /// Rings while another meeting is under way: the alarm vibrates first and
     /// its sound comes in after AlarmTones.quietLead.
@@ -43,7 +45,7 @@ struct MeetingAlarmRequest: Sendable, Codable {
 
     /// Everything baked into a scheduled alarm. If it changes, the alarm is rescheduled.
     var fingerprint: String {
-        "\(slot)|\(minutesBefore)|\(Int(fireDate.timeIntervalSince1970))|\(eventTitle)|\(location ?? "")|\(joinURL?.absoluteString ?? "")|\(linkChange ?? "")|\(calendarRGB ?? [])|\(sound.rawValue)|\(quiet)|\(AlarmTones.isReady(sound, quiet: quiet))|\(snoozeMinutes)"
+        "\(slot)|\(minutesBefore)|\(Int(fireDate.timeIntervalSince1970))|\(eventTitle)|\(location ?? "")|\(joinURL?.absoluteString ?? "")|\(linkChange ?? "")|\(note ?? "")|\(calendarRGB ?? [])|\(sound.rawValue)|\(quiet)|\(AlarmTones.isReady(sound, quiet: quiet))|\(snoozeMinutes)"
     }
 }
 
@@ -411,7 +413,8 @@ final class MeetingAlarms {
                 location: request.location,
                 calendarRGB: request.calendarRGB,
                 joinURL: request.joinURL,
-                linkChange: request.linkChange
+                linkChange: request.linkChange,
+                note: request.note
             ),
             tintColor: request.calendarRGB.map { Color(.sRGB, red: $0[0], green: $0[1], blue: $0[2]) } ?? .indigo
         )
@@ -458,6 +461,7 @@ final class MeetingAlarms {
             meetingKey: "befoor_test", slot: 1, minutesBefore: 5, fireDate: ringAt,
             eventTitle: String(localized: "Test meeting"), eventStart: ringAt.addingTimeInterval(5 * 60),
             calendarName: "", calendarRGB: nil, location: nil, joinURL: nil, linkChange: nil,
+            note: String(localized: "Your note for the meeting shows here"),
             sound: settings.selectedSound, quiet: false, snoozeMinutes: settings.snoozeDurationMinutes
         )
         try? manager.cancel(id: Self.testAlarmID)
@@ -547,6 +551,8 @@ struct MeetingAlarmMetadata: AlarmMetadata {
     var joinURL: URL?
     /// "removed" or "changed" if the meeting's link changed.
     var linkChange: String?
+    /// The person's short note for the meeting.
+    var note: String?
 }
 
 // MARK: - Intent

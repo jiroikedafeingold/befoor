@@ -22,6 +22,7 @@ struct NextMeetingAttributes: ActivityAttributes {
         var nextStartDate: Date?
         var joinURL: URL?
         var linkChange: String?
+        var note: String?
     }
 }
 
@@ -71,10 +72,15 @@ struct NextMeetingLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: 6) {
+                        if let note = state.note {
+                            NoteBanner(note: note, compact: true)
+                                .lineLimit(1)
+                        }
                         Text(state.title)
                             .font(.headline)
                             .lineLimit(1)
-                        MeetingDetailsView(state: state)
+                        // The island has a fixed height: with a note, drop the extras.
+                        MeetingDetailsView(state: state, showExtras: state.note == nil)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 4)
@@ -136,6 +142,8 @@ private struct CountdownText: View {
 /// The "quick information" rows shared by the expanded island and the Lock Screen.
 private struct MeetingDetailsView: View {
     let state: NextMeetingAttributes.ContentState
+    /// Attendee count and the following meeting; left out when space is short.
+    var showExtras = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
@@ -145,7 +153,7 @@ private struct MeetingDetailsView: View {
                 Label(location, systemImage: "mappin.and.ellipse")
             }
 
-            if state.attendeeCount > 0 {
+            if showExtras && state.attendeeCount > 0 {
                 Label("\(state.attendeeCount) attendees", systemImage: "person.2")
             }
 
@@ -170,7 +178,7 @@ private struct MeetingDetailsView: View {
                 }
             }
 
-            if let nextTitle = state.nextTitle, let nextStart = state.nextStartDate {
+            if showExtras, let nextTitle = state.nextTitle, let nextStart = state.nextStartDate {
                 Text("Then \(nextTitle) at \(nextStart, style: .time)")
             }
         }
@@ -186,6 +194,9 @@ private struct LockScreenMeetingView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            if let note = state.note {
+                NoteBanner(note: note)
+            }
             HStack(alignment: .center, spacing: 10) {
                 AppIconView(size: 36)
                 VStack(alignment: .leading, spacing: 2) {
@@ -203,7 +214,8 @@ private struct LockScreenMeetingView: View {
                     .frame(maxWidth: 110, alignment: .trailing)
             }
             HStack(alignment: .bottom) {
-                MeetingDetailsView(state: state)
+                // Live Activities are cut off past ~160 pt: with a note, drop the extras.
+                MeetingDetailsView(state: state, showExtras: state.note == nil)
                 Spacer(minLength: 8)
                 if let joinURL = state.joinURL {
                     JoinButton(url: joinURL, color: state.calendarColor)
@@ -225,6 +237,28 @@ private struct LinkChangeNotice: View {
                   systemImage: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange)
         }
+    }
+}
+
+/// The person's note for the meeting, highlighted like a sticky note.
+private struct NoteBanner: View {
+    let note: String
+    /// Smaller, for the Dynamic Island's fixed height.
+    var compact = false
+
+    var body: some View {
+        Label {
+            Text(note)
+                .lineLimit(2)
+        } icon: {
+            Text(verbatim: "👉🏽")
+        }
+        .font((compact ? Font.caption : .subheadline).weight(.semibold))
+        .foregroundStyle(.primary)
+        .padding(.horizontal, compact ? 8 : 10)
+        .padding(.vertical, compact ? 3 : 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.yellow.opacity(0.35), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }
 
@@ -288,7 +322,8 @@ private struct JoinButton: View {
         attendeeCount: 4,
         nextTitle: "Product Sync",
         nextStartDate: .now.addingTimeInterval(7200),
-        joinURL: URL(string: "https://zoom.us/j/123456789")
+        joinURL: URL(string: "https://zoom.us/j/123456789"),
+        note: "Ask about the Q3 budget"
     )
 }
 #endif

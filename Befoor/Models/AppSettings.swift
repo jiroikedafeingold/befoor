@@ -73,7 +73,7 @@ final class AppSettings: ObservableObject {
         Keys.leadTime, Keys.ignoredKeywords, Keys.skipWeekends,
         Keys.isEnabled, Keys.selectedSound, Keys.lookAheadDays,
         Keys.checkInterval, Keys.snoozeDuration, Keys.soundEnabled,
-        Keys.lastAlert, Keys.skippedMeetings, Keys.pausedUntil,
+        Keys.lastAlert, Keys.skippedMeetings, Keys.pausedUntil, Keys.meetingNotes,
         Keys.morningSummary, Keys.morningSummaryMinutes,
     ]
 
@@ -186,6 +186,31 @@ final class AppSettings: ObservableObject {
         didSet { save(morningSummaryMinutes, forKey: Keys.morningSummaryMinutes) }
     }
 
+    // Short notes for single meetings ("event identifier|start" → note), shown
+    // on the meeting's alarm, countdown and list row. Synced.
+    @Published private(set) var meetingNotes: [String: String] {
+        didSet { save(meetingNotes, forKey: Keys.meetingNotes) }
+    }
+
+    static let maxNoteLength = 120
+
+    func note(eventIdentifier: String, start: Date) -> String? {
+        meetingNotes[Self.skipKey(eventIdentifier: eventIdentifier, start: start)]
+    }
+
+    /// Sets (or, when empty, removes) a meeting's note, and forgets notes for
+    /// meetings that are long over.
+    func setNote(_ note: String, eventIdentifier: String, start: Date) {
+        let cutoff = Date().addingTimeInterval(-86_400).timeIntervalSince1970
+        var notes = meetingNotes.filter { key, _ in
+            (key.split(separator: "|").last.flatMap { Double($0) } ?? 0) > cutoff
+        }
+        let key = Self.skipKey(eventIdentifier: eventIdentifier, start: start)
+        let trimmed = String(note.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Self.maxNoteLength))
+        notes[key] = trimmed.isEmpty ? nil : trimmed
+        meetingNotes = notes
+    }
+
     // Do not create alarms for events on Saturday or Sunday
     @Published var skipWeekends: Bool {
         didSet { save(skipWeekends, forKey: Keys.skipWeekends) }
@@ -253,6 +278,7 @@ final class AppSettings: ObservableObject {
         }
         ignoredKeywords           = Self.deduped(keywords)
         skippedMeetings           = Set(defaults.stringArray(forKey: Keys.skippedMeetings) ?? [])
+        meetingNotes              = defaults.dictionary(forKey: Keys.meetingNotes) as? [String: String] ?? [:]
         skipWeekends              = defaults.object(forKey: Keys.skipWeekends) as? Bool ?? false
         pausedUntil               = Self.date(defaults.double(forKey: Keys.pausedUntil))
         morningSummaryEnabled     = defaults.object(forKey: Keys.morningSummary) as? Bool ?? false
@@ -329,6 +355,8 @@ final class AppSettings: ObservableObject {
                     if let v = value as? Int { lastAlertMinutes = Self.clamp(v, Self.laterAlertRange) }
                 case Keys.ignoredKeywords:
                     if let v = value as? [String] { ignoredKeywords = Self.deduped(v) }
+                case Keys.meetingNotes:
+                    if let v = value as? [String: String] { meetingNotes = v }
                 case Keys.skippedMeetings:
                     if let v = value as? [String] { skippedMeetings = Set(v) }
                 case Keys.pausedUntil:
@@ -366,6 +394,7 @@ final class AppSettings: ObservableObject {
         static let skipWeekends       = "bf_skipWeekends"
         static let skippedMeetings    = "bf_skippedMeetings"
         static let keywordsMigratedV2 = "bf_keywordsMigratedV2"
+        static let meetingNotes       = "bf_meetingNotes"
         static let pausedUntil        = "bf_pausedUntil"
         static let morningSummary     = "bf_morningSummary"
         static let morningSummaryMinutes = "bf_morningSummaryMinutes"

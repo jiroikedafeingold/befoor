@@ -103,6 +103,12 @@ struct HelpView: View {
                         detail: "Meetings with a Zoom, Google Meet, Teams or Webex link get a Join button, in the list and on the countdown."
                     )
                     HelpRow(
+                        icon: "note.text",
+                        iconColor: .yellow,
+                        title: "Meeting Notes",
+                        detail: "Touch and hold a meeting and tap Add Note. The note shows highlighted on its row, its alarm and the countdown — handy for follow-ups or things to bring up."
+                    )
+                    HelpRow(
                         icon: "speaker.wave.1.fill",
                         iconColor: .indigo,
                         title: "Back-to-Back Meetings",

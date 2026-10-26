@@ -165,7 +165,8 @@ final class AlarmScheduler: ObservableObject {
                     calendarIdentifier:     event.calendar?.calendarIdentifier ?? "",
                     joinURL:                calendar.joinURL(for: event),
                     linkChange:             linkChanges[LinkWatch.key(event)],
-                    isSkipped:              settings.isSkipped(eventIdentifier: event.eventIdentifier, start: event.startDate)
+                    isSkipped:              settings.isSkipped(eventIdentifier: event.eventIdentifier, start: event.startDate),
+                    note:                   settings.note(eventIdentifier: event.eventIdentifier, start: event.startDate)
                 ))
             }
             let events = all.filter {
@@ -174,6 +175,8 @@ final class AlarmScheduler: ObservableObject {
             }
             guard !events.isEmpty else { continue }
             let linkChange = events.lazy.compactMap { linkChanges[LinkWatch.key($0)] }.first
+            let notes = events.compactMap { settings.note(eventIdentifier: $0.eventIdentifier, start: $0.startDate) }
+            let note = notes.isEmpty ? nil : notes.joined(separator: " · ")
 
             let title = Self.combinedTitle(events.map { $0.title ?? Self.untitled })
             let calName = events.first?.calendar?.title ?? String(localized: "Calendar")
@@ -210,6 +213,7 @@ final class AlarmScheduler: ObservableObject {
                     location:      location,
                     joinURL:       joinURL,
                     linkChange:    linkChange,
+                    note:          note,
                     sound:         settings.selectedSound,
                     // Ringing during another meeting: vibrate first, sound after 15 s.
                     quiet:         Self.inAnotherMeeting(at: alert.date, start: start, events: filtered),
@@ -305,7 +309,7 @@ final class AlarmScheduler: ObservableObject {
     /// whether the widget actually needs reloading.
     private func alarmSignature() -> Set<String> {
         Set(store.alarms.values.map {
-            "\($0.eventIdentifier)|\($0.notificationIdentifier)|\($0.eventTitle)|\($0.calendarIdentifier)|\(Int($0.eventStartDate.timeIntervalSince1970))|\($0.joinURL?.absoluteString ?? "")|\($0.isSkipped)"
+            "\($0.eventIdentifier)|\($0.notificationIdentifier)|\($0.eventTitle)|\($0.calendarIdentifier)|\(Int($0.eventStartDate.timeIntervalSince1970))|\($0.joinURL?.absoluteString ?? "")|\($0.isSkipped)|\($0.note ?? "")"
         })
     }
 

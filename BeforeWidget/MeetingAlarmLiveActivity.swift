@@ -16,6 +16,7 @@ struct MeetingAlarmMetadata: AlarmMetadata {
     var calendarRGB: [Double]?
     var joinURL: URL?
     var linkChange: String?
+    var note: String?
 }
 
 private extension AlarmAttributes<MeetingAlarmMetadata> {
@@ -65,6 +66,10 @@ struct MeetingAlarmLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: 6) {
+                        if let note = metadata?.note {
+                            NoteBanner(note: note, compact: true)
+                                .lineLimit(1)
+                        }
                         if let metadata {
                             Text(metadata.meetingTitle)
                                 .font(.headline)
@@ -158,6 +163,9 @@ private struct AlarmLockScreenView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            if let note = attributes.metadata?.note {
+                NoteBanner(note: note)
+            }
             HStack(alignment: .center, spacing: 10) {
                 IconView(size: 36)
                 VStack(alignment: .leading, spacing: 2) {
@@ -198,6 +206,28 @@ private struct LinkChangeNotice: View {
                   systemImage: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange)
         }
+    }
+}
+
+/// The person's note for the meeting, highlighted like a sticky note.
+private struct NoteBanner: View {
+    let note: String
+    /// Smaller, for the Dynamic Island's fixed height.
+    var compact = false
+
+    var body: some View {
+        Label {
+            Text(note)
+                .lineLimit(2)
+        } icon: {
+            Text(verbatim: "👉🏽")
+        }
+        .font((compact ? Font.caption : .subheadline).weight(.semibold))
+        .foregroundStyle(.primary)
+        .padding(.horizontal, compact ? 8 : 10)
+        .padding(.vertical, compact ? 3 : 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.yellow.opacity(0.35), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }
 

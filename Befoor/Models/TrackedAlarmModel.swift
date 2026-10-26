@@ -14,6 +14,8 @@ struct TrackedAlarmModel: Codable, Identifiable {
     var linkChange: String?
     /// Skipped from the list, the widget or Siri; shown, but gets no alarms.
     var isSkipped: Bool = false
+    /// The person's short note for this meeting.
+    var note: String?
 
     var id: String { eventIdentifier }
 
@@ -25,7 +27,8 @@ struct TrackedAlarmModel: Codable, Identifiable {
         calendarIdentifier: String,
         joinURL: URL? = nil,
         linkChange: String? = nil,
-        isSkipped: Bool = false
+        isSkipped: Bool = false,
+        note: String? = nil
     ) {
         self.eventIdentifier = eventIdentifier
         self.notificationIdentifier = notificationIdentifier
@@ -35,5 +38,6 @@ struct TrackedAlarmModel: Codable, Identifiable {
         self.joinURL = joinURL
         self.linkChange = linkChange
         self.isSkipped = isSkipped
+        self.note = note
     }
 }

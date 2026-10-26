@@ -12,6 +12,9 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var alarmsAllowed = true
     @State private var alarmsDenied = false
+    /// The meeting whose note is being edited, and the text so far.
+    @State private var noteMeeting: TrackedAlarmModel?
+    @State private var noteDraft = ""
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -120,7 +123,7 @@ struct ContentView: View {
     }
 
     private var alarmsList: some View {
-        List {
+        noteAlert(List {
             statusSections
 
             ForEach(meetingsByDay, id: \.day) { day in
@@ -128,20 +131,51 @@ struct ContentView: View {
                     ForEach(day.meetings) { meeting in
                         let skipped = settings.isSkipped(eventIdentifier: meeting.eventIdentifier,
                                                          start: meeting.eventStartDate)
+                        let note = settings.note(eventIdentifier: meeting.eventIdentifier, start: meeting.eventStartDate)
                         AlarmRow(alarm: meeting, isSkipped: skipped,
-                                 isPaused: settings.isPaused(at: meeting.eventStartDate))
+                                 isPaused: settings.isPaused(at: meeting.eventStartDate),
+                                 note: note)
                             .swipeActions(edge: .trailing) {
                                 skipButton(for: meeting, skipped: skipped)
                             }
                             .contextMenu {
                                 skipButton(for: meeting, skipped: skipped)
+                                Button {
+                                    noteDraft = note ?? ""
+                                    noteMeeting = meeting
+                                } label: {
+                                    Label(note == nil ? "Add Note" : "Edit Note", systemImage: "note.text")
+                                }
                             }
                     }
                 } header: {
                     dayTitle(day.day)
                 }
             }
+        })
+    }
+
+    /// A short note for one meeting: shown on its row, alarm and countdown.
+    private func noteAlert<Content: View>(_ content: Content) -> some View {
+        content.alert("Meeting Note", isPresented: Binding(
+            get: { noteMeeting != nil },
+            set: { if !$0 { noteMeeting = nil } }
+        ), presenting: noteMeeting) { meeting in
+            TextField("e.g. Bring up the budget", text: $noteDraft)
+            Button("Save") { saveNote(noteDraft, for: meeting) }
+            if settings.note(eventIdentifier: meeting.eventIdentifier, start: meeting.eventStartDate) != nil {
+                Button("Remove Note", role: .destructive) { saveNote("", for: meeting) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { meeting in
+            Text("Shows on \(meeting.eventTitle)'s alarm and countdown.")
         }
+    }
+
+    private func saveNote(_ note: String, for meeting: TrackedAlarmModel) {
+        settings.setNote(note, eventIdentifier: meeting.eventIdentifier, start: meeting.eventStartDate)
+        // The note is baked into the meeting's alarms and countdown.
+        Task { await AlarmScheduler.shared.sync(force: true) }
     }
 
     /// Warnings that matter more than the list: Befoor paused, or meetings that
@@ -318,6 +352,7 @@ private struct AlarmRow: View {
     let alarm: TrackedAlarmModel
     let isSkipped: Bool
     var isPaused = false
+    var note: String?
     @ObservedObject private var calService = CalendarService.shared
 
     private var silenced: Bool { isSkipped || isPaused }
@@ -336,6 +371,20 @@ private struct AlarmRow: View {
                     .font(.body.weight(.medium))
                     .strikethrough(isSkipped)
                     .lineLimit(1)
+
+                if let note {
+                    Label {
+                        Text(note)
+                    } icon: {
+                        Text(verbatim: "👉🏽")
+                    }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.yellow.opacity(0.35), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                }
 
                 if let change = alarm.linkChange {
                     Label(change == "removed" ? "Video link removed" : "Video link changed",

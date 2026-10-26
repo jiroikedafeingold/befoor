@@ -73,7 +73,7 @@ final class AppSettings: ObservableObject {
         Keys.leadTime, Keys.ignoredKeywords, Keys.skipWeekends,
         Keys.isEnabled, Keys.selectedSound, Keys.lookAheadDays,
         Keys.checkInterval, Keys.snoozeDuration, Keys.soundEnabled,
-        Keys.lastAlert, Keys.skippedMeetings, Keys.pausedUntil, Keys.meetingNotes, Keys.meetingFirstAlerts, Keys.seriesFirstAlerts,
+        Keys.lastAlert, Keys.skippedMeetings, Keys.pausedUntil, Keys.meetingNotes, Keys.meetingFirstAlerts, Keys.seriesFirstAlerts, Keys.keywordFirstAlerts,
         Keys.morningSummary, Keys.morningSummaryMinutes,
     ]
 
@@ -205,61 +205,76 @@ final class AppSettings: ObservableObject {
 
     // First-alert times chosen for single meetings ("event identifier|start" →
     // minutes before), replacing First Alert for that meeting. 0 means "the
-    // usual time" for one meeting of a series that has its own time. Synced.
+    // usual time", overriding the series' or a keyword's time. Synced.
     @Published private(set) var meetingFirstAlerts: [String: Int] {
         didSet { save(meetingFirstAlerts, forKey: Keys.meetingFirstAlerts) }
     }
 
     // First-alert times chosen for every meeting of a repeating series (event
-    // identifier, which its occurrences share → minutes before). Synced.
+    // identifier, which its occurrences share → minutes before; 0 as above). Synced.
     @Published private(set) var seriesFirstAlerts: [String: Int] {
         didSet { save(seriesFirstAlerts, forKey: Keys.seriesFirstAlerts) }
     }
 
-    /// The choices offered for a single meeting's first alert.
-    static let meetingFirstAlertChoices = [5, 10, 15, 30, 45, 60, 90, 120]
-
-    /// The first-alert time chosen for this meeting or its series, if any; a
-    /// choice for just this meeting wins over the series'.
-    func chosenFirstAlert(eventIdentifier: String, start: Date) -> Int? {
-        if let minutes = meetingFirstAlerts[Self.skipKey(eventIdentifier: eventIdentifier, start: start)] {
-            return minutes == 0 ? nil : minutes
-        }
-        return seriesFirstAlerts[eventIdentifier]
+    // First-alert times for meetings whose titles contain a keyword (keyword →
+    // minutes before), e.g. "kid pickup" → 45. Synced.
+    @Published var keywordFirstAlerts: [String: Int] {
+        didSet { save(keywordFirstAlerts, forKey: Keys.keywordFirstAlerts) }
     }
 
-    /// Sets (or, when nil, clears) the first-alert time for one meeting or for
-    /// its whole series, and forgets choices for meetings that are long over.
-    func setFirstAlert(_ minutes: Int?, eventIdentifier: String, start: Date, wholeSeries: Bool) {
+    /// The choices offered for a meeting's or keyword's first alert.
+    static let meetingFirstAlertChoices = [5, 10, 15, 30, 45, 60, 90, 120]
+
+    /// The earliest first-alert time among the keywords in `title`, if any.
+    func keywordFirstAlert(for title: String) -> Int? {
+        keywordFirstAlerts
+            .filter { title.localizedCaseInsensitiveContains($0.key) }
+            .values.max()
+    }
+
+    /// This meeting's own first-alert time: chosen for just this meeting, else
+    /// for its series, else from a keyword in its title. Nil means First Alert.
+    func chosenFirstAlert(eventIdentifier: String, start: Date, title: String) -> Int? {
+        let chosen = meetingFirstAlerts[Self.skipKey(eventIdentifier: eventIdentifier, start: start)]
+            ?? seriesFirstAlerts[eventIdentifier]
+        if let chosen { return chosen == 0 ? nil : chosen }
+        return keywordFirstAlert(for: title)
+    }
+
+    /// Sets (or, when nil, goes back to the usual) first-alert time for one
+    /// meeting or for its whole series, and forgets choices for meetings that
+    /// are long over.
+    func setFirstAlert(_ minutes: Int?, eventIdentifier: String, start: Date, title: String, wholeSeries: Bool) {
         let cutoff = Date().addingTimeInterval(-86_400).timeIntervalSince1970
         var choices = meetingFirstAlerts.filter { key, _ in
             (key.split(separator: "|").last.flatMap { Double($0) } ?? 0) > cutoff
         }
+        let keywordTime = keywordFirstAlert(for: title) != nil
         if wholeSeries {
             // The series' time replaces choices made for single meetings in it.
             choices = choices.filter { !$0.key.hasPrefix("\(eventIdentifier)|") }
-            seriesFirstAlerts[eventIdentifier] = minutes
+            seriesFirstAlerts[eventIdentifier] = minutes ?? (keywordTime ? 0 : nil)
         } else {
-            let usual = minutes == nil && seriesFirstAlerts[eventIdentifier] != nil
-            choices[Self.skipKey(eventIdentifier: eventIdentifier, start: start)] = usual ? 0 : minutes
+            let otherTime = keywordTime || seriesFirstAlerts[eventIdentifier].map { $0 != 0 } == true
+            choices[Self.skipKey(eventIdentifier: eventIdentifier, start: start)] = minutes ?? (otherTime ? 0 : nil)
         }
         meetingFirstAlerts = choices
     }
 
     /// Minutes before a meeting time its first alert rings. Meetings at the same
-    /// time share one alarm, so the earliest choice among them (skipped ones
+    /// time share one alarm, so the earliest time among them (skipped ones
     /// aside) wins; with none, First Alert.
-    func firstAlertMinutes(start: Date, eventIdentifiers: [String]) -> Int {
-        eventIdentifiers
-            .filter { !isSkipped(eventIdentifier: $0, start: start) }
-            .compactMap { chosenFirstAlert(eventIdentifier: $0, start: start) }
+    func firstAlertMinutes(start: Date, meetings: [(eventIdentifier: String, title: String)]) -> Int {
+        meetings
+            .filter { !isSkipped(eventIdentifier: $0.eventIdentifier, start: start) }
+            .compactMap { chosenFirstAlert(eventIdentifier: $0.eventIdentifier, start: start, title: $0.title) }
             .max() ?? leadTimeMinutes
     }
 
     /// The distinct alert times for a meeting time, earliest alert (most
     /// minutes before) first.
-    func alertMinutes(start: Date, eventIdentifiers: [String]) -> [Int] {
-        Array(Set([firstAlertMinutes(start: start, eventIdentifiers: eventIdentifiers), lastAlertMinutes]))
+    func alertMinutes(start: Date, meetings: [(eventIdentifier: String, title: String)]) -> [Int] {
+        Array(Set([firstAlertMinutes(start: start, meetings: meetings), lastAlertMinutes]))
             .sorted(by: >)
     }
 
@@ -333,6 +348,7 @@ final class AppSettings: ObservableObject {
         meetingNotes              = defaults.dictionary(forKey: Keys.meetingNotes) as? [String: String] ?? [:]
         meetingFirstAlerts        = defaults.dictionary(forKey: Keys.meetingFirstAlerts) as? [String: Int] ?? [:]
         seriesFirstAlerts         = defaults.dictionary(forKey: Keys.seriesFirstAlerts) as? [String: Int] ?? [:]
+        keywordFirstAlerts        = defaults.dictionary(forKey: Keys.keywordFirstAlerts) as? [String: Int] ?? [:]
         skipWeekends              = defaults.object(forKey: Keys.skipWeekends) as? Bool ?? false
         pausedUntil               = Self.date(defaults.double(forKey: Keys.pausedUntil))
         morningSummaryEnabled     = defaults.object(forKey: Keys.morningSummary) as? Bool ?? false
@@ -445,6 +461,8 @@ final class AppSettings: ObservableObject {
                     if let v = value as? [String: Int] { meetingFirstAlerts = v }
                 case Keys.seriesFirstAlerts:
                     if let v = value as? [String: Int] { seriesFirstAlerts = v }
+                case Keys.keywordFirstAlerts:
+                    if let v = value as? [String: Int] { keywordFirstAlerts = v }
                 case Keys.skippedMeetings:
                     if let v = value as? [String] { skippedMeetings = Set(v) }
                 case Keys.pausedUntil:
@@ -485,6 +503,7 @@ final class AppSettings: ObservableObject {
         static let meetingNotes       = "bf_meetingNotes"
         static let meetingFirstAlerts = "bf_meetingFirstAlerts"
         static let seriesFirstAlerts  = "bf_seriesFirstAlerts"
+        static let keywordFirstAlerts = "bf_keywordFirstAlerts"
         static let alarmsStopped      = "bf_alarmsStopped"
         static let firstUseDate       = "bf_firstUseDate"
         static let reviewPromptVersion = "bf_reviewPromptVersion"

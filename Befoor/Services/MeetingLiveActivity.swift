@@ -99,10 +99,10 @@ final class MeetingLiveActivityManager {
     /// Minutes before the meeting its first alert rings, counting every
     /// meeting that starts with it (they share the alarm).
     private static func firstAlertMinutes(_ meeting: TrackedAlarmModel) -> Int {
-        let ids = TrackedAlarmsStore.shared.alarms.values
+        let meetings = TrackedAlarmsStore.shared.alarms.values
             .filter { $0.notificationIdentifier == meeting.notificationIdentifier }
-            .map(\.eventIdentifier)
-        return AppSettings.shared.alertMinutes(start: meeting.eventStartDate, eventIdentifiers: ids).first ?? 0
+            .map { (eventIdentifier: $0.eventIdentifier, title: $0.eventTitle) }
+        return AppSettings.shared.alertMinutes(start: meeting.eventStartDate, meetings: meetings).first ?? 0
     }
 
     private var advanceTimer: Timer?

@@ -182,7 +182,9 @@ final class AlarmScheduler: ObservableObject {
             let location = events.compactMap(\.location).first { !$0.isEmpty }
             let joinURL = events.lazy.compactMap { self.calendar.joinURL(for: $0) }.first
 
-            let alerts = Self.alertsToSchedule(minutes: settings.alertMinutes(start: start, eventIdentifiers: events.map(\.eventIdentifier)),
+            let alerts = Self.alertsToSchedule(minutes: settings.alertMinutes(start: start, meetings: events.map {
+                                                      (eventIdentifier: $0.eventIdentifier, title: $0.title ?? Self.untitled)
+                                                  }),
                                                   start: start)
             guard !alerts.isEmpty else { continue }
 

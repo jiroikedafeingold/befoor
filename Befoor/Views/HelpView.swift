@@ -115,6 +115,12 @@ struct HelpView: View {
                         detail: "Touch and hold a meeting and pick First Alert to ring earlier or later for just that meeting — say, 30 minutes before an interview. For a repeating meeting, choose just that one or the whole series. Its row shows the time you picked."
                     )
                     HelpRow(
+                        icon: "text.badge.plus",
+                        iconColor: .indigo,
+                        title: "Keyword Alerts",
+                        detail: "In Settings → Keyword Alerts, give a word and a time — say \"kid pickup\" and 45 minutes — and every meeting with that word in its title gets its first alert then."
+                    )
+                    HelpRow(
                         icon: "speaker.wave.1.fill",
                         iconColor: .indigo,
                         title: "Back-to-Back Meetings",

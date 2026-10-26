@@ -7,6 +7,9 @@ struct SettingsView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var newKeyword = ""
     @State private var showAddKeyword = false
+    @State private var newAlertKeyword = ""
+    @State private var newAlertMinutes = 30
+    @State private var showAddAlertKeyword = false
     @State private var alarmsAllowed = false
     @State private var testPending = false
 
@@ -189,6 +192,43 @@ struct SettingsView: View {
                     Text("Dingly rings a real alarm before each meeting, so it sounds even when your iPhone is on silent or in a Focus, and works even if Dingly isn't open. With Sound off, or if alarms aren't allowed, you get notifications instead, which follow your ringer switch.")
                 }
 
+                // MARK: Keyword alerts
+                Section {
+                    ForEach(settings.keywordFirstAlerts.keys.sorted(), id: \.self) { keyword in
+                        HStack {
+                            Image(systemName: "minus.circle.fill")
+                                .foregroundStyle(.red)
+                                .onTapGesture { settings.keywordFirstAlerts[keyword] = nil }
+                            Text(keyword)
+                            Spacer()
+                            Text("\(settings.keywordFirstAlerts[keyword] ?? 0) min before")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    if showAddAlertKeyword {
+                        TextField("e.g. kid pickup", text: $newAlertKeyword)
+                            .autocorrectionDisabled()
+                        Picker("First alert", selection: $newAlertMinutes) {
+                            ForEach(keywordAlertChoices, id: \.self) { minutes in
+                                Text("\(minutes) min before").tag(minutes)
+                            }
+                        }
+                        Button("Add") { addKeywordAlert() }
+                            .disabled(newAlertKeyword.trimmingCharacters(in: .whitespaces).isEmpty)
+                    } else {
+                        Button {
+                            showAddAlertKeyword = true
+                        } label: {
+                            Label("Add Keyword Alert", systemImage: "plus.circle")
+                        }
+                    }
+                } header: {
+                    Text("Keyword Alerts")
+                } footer: {
+                    Text("Meetings whose titles contain one of these words (case-insensitive) get their first alert at the time you set, instead of First Alert.")
+                }
+
                 // MARK: Background refresh
                 Section {
                     Picker("Check interval", selection: $settings.backgroundCheckIntervalMinutes) {
@@ -263,6 +303,7 @@ struct SettingsView: View {
             .onChange(of: settings.soundEnabled) { _, _ in AlarmScheduler.shared.requestResync() }
             .onChange(of: settings.lastAlertMinutes) { _, _ in AlarmScheduler.shared.requestResync() }
             .onChange(of: settings.snoozeDurationMinutes) { _, _ in AlarmScheduler.shared.requestResync() }
+            .onChange(of: settings.keywordFirstAlerts) { _, _ in AlarmScheduler.shared.requestResync() }
             .onAppear { alarmsAllowed = MeetingAlarms.shared.isAuthorized }
             // Picks up a change made in iOS Settings while Befoor was in the background.
             .onChange(of: scenePhase) { _, phase in
@@ -338,6 +379,23 @@ struct SettingsView: View {
         settings.ignoredKeywords.append(trimmed)
         newKeyword = ""
         showAddKeyword = false
+    }
+
+    /// Keyword alert times, all before the last alert so they stay the first.
+    private var keywordAlertChoices: [Int] {
+        AppSettings.meetingFirstAlertChoices.filter { $0 > settings.lastAlertMinutes }
+    }
+
+    private func addKeywordAlert() {
+        let trimmed = newAlertKeyword.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        // Re-adding a keyword (in any case) replaces its time.
+        for key in settings.keywordFirstAlerts.keys where key.caseInsensitiveCompare(trimmed) == .orderedSame {
+            settings.keywordFirstAlerts[key] = nil
+        }
+        settings.keywordFirstAlerts[trimmed] = newAlertMinutes
+        newAlertKeyword = ""
+        showAddAlertKeyword = false
     }
 
     private func remove(keyword: String) {

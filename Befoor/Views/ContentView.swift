@@ -143,7 +143,8 @@ struct ContentView: View {
                                                          start: meeting.eventStartDate)
                         let note = settings.note(eventIdentifier: meeting.eventIdentifier, start: meeting.eventStartDate)
                         let firstAlert = settings.chosenFirstAlert(eventIdentifier: meeting.eventIdentifier,
-                                                                   start: meeting.eventStartDate)
+                                                                   start: meeting.eventStartDate,
+                                                                   title: meeting.eventTitle)
                         AlarmRow(alarm: meeting, isSkipped: skipped,
                                  isPaused: settings.isPaused(at: meeting.eventStartDate),
                                  note: note, firstAlert: firstAlert)
@@ -185,7 +186,8 @@ struct ContentView: View {
 
     private func applyFirstAlert(_ pending: PendingFirstAlert, wholeSeries: Bool) {
         settings.setFirstAlert(pending.minutes, eventIdentifier: pending.meeting.eventIdentifier,
-                               start: pending.meeting.eventStartDate, wholeSeries: wholeSeries)
+                               start: pending.meeting.eventStartDate, title: pending.meeting.eventTitle,
+                               wholeSeries: wholeSeries)
         Task { await AlarmScheduler.shared.sync(force: true) }
     }
 

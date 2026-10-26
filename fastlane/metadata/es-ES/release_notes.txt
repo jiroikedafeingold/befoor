@@ -1,11 +1,5 @@
-- Pausa por vacaciones: Ajustes → Pausa desactiva las alarmas hasta la fecha que elijas y después vuelven solas.
-- Avisos de enlaces de vídeo: si se elimina o cambia el enlace de Zoom, Meet o Teams de una reunión, lo verás en la lista y en la cuenta atrás, y recibirás una notificación si faltan menos de dos horas.
-- Reuniones seguidas: un aviso que llega durante otra reunión primero vibra y solo reproduce su sonido tras 15 segundos.
-- Pregunta a Siri «Cuándo es mi próxima reunión en Befoor», «Unirme a mi próxima reunión con Befoor» u «Omitir mi próxima reunión en Befoor».
-- El widget de la pantalla de inicio ahora tiene botones para unirse y omitir.
-- Resumen matinal: una notificación silenciosa opcional con cuántas reuniones tienes y cuándo empieza la primera.
-- «Probar aviso», al final de Ajustes, hace sonar una alarma de prueba en 10 segundos.
-- Más palabras clave ignoradas de serie: OOO, Out of office, Focus time, Do not book, Commute y Travel time.
-- Corregido: las notificaciones que llegaban con Befoor abierto no se quedaban en el centro de notificaciones.
+- Notas de reuniones: mantén pulsada una reunión y toca Añadir nota. La nota aparece resaltada en la lista, en la alarma y en la cuenta atrás: útil para seguimientos o temas que sacar.
+- La lista ahora muestra las próximas dos semanas. Las reuniones más allá del periodo de anticipación muestran un reloj y reciben sus alarmas al acercarse el día.
+- Corregido: tras detener la primera alarma, a veces no aparecía la cuenta atrás.
 
 ¿Preguntas o comentarios? apps@feingold5.com

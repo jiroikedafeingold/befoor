@@ -1,11 +1,5 @@
-- Pause pour les vacances : Réglages → Pause coupe les alarmes jusqu’à la date choisie, puis elles reviennent d’elles-mêmes.
-- Alertes de lien vidéo : si le lien Zoom, Meet ou Teams d’une réunion est supprimé ou modifié, vous le voyez dans la liste et dans le compte à rebours, avec une notification si la réunion est dans moins de deux heures.
-- Réunions enchaînées : une alerte qui arrive pendant une autre réunion vibre d’abord et ne joue son son qu’après 15 secondes.
-- Demandez à Siri « Quelle est ma prochaine réunion dans Befoor », « Rejoindre ma prochaine réunion avec Befoor » ou « Ignorer ma prochaine réunion dans Befoor ».
-- Le widget de l’écran d’accueil a désormais des boutons Rejoindre et Ignorer.
-- Résumé du matin : une notification discrète facultative avec le nombre de réunions et l’heure de la première.
-- « Tester une alerte », tout en bas des Réglages, fait sonner une alarme de test dans 10 secondes.
-- Plus de mots-clés ignorés par défaut : OOO, Out of office, Focus time, Do not book, Commute et Travel time.
-- Correction : les notifications reçues pendant que Befoor était ouvert ne restaient pas dans le centre de notifications.
+- Notes de réunion : maintenez une réunion et touchez Ajouter une note. La note s’affiche en surbrillance dans la liste, sur l’alarme et dans le compte à rebours : pratique pour les suivis ou les sujets à aborder.
+- La liste affiche désormais les deux prochaines semaines. Les réunions au-delà de la période d’anticipation affichent une horloge et reçoivent leurs alarmes à l’approche du jour.
+- Correction : après l’arrêt de la première alarme, le compte à rebours n’apparaissait parfois pas.
 
 Des questions ou des commentaires ? apps@feingold5.com

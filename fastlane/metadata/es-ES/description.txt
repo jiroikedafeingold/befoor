@@ -11,6 +11,7 @@ Befoor lee los calendarios que elijas y hace sonar una alarma de verdad antes de
 - Ignora reuniones por palabra clave (como «almuerzo»), omite los fines de semana y elige qué calendarios vigilar.
 - Consulta tus reuniones de los próximos días; Befoor se mantiene al día automáticamente. Una acción de Atajos lo sincroniza cuando quieras.
 - Pausa durante las vacaciones, recibe un resumen matinal, únete u omite reuniones con Siri o el widget, y recibe un aviso si cambia el enlace de vídeo de una reunión.
+- Añade una nota breve a cualquier reunión; aparece resaltada en su alarma y su cuenta atrás.
 - Para iPhone y iPad.
 
 Requiere iOS 26.

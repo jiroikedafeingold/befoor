@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import CryptoKit
+import OSLog
 
 #if !targetEnvironment(macCatalyst)
 import ActivityKit
@@ -12,7 +13,7 @@ import SwiftUI
 // MARK: - Request
 
 /// One alarm Befoor wants to exist.
-struct MeetingAlarmRequest: Sendable {
+struct MeetingAlarmRequest: Sendable, Codable {
     /// One key per start time: meetings that start together share their alarms.
     let meetingKey: String
     /// Which of the meeting's alerts this is: 1 is the first, 2 the last.
@@ -187,7 +188,27 @@ final class MeetingAlarms {
 
     /// The alarms the last sync asked for, so Stop can turn a meeting's next
     /// alert into a countdown without rebuilding them from the calendar.
-    private var lastRequests: [MeetingAlarmRequest] = []
+    private var lastRequests: [MeetingAlarmRequest] {
+        get {
+            if let cachedRequests { return cachedRequests }
+            // Befoor may have been launched just to handle Stop; read what the
+            // last sync saved instead of waiting for a new one.
+            let saved = (try? Data(contentsOf: Self.requestsURL))
+                .flatMap { try? JSONDecoder().decode([MeetingAlarmRequest].self, from: $0) } ?? []
+            cachedRequests = saved
+            return saved
+        }
+        set {
+            cachedRequests = newValue
+            try? FileManager.default.createDirectory(at: URL.applicationSupportDirectory, withIntermediateDirectories: true)
+            try? JSONEncoder().encode(newValue).write(to: Self.requestsURL, options: .atomic)
+        }
+    }
+    private var cachedRequests: [MeetingAlarmRequest]?
+    private static var requestsURL: URL { URL.applicationSupportDirectory.appending(path: "alarm-requests.json") }
+
+    /// Stop and countdown decisions, so a card that didn't appear can be traced.
+    private let log = Logger(subsystem: "com.befoor.app", category: "Alarms")
 
     /// Whether one of the meeting's alarms is ringing, snoozed or counting down.
     /// AlarmKit shows its own Live Activity for it then, so Befoor's countdown
@@ -452,16 +473,20 @@ final class MeetingAlarms {
     /// Called when the person taps Stop or Snooze on a ringing alarm. Either way
     /// the meeting's last alert still rings.
     func handleAction(meetingKey: String, slot: Int, stopped: Bool) async {
-        // Befoor is awake anyway, so use the moment to pick up calendar changes
-        // made since it last ran. Awaited so the system doesn't suspend the app
-        // mid-sync once the intent returns. Ringing and snoozed alarms are left
-        // alone by the sync.
-        await AlarmScheduler.shared.sync()
+        log.notice("\(stopped ? "stop" : "snooze", privacy: .public) on \(meetingKey, privacy: .public) slot \(slot)")
 
-        // Snooze already counts down in the alarm's own Live Activity.
+        // First, while iOS is sure to let this run: turn the next alert into the
+        // countdown card. (Snooze already counts down in the alarm's own Live
+        // Activity.) This used to wait for the sync below, which on a full
+        // calendar or a cold launch could run out of time before getting here.
         if stopped {
             await countDownToNextAlert(meetingKey: meetingKey, after: slot)
         }
+
+        // Then use the moment to pick up calendar changes made since Befoor
+        // last ran. Awaited so the system doesn't suspend the app mid-sync once
+        // the intent returns. Ringing and counting-down alarms are left alone.
+        await AlarmScheduler.shared.sync()
 
         // Then tidy the countdown. Befoor is in the background here, which iOS
         // doesn't let start a Live Activity (not even from an alarm's intent), so
@@ -478,18 +503,25 @@ final class MeetingAlarms {
         let now = Date()
         guard let next = lastRequests
             .filter({ $0.meetingKey == meetingKey && $0.slot > slot && $0.fireDate > now.addingTimeInterval(5) })
-            .min(by: { $0.slot < $1.slot }),
-              currentAlarms.first(where: { $0.id == next.id })?.state ?? .scheduled == .scheduled
-        else { return }
+            .min(by: { $0.slot < $1.slot }) else {
+            log.notice("no later alert for \(meetingKey, privacy: .public) after slot \(slot) (\(self.lastRequests.count) requests known)")
+            return
+        }
+        let state = currentAlarms.first(where: { $0.id == next.id })?.state
+        guard state == nil || state == .scheduled else {
+            log.notice("next alert already \(String(describing: state), privacy: .public); leaving it")
+            return
+        }
 
         try? manager.cancel(id: next.id)
         do {
             _ = try await manager.schedule(id: next.id,
                                            configuration: configuration(for: next, at: next.fireDate, countingDown: true))
             chains[next.id.uuidString] = next.fireDate.timeIntervalSince1970
+            log.notice("counting down to slot \(next.slot) at \(next.fireDate, privacy: .public)")
         } catch {
             // Never lose the alert: put it back as a plain alarm.
-            print("[Befoor] Countdown to next alert failed: \(error)")
+            log.error("countdown to next alert failed: \(error, privacy: .public)")
             _ = try? await manager.schedule(id: next.id, configuration: configuration(for: next, at: next.fireDate))
         }
         fingerprints[next.id.uuidString] = next.fingerprint

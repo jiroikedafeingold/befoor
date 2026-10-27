@@ -43,48 +43,85 @@ struct MeetingAlarmLiveActivity: Widget {
             let metadata = context.attributes.metadata
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 6) {
-                        IconView(size: 24, asset: "BefoorIslandIcon")
-                        if let metadata {
-                            Text(metadata.startDate, style: .time)
-                                .monospacedDigit()
+                    NarrowIsland {
+                        HStack(spacing: 6) {
+                            IconView(size: 24, asset: "BefoorIslandIcon")
+                            if let metadata {
+                                Text(metadata.startDate, style: .time)
+                                    .monospacedDigit()
+                            }
                         }
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.leading, 4)
+                    } narrow: {
+                        IconView(size: 24, asset: "BefoorIslandIcon")
                     }
-                    .font(.subheadline.weight(.semibold))
-                    .padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    HStack(spacing: 8) {
-                        if let joinURL = metadata?.joinURL {
-                            JoinButton(url: joinURL, color: color, compact: true)
+                    NarrowIsland {
+                        HStack(spacing: 8) {
+                            if let joinURL = metadata?.joinURL {
+                                JoinButton(url: joinURL, color: color, compact: true)
+                            }
+                            MeetingCountdown(metadata: metadata)
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(color)
                         }
+                        .padding(.trailing, 4)
+                    } narrow: {
                         MeetingCountdown(metadata: metadata)
-                            .font(.title3.weight(.semibold))
+                            .font(.headline)
+                            .minimumScaleFactor(0.6)
+                            .lineLimit(1)
                             .foregroundStyle(color)
                     }
-                    .padding(.trailing, 4)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        if let note = metadata?.note {
-                            NoteBanner(note: note, compact: true)
-                                .lineLimit(1)
+                    NarrowIsland {
+                        VStack(alignment: .leading, spacing: 6) {
+                            if let note = metadata?.note {
+                                NoteBanner(note: note, compact: true)
+                                    .lineLimit(1)
+                            }
+                            if let metadata {
+                                Text(metadata.meetingTitle)
+                                    .font(.headline)
+                                    .lineLimit(1)
+                            }
+                            AlarmDetails(metadata: metadata, state: context.state)
                         }
-                        if let metadata {
-                            Text(metadata.meetingTitle)
-                                .font(.headline)
-                                .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 4)
+                    } narrow: {
+                        // A narrow island runs top to bottom: one item per line, wrapping.
+                        VStack(alignment: .leading, spacing: 4) {
+                            if let metadata {
+                                Text(metadata.meetingTitle)
+                                    .font(.subheadline.weight(.semibold))
+                                    .lineLimit(3)
+                                Text(metadata.startDate, style: .time)
+                                    .font(.caption.weight(.semibold))
+                                    .monospacedDigit()
+                            }
+                            if let note = metadata?.note {
+                                NoteBanner(note: note, compact: true)
+                                    .lineLimit(3)
+                            }
+                            if let joinURL = metadata?.joinURL {
+                                JoinButton(url: joinURL, color: color, compact: true)
+                            }
+                            AlarmDetails(metadata: metadata, state: context.state, stacked: true)
                         }
-                        AlarmDetails(metadata: metadata, state: context.state)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 4)
                 }
             } compactLeading: {
                 IconView(size: 20, asset: "BefoorIslandIcon")
             } compactTrailing: {
                 MeetingCountdown(metadata: metadata)
                     .frame(maxWidth: 64)
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
                     .foregroundStyle(color)
             } minimal: {
                 Image(systemName: "alarm")
@@ -130,9 +167,13 @@ private struct MeetingCountdown: View {
 private struct AlarmDetails: View {
     let metadata: MeetingAlarmMetadata?
     let state: AlarmPresentationState
+    /// One item per line, for a narrow Dynamic Island.
+    var stacked = false
 
     var body: some View {
-        HStack(spacing: 10) {
+        let layout = stacked ? AnyLayout(VStackLayout(alignment: .leading, spacing: 3))
+                             : AnyLayout(HStackLayout(spacing: 10))
+        layout {
             switch state.mode {
             case .countdown(let countdown):
                 Label {
@@ -153,7 +194,7 @@ private struct AlarmDetails: View {
         }
         .font(.caption)
         .foregroundStyle(.secondary)
-        .lineLimit(1)
+        .lineLimit(stacked ? 2 : 1)
     }
 }
 

@@ -51,45 +51,80 @@ struct NextMeetingLiveActivity: Widget {
             let state = context.state
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 6) {
+                    NarrowIsland {
+                        HStack(spacing: 6) {
+                            AppIconView(size: 24, asset: "BefoorIslandIcon")
+                            Text(state.startDate, style: .time)
+                                .monospacedDigit()
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.leading, 4)
+                    } narrow: {
                         AppIconView(size: 24, asset: "BefoorIslandIcon")
-                        Text(state.startDate, style: .time)
-                            .monospacedDigit()
                     }
-                    .font(.subheadline.weight(.semibold))
-                    .padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    HStack(spacing: 8) {
-                        if let joinURL = state.joinURL {
-                            JoinButton(url: joinURL, color: state.calendarColor, compact: true)
+                    NarrowIsland {
+                        HStack(spacing: 8) {
+                            if let joinURL = state.joinURL {
+                                JoinButton(url: joinURL, color: state.calendarColor, compact: true)
+                            }
+                            CountdownText(startDate: state.startDate, isStale: context.isStale)
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(state.calendarColor)
                         }
+                        .padding(.trailing, 4)
+                    } narrow: {
                         CountdownText(startDate: state.startDate, isStale: context.isStale)
-                            .font(.title3.weight(.semibold))
+                            .font(.headline)
+                            .minimumScaleFactor(0.6)
+                            .lineLimit(1)
                             .foregroundStyle(state.calendarColor)
                     }
-                    .padding(.trailing, 4)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        if let note = state.note {
-                            NoteBanner(note: note, compact: true)
+                    NarrowIsland {
+                        VStack(alignment: .leading, spacing: 6) {
+                            if let note = state.note {
+                                NoteBanner(note: note, compact: true)
+                                    .lineLimit(1)
+                            }
+                            Text(state.title)
+                                .font(.headline)
                                 .lineLimit(1)
+                            // The island has a fixed height: with a note, drop the extras.
+                            MeetingDetailsView(state: state, showExtras: state.note == nil)
                         }
-                        Text(state.title)
-                            .font(.headline)
-                            .lineLimit(1)
-                        // The island has a fixed height: with a note, drop the extras.
-                        MeetingDetailsView(state: state, showExtras: state.note == nil)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 4)
+                    } narrow: {
+                        // A narrow island runs top to bottom: one item per line, wrapping.
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(state.title)
+                                .font(.subheadline.weight(.semibold))
+                                .lineLimit(3)
+                            Text(state.startDate, style: .time)
+                                .font(.caption.weight(.semibold))
+                                .monospacedDigit()
+                            if let note = state.note {
+                                NoteBanner(note: note, compact: true)
+                                    .lineLimit(3)
+                            }
+                            if let joinURL = state.joinURL {
+                                JoinButton(url: joinURL, color: state.calendarColor, compact: true)
+                            }
+                            MeetingDetailsView(state: state, showExtras: false, stacked: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 4)
                 }
             } compactLeading: {
                 AppIconView(size: 20, asset: "BefoorIslandIcon")
             } compactTrailing: {
                 CountdownText(startDate: state.startDate, isStale: context.isStale)
                     .frame(maxWidth: 64)
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
                     .foregroundStyle(state.calendarColor)
             } minimal: {
                 ProgressView(timerInterval: state.countdownRange, countsDown: true) {
@@ -144,8 +179,12 @@ private struct MeetingDetailsView: View {
     let state: NextMeetingAttributes.ContentState
     /// Attendee count and the following meeting; left out when space is short.
     var showExtras = true
+    /// One item per line, for a narrow Dynamic Island.
+    var stacked = false
 
     var body: some View {
+        let row = stacked ? AnyLayout(VStackLayout(alignment: .leading, spacing: 3))
+                          : AnyLayout(HStackLayout(spacing: 10))
         VStack(alignment: .leading, spacing: 3) {
             LinkChangeNotice(change: state.linkChange)
 
@@ -157,7 +196,7 @@ private struct MeetingDetailsView: View {
                 Label("\(state.attendeeCount) attendees", systemImage: "person.2")
             }
 
-            HStack(spacing: 10) {
+            row {
                 if let calendar = state.calendarName {
                     HStack(spacing: 4) {
                         Circle()
@@ -184,7 +223,7 @@ private struct MeetingDetailsView: View {
         }
         .font(.caption)
         .foregroundStyle(.secondary)
-        .lineLimit(1)
+        .lineLimit(stacked ? 2 : 1)
     }
 }
 

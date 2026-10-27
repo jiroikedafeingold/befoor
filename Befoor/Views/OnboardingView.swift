@@ -153,6 +153,10 @@ private struct WelcomePage: View {
 // MARK: - Page 2: How It Works
 
 private struct HowItWorksPage: View {
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    /// Landscape on iPhone: a smaller hero so the text shows without scrolling.
+    private var short: Bool { verticalSizeClass == .compact }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -163,18 +167,18 @@ private struct HowItWorksPage: View {
                         startPoint: .top, endPoint: .bottom
                     )
                     .frame(maxWidth: .infinity)
-                    .frame(height: 300)
+                    .frame(height: short ? 140 : 300)
 
                     VStack(spacing: 12) {
                         ZStack {
                             Circle()
                                 .fill(Color.purple.opacity(0.15))
-                                .frame(width: 120, height: 120)
+                                .frame(width: short ? 72 : 120, height: short ? 72 : 120)
                             Image(systemName: "sparkles")
-                                .font(.system(size: 52, weight: .medium))
+                                .font(.system(size: short ? 32 : 52, weight: .medium))
                                 .foregroundStyle(Color.purple)
                         }
-                        .padding(.top, 60)
+                        .padding(.top, short ? 16 : 60)
 
                         Text("How Dingly Works")
                             .font(.title.bold())
@@ -392,6 +396,10 @@ private struct AllSetPage: View {
 // MARK: - Shared Components
 
 private struct OnboardingPageShell<ActionContent: View>: View {
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    /// Landscape on iPhone: a smaller hero so the text shows without scrolling.
+    private var short: Bool { verticalSizeClass == .compact }
+
     let iconName: String
     let iconColor: Color
     let backgroundGradient: [Color]
@@ -419,57 +427,60 @@ private struct OnboardingPageShell<ActionContent: View>: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Hero area — gradient spans full width, icon is centered
-            ZStack(alignment: .bottom) {
-                LinearGradient(
-                    colors: backgroundGradient,
-                    startPoint: .top, endPoint: .bottom
-                )
-                .frame(maxWidth: .infinity)
-                .frame(height: 300)
+        // Scrolls so the page still fits in landscape on iPhone.
+        ScrollView {
+            VStack(spacing: 0) {
+                // Hero area — gradient spans full width, icon is centered
+                ZStack(alignment: .bottom) {
+                    LinearGradient(
+                        colors: backgroundGradient,
+                        startPoint: .top, endPoint: .bottom
+                    )
+                    .frame(maxWidth: .infinity)
+                    .frame(height: short ? 120 : 300)
 
-                VStack(spacing: 16) {
-                    ZStack {
-                        Circle()
-                            .fill(iconColor.opacity(0.15))
-                            .frame(width: 120, height: 120)
-                        Image(systemName: iconName)
-                            .font(.system(size: 52, weight: .medium))
-                            .foregroundStyle(iconColor)
+                    VStack(spacing: 16) {
+                        ZStack {
+                            Circle()
+                                .fill(iconColor.opacity(0.15))
+                                .frame(width: short ? 72 : 120, height: short ? 72 : 120)
+                            Image(systemName: iconName)
+                                .font(.system(size: short ? 32 : 52, weight: .medium))
+                                .foregroundStyle(iconColor)
+                        }
+                        .padding(.top, short ? 16 : 60)
                     }
-                    .padding(.top, 60)
+                    .padding(.bottom, short ? 8 : 24)
                 }
-                .padding(.bottom, 24)
-            }
 
-            // Text content — constrained width, left-aligned within centered column
-            VStack(alignment: .leading, spacing: 12) {
-                Text(title)
-                    .font(.title.bold())
+                // Text content — constrained width, left-aligned within centered column
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(title)
+                        .font(.title.bold())
 
-                Text(subtitle)
-                    .font(.headline)
-                    .foregroundStyle(iconColor)
+                    Text(subtitle)
+                        .font(.headline)
+                        .foregroundStyle(iconColor)
 
-                Text(description)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 4)
+                    Text(description)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 4)
 
-                if let actionContent {
-                    actionContent()
-                        .padding(.top, 12)
+                    if let actionContent {
+                        actionContent()
+                            .padding(.top, 12)
+                    }
                 }
-            }
-            .frame(maxWidth: 600, alignment: .leading)
-            .padding(.horizontal, 32)
-            .padding(.top, 28)
+                .frame(maxWidth: 600, alignment: .leading)
+                .padding(.horizontal, 32)
+                .padding(.top, short ? 12 : 28)
 
-            Spacer(minLength: 140)
+                Spacer(minLength: 140)
+            }
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity)
     }
 }
 

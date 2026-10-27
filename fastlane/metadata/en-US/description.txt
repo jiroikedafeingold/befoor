@@ -13,6 +13,6 @@ Dingly reads the calendars you choose and rings a real alarm before each meeting
 - Pause for a vacation, get a morning summary, ask Siri or use the widget to join or skip a meeting, and get a warning if a meeting's video link changes.
 - Add a short note to any meeting; it shows highlighted on its alarm and countdown.
 - Ring earlier for the meetings that need it: choose a first alert for one meeting, a whole series, or every meeting with a keyword like "kid pickup".
-- Works on iPhone and iPad, in English, Chinese, French, German, Italian, Japanese, Korean, Portuguese, Russian and Spanish.
+- Works on iPhone, iPhone Duo and iPad, in English, Chinese, French, German, Italian, Japanese, Korean, Portuguese, Russian and Spanish.
 
 Requires iOS 26.

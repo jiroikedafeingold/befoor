@@ -13,6 +13,6 @@ Dingly lit les calendriers de votre choix et fait sonner une vraie alarme avant 
 - Mettez en pause pendant les vacances, recevez un résumé du matin, rejoignez ou ignorez une réunion avec Siri ou le widget, et soyez averti si le lien vidéo d’une réunion change.
 - Ajoutez une courte note à une réunion : elle s’affiche en surbrillance sur son alarme et son compte à rebours.
 - Sonnez plus tôt pour les réunions qui le demandent : choisissez une première alerte pour une réunion, toute une série, ou chaque réunion contenant un mot-clé comme « récupérer les enfants ».
-- Pour iPhone et iPad.
+- Pour iPhone, iPhone Duo et iPad.
 
 Nécessite iOS 26.

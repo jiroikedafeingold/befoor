@@ -13,6 +13,6 @@ O Dingly lê os calendários que você escolher e toca um alarme de verdade ante
 - Pause durante as férias, receba um resumo da manhã, entre ou pule reuniões com a Siri ou o widget, e seja avisado se o link de vídeo de uma reunião mudar.
 - Adicione uma nota curta a qualquer reunião; ela aparece destacada no alarme e na contagem regressiva.
 - Toque mais cedo nas reuniões que precisam: escolha um primeiro alerta para uma reunião, uma série inteira ou toda reunião com uma palavra-chave como “buscar as crianças”.
-- Para iPhone e iPad.
+- Para iPhone, iPhone Duo e iPad.
 
 Requer iOS 26.

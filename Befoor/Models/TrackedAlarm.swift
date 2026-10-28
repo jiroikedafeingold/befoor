@@ -39,7 +39,7 @@ final class TrackedAlarmsStore: ObservableObject {
     }
 
     func upsert(_ alarm: TrackedAlarmModel) {
-        alarms[alarm.eventIdentifier] = alarm
+        alarms[alarm.id] = alarm
     }
 
     func remove(eventIdentifier: String) {
@@ -71,7 +71,7 @@ final class TrackedAlarmsStore: ObservableObject {
         guard let url = Self.snapshotURL,
               let data = try? Data(contentsOf: url),
               let models = try? JSONDecoder().decode([TrackedAlarmModel].self, from: data) else { return }
-        alarms = Dictionary(models.map { ($0.eventIdentifier, $0) },
+        alarms = Dictionary(models.map { ($0.id, $0) },
                             uniquingKeysWith: { _, latest in latest })
     }
 

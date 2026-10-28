@@ -17,7 +17,9 @@ struct TrackedAlarmModel: Codable, Identifiable {
     /// The person's short note for this meeting.
     var note: String?
 
-    var id: String { eventIdentifier }
+    /// One per occurrence: a repeating meeting shares its eventIdentifier
+    /// across every occurrence, so the start time is part of the identity.
+    var id: String { "\(eventIdentifier)|\(Int(eventStartDate.timeIntervalSince1970))" }
 
     init(
         eventIdentifier: String,

@@ -422,6 +422,32 @@ struct ContentView: View {
 
 }
 
+// MARK: - Time Left
+
+/// Time until a meeting, without seconds: "45 minutes" under an hour, the
+/// nearest quarter hour up to 4 hours ("3.75 hours"), then one whole unit
+/// ("5 hours", "2 days").
+private struct TimeLeftText: View {
+    let start: Date
+
+    var body: some View {
+        TimelineView(.everyMinute) { context in
+            let left = start.timeIntervalSince(context.date)
+            if left >= 3600 && left < 4 * 3600 {
+                let hours = (left / 900).rounded() / 4
+                Text(Measurement(value: hours, unit: UnitDuration.hours)
+                    .formatted(.measurement(width: .wide, usage: .asProvided,
+                                            numberFormatStyle: .number.precision(.fractionLength(0...2)))))
+            } else {
+                Text(.currentDate, format: .offset(to: start,
+                                                   allowedFields: [.day, .hour, .minute],
+                                                   maxFieldCount: 1,
+                                                   sign: .never))
+            }
+        }
+    }
+}
+
 // MARK: - Alarm Row
 
 private struct AlarmRow: View {
@@ -485,11 +511,7 @@ private struct AlarmRow: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
-                        // One unit, no seconds: "2 days", "3 hours", or "45 minutes" under an hour.
-                        Text(.currentDate, format: .offset(to: alarm.eventStartDate,
-                                                           allowedFields: [.day, .hour, .minute],
-                                                           maxFieldCount: 1,
-                                                           sign: .never))
+                        TimeLeftText(start: alarm.eventStartDate)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

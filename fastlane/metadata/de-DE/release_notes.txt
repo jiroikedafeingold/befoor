@@ -1,7 +1,4 @@
-- Befoor heißt jetzt Dingly. Gleiche App, neuer Name.
-- Notizen zu Terminen: Halte einen Termin gedrückt und tippe auf „Notiz hinzufügen“. Die Notiz erscheint hervorgehoben in der Liste, auf dem Wecker und im Countdown – praktisch für Follow-ups oder Themen, die du ansprechen willst.
-- Früher klingeln, wo es nötig ist: Halte einen Termin gedrückt und wähle „Erster Hinweis“ für nur diesen Termin oder die ganze Serie, oder lege in den Einstellungen Stichwort-Hinweise fest (z. B. „Kinder abholen“ klingelt 45 Minuten vorher).
-- Gemacht für das iPhone Duo: Dingly funktioniert auf beiden Displays und in jeder Ausrichtung, und der Countdown passt in die seitliche Dynamic Island.
-- Behoben: Nach dem Beenden des ersten Weckers erschien der Countdown manchmal nicht.
+- Behoben: Wiederkehrende Termine, etwa ein wöchentliches 1:1, fehlten am Tag selbst manchmal in der Liste.
+- Die Liste zeigt die verbleibende Zeit jetzt schlichter: in Stunden, unter einer Stunde in Minuten.
 
 Fragen oder Feedback? apps@feingold5.com

@@ -1,7 +1,4 @@
-- Befoor is now Dingly. Same app, new name.
-- Meeting notes: touch and hold a meeting and tap Add Note. Your note shows highlighted on its row, its alarm and the countdown — handy for follow-ups or things to bring up.
-- Ring earlier for the meetings that need it: touch and hold a meeting and pick First Alert for just that meeting or its whole series, or set Keyword Alerts in Settings (for example, "kid pickup" rings 45 minutes before).
-- Made for iPhone Duo: Dingly works on both screens and in any orientation, and its countdown fits the side Dynamic Island.
-- Fixed: after you stopped the first alarm, the countdown sometimes didn't appear.
+- Fixed: repeating meetings, like a weekly 1:1, could be missing from the list on the day they happen.
+- The list now shows time left as a simple countdown: hours, or minutes when it is under an hour.
 
 Questions or feedback? apps@feingold5.com

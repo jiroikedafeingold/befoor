@@ -1,7 +1,4 @@
-- O Befoor agora se chama Dingly. O mesmo app, com novo nome.
-- Notas de reunião: mantenha uma reunião pressionada e toque em Adicionar nota. A nota aparece destacada na lista, no alarme e na contagem regressiva — útil para pendências ou assuntos para levantar.
-- Toque mais cedo nas reuniões que precisam: mantenha uma reunião pressionada e escolha Primeiro alerta só para ela ou para a série inteira, ou defina Alertas por palavra-chave nos Ajustes (por exemplo, “buscar as crianças” toca 45 minutos antes).
-- Feito para o iPhone Duo: o Dingly funciona nas duas telas e em qualquer orientação, e a contagem regressiva cabe na Dynamic Island lateral.
-- Corrigido: depois de parar o primeiro alarme, às vezes a contagem regressiva não aparecia.
+- Corrigido: reuniões recorrentes, como um 1:1 semanal, às vezes não apareciam na lista no próprio dia.
+- A lista agora mostra o tempo restante de forma mais simples: em horas, ou em minutos quando falta menos de uma hora.
 
 Dúvidas ou sugestões? apps@feingold5.com

@@ -1,7 +1,4 @@
-- Befoor ora si chiama Dingly. Stessa app, nuovo nome.
-- Note sulle riunioni: tieni premuta una riunione e tocca Aggiungi nota. La nota compare evidenziata nell’elenco, sulla sveglia e nel conto alla rovescia: comoda per i follow-up o gli argomenti da sollevare.
-- Suona prima per le riunioni che lo richiedono: tieni premuta una riunione e scegli Primo avviso solo per quella riunione o per l’intera serie, oppure imposta gli Avvisi per parola chiave in Impostazioni (ad esempio, «prendere i bambini» suona 45 minuti prima).
-- Pensato per iPhone Duo: Dingly funziona su entrambi gli schermi e in qualsiasi orientamento, e il conto alla rovescia sta nella Dynamic Island laterale.
-- Corretto: dopo aver fermato la prima sveglia, a volte il conto alla rovescia non compariva.
+- Corretto: le riunioni ricorrenti, come un 1:1 settimanale, a volte mancavano dall’elenco il giorno stesso.
+- L’elenco ora mostra il tempo rimanente in modo più semplice: in ore, o in minuti quando manca meno di un’ora.
 
 Domande o suggerimenti? apps@feingold5.com

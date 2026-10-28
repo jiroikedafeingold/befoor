@@ -485,7 +485,11 @@ private struct AlarmRow: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {
-                        Text(alarm.eventStartDate, style: .relative)
+                        // One unit, no seconds: "2 days", "3 hours", or "45 minutes" under an hour.
+                        Text(.currentDate, format: .offset(to: alarm.eventStartDate,
+                                                           allowedFields: [.day, .hour, .minute],
+                                                           maxFieldCount: 1,
+                                                           sign: .never))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

@@ -34,6 +34,12 @@ struct SettingsView: View {
                         value: $settings.leadTimeMinutes,
                         in: AppSettings.firstAlertRange
                     )
+                    Picker("First meeting of the day", selection: $settings.firstMeetingAlertMinutes) {
+                        Text("Same as first alert").tag(0)
+                        ForEach(AppSettings.meetingFirstAlertChoices.filter { $0 >= 15 }, id: \.self) { minutes in
+                            Text(alertLabel(minutes)).tag(minutes)
+                        }
+                    }
                     Stepper(
                         "Last alert: \(alertLabel(settings.lastAlertMinutes))",
                         value: $settings.lastAlertMinutes,
@@ -57,7 +63,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Alarm Timing")
                 } footer: {
-                    Text("Each meeting rings at the first alert, when its countdown appears, and again at the last alert. Meetings that start at the same time share one alarm.")
+                    Text("Each meeting rings at the first alert, when its countdown appears, and again at the last alert. Meetings that start at the same time share one alarm. The day's first meeting can ring earlier, to give you time to get ready.")
                 }
 
                 // MARK: Pause
@@ -299,6 +305,7 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             // These are baked into the scheduled alarms, so reschedule after a change.
             .onChange(of: settings.leadTimeMinutes) { _, _ in AlarmScheduler.shared.requestResync() }
+            .onChange(of: settings.firstMeetingAlertMinutes) { _, _ in AlarmScheduler.shared.requestResync() }
             .onChange(of: settings.selectedSound) { _, _ in AlarmScheduler.shared.requestResync() }
             .onChange(of: settings.soundEnabled) { _, _ in AlarmScheduler.shared.requestResync() }
             .onChange(of: settings.lastAlertMinutes) { _, _ in AlarmScheduler.shared.requestResync() }

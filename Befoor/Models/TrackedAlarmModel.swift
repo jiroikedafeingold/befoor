@@ -16,6 +16,9 @@ struct TrackedAlarmModel: Codable, Identifiable {
     var isSkipped: Bool = false
     /// The person's short note for this meeting.
     var note: String?
+    /// True for the day's first meeting time, which can ring earlier
+    /// (AppSettings.firstMeetingAlertMinutes). Optional so older snapshots decode.
+    var firstOfDay: Bool?
 
     /// One per occurrence: a repeating meeting shares its eventIdentifier
     /// across every occurrence, so the start time is part of the identity.
@@ -30,7 +33,8 @@ struct TrackedAlarmModel: Codable, Identifiable {
         joinURL: URL? = nil,
         linkChange: String? = nil,
         isSkipped: Bool = false,
-        note: String? = nil
+        note: String? = nil,
+        firstOfDay: Bool? = nil
     ) {
         self.eventIdentifier = eventIdentifier
         self.notificationIdentifier = notificationIdentifier
@@ -41,5 +45,6 @@ struct TrackedAlarmModel: Codable, Identifiable {
         self.linkChange = linkChange
         self.isSkipped = isSkipped
         self.note = note
+        self.firstOfDay = firstOfDay
     }
 }

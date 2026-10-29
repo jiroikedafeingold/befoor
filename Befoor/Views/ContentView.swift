@@ -147,7 +147,8 @@ struct ContentView: View {
                                                                    title: meeting.eventTitle)
                         AlarmRow(alarm: meeting, isSkipped: skipped,
                                  isPaused: settings.isPaused(at: meeting.eventStartDate),
-                                 note: note, firstAlert: firstAlert)
+                                 note: note,
+                                 firstAlert: firstAlert ?? morningFirstAlert(for: meeting))
                             .swipeActions(edge: .trailing) {
                                 skipButton(for: meeting, skipped: skipped)
                             }
@@ -405,6 +406,12 @@ struct ContentView: View {
             refreshAlarmStatus()
             await AlarmScheduler.shared.sync(force: true)
         }
+    }
+
+    /// The earlier first alert of the day's first meeting, shown on its row.
+    private func morningFirstAlert(for meeting: TrackedAlarmModel) -> Int? {
+        guard meeting.firstOfDay == true, settings.firstMeetingAlertMinutes > 0 else { return nil }
+        return settings.firstMeetingAlertMinutes
     }
 
     /// Upcoming meetings in the look-ahead window, grouped by day, without the

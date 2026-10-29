@@ -5260,66 +5260,66 @@
         }
       }
     },
-    "Each meeting rings at the first alert, when its countdown appears, and again at the last alert. Meetings that start at the same time share one alarm.": {
+    "Each meeting rings at the first alert, when its countdown appears, and again at the last alert. Meetings that start at the same time share one alarm. The day's first meeting can ring earlier, to give you time to get ready.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jeder Termin klingelt beim ersten Hinweis, wenn sein Countdown erscheint, und noch einmal beim letzten Hinweis. Termine, die gleichzeitig beginnen, teilen sich einen Wecker."
+            "value": "Jeder Termin klingelt beim ersten Hinweis, wenn sein Countdown erscheint, und noch einmal beim letzten Hinweis. Termine, die gleichzeitig beginnen, teilen sich einen Wecker. Der erste Termin des Tages kann früher klingeln, damit du Zeit hast, dich fertig zu machen."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cada reunión suena en el primer aviso, cuando aparece su cuenta atrás, y de nuevo en el último aviso. Las reuniones que empiezan a la vez comparten una alarma."
+            "value": "Cada reunión suena en el primer aviso, cuando aparece su cuenta atrás, y de nuevo en el último aviso. Las reuniones que empiezan a la vez comparten una alarma. La primera reunión del día puede sonar antes, para que tengas tiempo de prepararte."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chaque réunion sonne à la première alerte, quand son compte à rebours apparaît, puis à la dernière alerte. Les réunions qui commencent en même temps partagent une alarme."
+            "value": "Chaque réunion sonne à la première alerte, quand son compte à rebours apparaît, puis à la dernière alerte. Les réunions qui commencent en même temps partagent une alarme. La première réunion de la journée peut sonner plus tôt, pour vous laisser le temps de vous préparer."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ogni riunione suona al primo avviso, quando compare il conto alla rovescia, e di nuovo all’ultimo avviso. Le riunioni che iniziano alla stessa ora condividono una sveglia."
+            "value": "Ogni riunione suona al primo avviso, quando compare il conto alla rovescia, e di nuovo all’ultimo avviso. Le riunioni che iniziano alla stessa ora condividono una sveglia. La prima riunione della giornata può suonare prima, per darti il tempo di prepararti."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "各ミーティングは、カウントダウンが表示される最初の通知で鳴り、最後の通知でもう一度鳴ります。同時に始まるミーティングは1つのアラームを共有します。"
+            "value": "各ミーティングは、カウントダウンが表示される最初の通知で鳴り、最後の通知でもう一度鳴ります。同時に始まるミーティングは1つのアラームを共有します。その日最初のミーティングは、身支度の時間を取れるよう早めに鳴らせます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "각 회의는 카운트다운이 나타나는 첫 알림에 울리고, 마지막 알림에 한 번 더 울립니다. 같은 시간에 시작하는 회의는 알람 하나를 공유합니다."
+            "value": "각 회의는 카운트다운이 나타나는 첫 알림에 울리고, 마지막 알림에 한 번 더 울립니다. 같은 시간에 시작하는 회의는 알람 하나를 공유합니다. 하루의 첫 회의는 준비할 시간이 있도록 더 일찍 울리게 할 수 있습니다."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cada reunião toca no primeiro alerta, quando a contagem regressiva aparece, e de novo no último alerta. Reuniões que começam ao mesmo tempo compartilham um alarme."
+            "value": "Cada reunião toca no primeiro alerta, quando a contagem regressiva aparece, e de novo no último alerta. Reuniões que começam ao mesmo tempo compartilham um alarme. A primeira reunião do dia pode tocar mais cedo, para você ter tempo de se arrumar."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Каждая встреча звонит при первом сигнале, когда появляется её обратный отсчёт, и снова при последнем. Встречи, начинающиеся одновременно, используют один будильник."
+            "value": "Каждая встреча звонит при первом сигнале, когда появляется её обратный отсчёт, и снова при последнем. Встречи, начинающиеся одновременно, используют один будильник. Первая встреча дня может звонить раньше, чтобы было время собраться."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "每个会议会在第一次提醒（出现倒计时时）响起，并在最后一次提醒时再响一次。同时开始的会议共用一个闹钟。"
+            "value": "每个会议会在第一次提醒（出现倒计时时）响起，并在最后一次提醒时再响一次。同时开始的会议共用一个闹钟。当天的第一个会议可以提早响铃，让你有时间做好准备。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "每個會議會在第一次提醒（出現倒數時）響起，並在最後一次提醒時再響一次。同時開始的會議共用一個鬧鐘。"
+            "value": "每個會議會在第一次提醒（出現倒數時）響起，並在最後一次提醒時再響一次。同時開始的會議共用一個鬧鐘。當天的第一個會議可以提早響鈴，讓你有時間做好準備。"
           }
         }
       }
@@ -14579,6 +14579,134 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的會議備註會顯示在這裡"
+          }
+        }
+      }
+    },
+    "First meeting of the day": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erster Termin des Tages"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Primera reunión del día"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Première réunion de la journée"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prima riunione della giornata"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "その日最初のミーティング"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "하루의 첫 회의"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Primeira reunião do dia"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Первая встреча дня"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当天第一个会议"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當天第一個會議"
+          }
+        }
+      }
+    },
+    "Same as first alert": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wie erster Hinweis"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Igual que el primer aviso"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comme la première alerte"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Come il primo avviso"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最初の通知と同じ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "첫 알림과 동일"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Igual ao primeiro alerta"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Как первый сигнал"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "与第一次提醒相同"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "與第一次提醒相同"
           }
         }
       }

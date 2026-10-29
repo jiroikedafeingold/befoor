@@ -102,7 +102,8 @@ final class MeetingLiveActivityManager {
         let meetings = TrackedAlarmsStore.shared.alarms.values
             .filter { $0.notificationIdentifier == meeting.notificationIdentifier }
             .map { (eventIdentifier: $0.eventIdentifier, title: $0.eventTitle) }
-        return AppSettings.shared.alertMinutes(start: meeting.eventStartDate, meetings: meetings).first ?? 0
+        return AppSettings.shared.alertMinutes(start: meeting.eventStartDate, meetings: meetings,
+                                               firstOfDay: meeting.firstOfDay == true).first ?? 0
     }
 
     private var advanceTimer: Timer?

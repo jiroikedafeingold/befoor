@@ -58,9 +58,9 @@ final class CalendarService: ObservableObject {
         return Set(store.calendars(for: .event).map(\.calendarIdentifier))
     }
 
-    /// Fetch all events between now and `lookAheadDays` days from now, from every
-    /// calendar except the ones the user turned off.
-    func fetchUpcomingEvents(lookAheadDays: Int, excludedIdentifiers: Set<String>) -> [EKEvent] {
+    /// Fetch all events between `start` (default now) and `lookAheadDays` days
+    /// from now, from every calendar except the ones the user turned off.
+    func fetchUpcomingEvents(from start: Date? = nil, lookAheadDays: Int, excludedIdentifiers: Set<String>) -> [EKEvent] {
         guard isAuthorized else { return [] }
 
         let now = Date()
@@ -73,7 +73,7 @@ final class CalendarService: ObservableObject {
 
         guard !calendars.isEmpty else { return [] }
 
-        let predicate = store.predicateForEvents(withStart: now, end: end, calendars: calendars)
+        let predicate = store.predicateForEvents(withStart: start ?? now, end: end, calendars: calendars)
         return store.events(matching: predicate)
             .sorted { $0.startDate < $1.startDate }
     }

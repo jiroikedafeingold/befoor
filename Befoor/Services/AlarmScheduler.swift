@@ -124,11 +124,19 @@ final class AlarmScheduler: ObservableObject {
         store.removeAll()
 
         settings.migrateCalendarSelectionIfNeeded(allCalendarIdentifiers: calendar.allCalendarIdentifiers)
-        let events  = calendar.fetchUpcomingEvents(
+        // From midnight, so meetings earlier today count toward the day's first
+        // meeting; everything else uses the ones not over yet.
+        let now = Date()
+        let dayEvents = filter(calendar.fetchUpcomingEvents(
+            from: Calendar.current.startOfDay(for: now),
             lookAheadDays: settings.lookAheadDays,
             excludedIdentifiers: settings.excludedCalendarIdentifiers
-        )
-        let filtered = filter(events)
+        ))
+        let filtered = dayEvents.filter { $0.endDate > now }
+        let firstOfDayStarts = Self.firstOfDayStarts(dayEvents.filter {
+            !settings.isSkipped(eventIdentifier: $0.eventIdentifier, start: $0.startDate)
+                && !settings.isPaused(at: $0.startDate)
+        })
         let linkChanges = LinkWatch.update(events: filtered, calendar: calendar, notifications: notifications)
 
         // Meetings ring as AlarmKit alarms, which play through silent mode and
@@ -152,6 +160,7 @@ final class AlarmScheduler: ObservableObject {
             // Same order as the countdown, which sorts by title too.
             let all = events.sorted { ($0.title ?? Self.untitled) < ($1.title ?? Self.untitled) }
             let meetingKey = Self.meetingKey(start: start)
+            let firstOfDay = firstOfDayStarts.contains(start)
 
             // Skipped and paused meetings stay in the list (so they can be
             // un-skipped) but get no alerts.
@@ -165,7 +174,8 @@ final class AlarmScheduler: ObservableObject {
                     joinURL:                calendar.joinURL(for: event),
                     linkChange:             linkChanges[LinkWatch.key(event)],
                     isSkipped:              settings.isSkipped(eventIdentifier: event.eventIdentifier, start: event.startDate),
-                    note:                   settings.note(eventIdentifier: event.eventIdentifier, start: event.startDate)
+                    note:                   settings.note(eventIdentifier: event.eventIdentifier, start: event.startDate),
+                    firstOfDay:             firstOfDay ? true : nil
                 ))
             }
             let events = all.filter {
@@ -184,7 +194,7 @@ final class AlarmScheduler: ObservableObject {
 
             let alerts = Self.alertsToSchedule(minutes: settings.alertMinutes(start: start, meetings: events.map {
                                                       (eventIdentifier: $0.eventIdentifier, title: $0.title ?? Self.untitled)
-                                                  }),
+                                                  }, firstOfDay: firstOfDay),
                                                   start: start)
             guard !alerts.isEmpty else { continue }
 
@@ -271,6 +281,13 @@ final class AlarmScheduler: ObservableObject {
         events.contains { other in
             other.startDate != start && other.startDate <= date && other.endDate > date
         }
+    }
+
+    /// The earliest meeting start on each day.
+    static func firstOfDayStarts(_ events: [EKEvent]) -> Set<Date> {
+        let calendar = Calendar.current
+        return Set(Dictionary(grouping: events) { calendar.startOfDay(for: $0.startDate) }
+            .values.compactMap { $0.map(\.startDate).min() })
     }
 
     /// Title for an event that has none.

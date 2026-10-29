@@ -466,7 +466,12 @@ private struct AlarmRow: View {
     var firstAlert: Int?
     @ObservedObject private var calService = CalendarService.shared
 
-    private var silenced: Bool { isSkipped || isPaused }
+    private var isCancelled: Bool { alarm.cancellation != nil }
+    private var silenced: Bool { isSkipped || isPaused || isCancelled }
+
+    private var cancelledText: Text {
+        alarm.cancellation == "declined" ? Text("Declined") : Text("Cancelled")
+    }
 
     private var calendarColor: Color {
         if let cal = calService.calendar(for: alarm.calendarIdentifier) {
@@ -480,7 +485,7 @@ private struct AlarmRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(alarm.eventTitle)
                     .font(.body.weight(.medium))
-                    .strikethrough(isSkipped)
+                    .strikethrough(isSkipped || isCancelled)
                     .lineLimit(1)
 
                 if let note {
@@ -509,7 +514,11 @@ private struct AlarmRow: View {
                         .fill(calendarColor)
                         .frame(width: 8, height: 8)
 
-                    if isSkipped {
+                    if isCancelled {
+                        Label { cancelledText } icon: { Image(systemName: "xmark.circle.fill") }
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.red)
+                    } else if isSkipped {
                         Text("Skipped")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -545,7 +554,7 @@ private struct AlarmRow: View {
 
             Spacer()
 
-            if let joinURL = alarm.joinURL {
+            if let joinURL = alarm.joinURL, !isCancelled {
                 Link(destination: joinURL) {
                     Label("Join", systemImage: "video.fill")
                         .font(.caption.weight(.semibold))
@@ -558,7 +567,7 @@ private struct AlarmRow: View {
             Image(systemName: silenced ? "bell.slash" : "alarm.fill")
                 .foregroundStyle(silenced ? AnyShapeStyle(.secondary) : AnyShapeStyle(.indigo.opacity(0.7)))
                 .font(.caption)
-                .accessibilityLabel(isSkipped ? Text("Skipped") : isPaused ? Text("Paused") : Text("Alarm set"))
+                .accessibilityLabel(isCancelled ? cancelledText : isSkipped ? Text("Skipped") : isPaused ? Text("Paused") : Text("Alarm set"))
         }
         .padding(.vertical, 2)
         .opacity(silenced ? 0.6 : 1)

@@ -133,10 +133,15 @@ final class AlarmScheduler: ObservableObject {
             excludedIdentifiers: settings.excludedCalendarIdentifiers
         ))
         let filtered = dayEvents.filter { $0.endDate > now }
-        let firstOfDayStarts = Self.firstOfDayStarts(dayEvents.filter {
-            !settings.isSkipped(eventIdentifier: $0.eventIdentifier, start: $0.startDate)
-                && !settings.isPaused(at: $0.startDate)
-        })
+        // Skipped, paused and cancelled meetings stay in the list (so they can
+        // be un-skipped, or seen to be off) but get no alerts.
+        func rings(_ event: EKEvent) -> Bool {
+            !settings.isSkipped(eventIdentifier: event.eventIdentifier, start: event.startDate)
+                && !settings.isPaused(at: event.startDate)
+                && calendar.cancellation(for: event) == nil
+        }
+        let firstOfDayStarts = Self.firstOfDayStarts(dayEvents.filter(rings))
+        let notCancelled = filtered.filter { calendar.cancellation(for: $0) == nil }
         let linkChanges = LinkWatch.update(events: filtered, calendar: calendar, notifications: notifications)
 
         // Meetings ring as AlarmKit alarms, which play through silent mode and
@@ -162,8 +167,6 @@ final class AlarmScheduler: ObservableObject {
             let meetingKey = Self.meetingKey(start: start)
             let firstOfDay = firstOfDayStarts.contains(start)
 
-            // Skipped and paused meetings stay in the list (so they can be
-            // un-skipped) but get no alerts.
             for event in all {
                 store.upsert(TrackedAlarmModel(
                     eventIdentifier:        event.eventIdentifier,
@@ -175,13 +178,11 @@ final class AlarmScheduler: ObservableObject {
                     linkChange:             linkChanges[LinkWatch.key(event)],
                     isSkipped:              settings.isSkipped(eventIdentifier: event.eventIdentifier, start: event.startDate),
                     note:                   settings.note(eventIdentifier: event.eventIdentifier, start: event.startDate),
-                    firstOfDay:             firstOfDay ? true : nil
+                    firstOfDay:             firstOfDay ? true : nil,
+                    cancellation:           calendar.cancellation(for: event)
                 ))
             }
-            let events = all.filter {
-                !settings.isSkipped(eventIdentifier: $0.eventIdentifier, start: $0.startDate)
-                    && !settings.isPaused(at: $0.startDate)
-            }
+            let events = all.filter(rings)
             guard !events.isEmpty else { continue }
             let linkChange = events.lazy.compactMap { linkChanges[LinkWatch.key($0)] }.first
             let notes = events.compactMap { settings.note(eventIdentifier: $0.eventIdentifier, start: $0.startDate) }
@@ -228,7 +229,7 @@ final class AlarmScheduler: ObservableObject {
                     note:          note,
                     sound:         settings.selectedSound,
                     // Ringing during another meeting: vibrate first, sound after 15 s.
-                    quiet:         Self.inAnotherMeeting(at: alert.date, start: start, events: filtered),
+                    quiet:         Self.inAnotherMeeting(at: alert.date, start: start, events: notCancelled),
                     snoozeMinutes: settings.snoozeDurationMinutes
                 ))
             }
@@ -256,10 +257,7 @@ final class AlarmScheduler: ObservableObject {
         }
 
         await notifications.scheduleMorningSummaries(
-            meetings: filtered.filter {
-                !settings.isSkipped(eventIdentifier: $0.eventIdentifier, start: $0.startDate)
-                    && !settings.isPaused(at: $0.startDate)
-            }.map { (title: $0.title ?? Self.untitled, start: $0.startDate) },
+            meetings: filtered.filter(rings).map { (title: $0.title ?? Self.untitled, start: $0.startDate) },
             enabled: settings.isEnabled && settings.morningSummaryEnabled,
             minutesAfterMidnight: settings.morningSummaryMinutes
         )
@@ -328,7 +326,7 @@ final class AlarmScheduler: ObservableObject {
     /// whether the widget actually needs reloading.
     private func alarmSignature() -> Set<String> {
         Set(store.alarms.values.map {
-            "\($0.eventIdentifier)|\($0.notificationIdentifier)|\($0.eventTitle)|\($0.calendarIdentifier)|\(Int($0.eventStartDate.timeIntervalSince1970))|\($0.joinURL?.absoluteString ?? "")|\($0.isSkipped)|\($0.note ?? "")"
+            "\($0.eventIdentifier)|\($0.notificationIdentifier)|\($0.eventTitle)|\($0.calendarIdentifier)|\(Int($0.eventStartDate.timeIntervalSince1970))|\($0.joinURL?.absoluteString ?? "")|\($0.isSkipped)|\($0.note ?? "")|\($0.cancellation ?? "")"
         })
     }
 
@@ -487,7 +485,7 @@ private func nextMeeting(withLink: Bool = false) async -> TrackedAlarmModel? {
     let settings = AppSettings.shared
     let now = Date()
     return store.alarms.values
-        .filter { $0.eventStartDate > now && !$0.isSkipped && !settings.isPaused(at: $0.eventStartDate) }
+        .filter { $0.eventStartDate > now && !$0.isSkipped && $0.cancellation == nil && !settings.isPaused(at: $0.eventStartDate) }
         .filter { !withLink || $0.joinURL != nil }
         .min { $0.eventStartDate < $1.eventStartDate }
 }

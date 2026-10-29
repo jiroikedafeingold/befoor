@@ -338,7 +338,7 @@ final class MeetingLiveActivityManager {
         let sorted = TrackedAlarmsStore.shared.alarms.values
             .filter { $0.eventStartDate > now }
             .filter { !settings.isSkipped(eventIdentifier: $0.eventIdentifier, start: $0.eventStartDate) }
-            .filter { !settings.isPaused(at: $0.eventStartDate) }
+            .filter { !settings.isPaused(at: $0.eventStartDate) && $0.cancellation == nil }
             .sorted { ($0.eventStartDate, $0.eventTitle) < ($1.eventStartDate, $1.eventTitle) }
         return Dictionary(grouping: sorted, by: \.notificationIdentifier).values
             .compactMap { group -> TrackedAlarmModel? in

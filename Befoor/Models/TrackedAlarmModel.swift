@@ -19,6 +19,8 @@ struct TrackedAlarmModel: Codable, Identifiable {
     /// True for the day's first meeting time, which can ring earlier
     /// (AppSettings.firstMeetingAlertMinutes). Optional so older snapshots decode.
     var firstOfDay: Bool?
+    /// "cancelled" or "declined" (everyone else declined): shown, but gets no alarms.
+    var cancellation: String?
 
     /// One per occurrence: a repeating meeting shares its eventIdentifier
     /// across every occurrence, so the start time is part of the identity.
@@ -34,7 +36,8 @@ struct TrackedAlarmModel: Codable, Identifiable {
         linkChange: String? = nil,
         isSkipped: Bool = false,
         note: String? = nil,
-        firstOfDay: Bool? = nil
+        firstOfDay: Bool? = nil,
+        cancellation: String? = nil
     ) {
         self.eventIdentifier = eventIdentifier
         self.notificationIdentifier = notificationIdentifier
@@ -46,5 +49,6 @@ struct TrackedAlarmModel: Codable, Identifiable {
         self.isSkipped = isSkipped
         self.note = note
         self.firstOfDay = firstOfDay
+        self.cancellation = cancellation
     }
 }

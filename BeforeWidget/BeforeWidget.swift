@@ -64,7 +64,8 @@ struct AlarmTimelineProvider: TimelineProvider {
         var alarms: [UpcomingAlarm] = []
         var nextBeyondWindow: Date?
         for model in models.sorted(by: { $0.eventStartDate < $1.eventStartDate }) {
-            guard model.eventStartDate >= now else { continue }
+            // Cancelled meetings (or ones everyone else declined) aren't coming up.
+            guard model.eventStartDate >= now, model.cancellation == nil else { continue }
             if model.eventStartDate > cutoff {
                 nextBeyondWindow = model.eventStartDate
                 break
@@ -96,6 +97,7 @@ private struct WidgetAlarmModel: Codable {
     let eventStartDate: Date
     let joinURL: URL?
     let isSkipped: Bool?
+    let cancellation: String?
 }
 
 // MARK: - Actions

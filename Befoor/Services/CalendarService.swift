@@ -102,6 +102,17 @@ final class CalendarService: ObservableObject {
 
     private static let linkDetector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
 
+    /// "cancelled" when the organizer cancelled the meeting, "declined" when
+    /// everyone else invited (people, not rooms) has declined it, else nil.
+    func cancellation(for event: EKEvent) -> String? {
+        if event.status == .canceled { return "cancelled" }
+        let others = (event.attendees ?? []).filter {
+            !$0.isCurrentUser && $0.participantType != .room && $0.participantType != .resource
+        }
+        if !others.isEmpty, others.allSatisfy({ $0.participantStatus == .declined }) { return "declined" }
+        return nil
+    }
+
     /// The event's video-call link, from its URL field, location or notes.
     func joinURL(for event: EKEvent) -> URL? {
         func isVideoCall(_ url: URL) -> Bool {

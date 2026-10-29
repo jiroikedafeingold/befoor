@@ -1,4 +1,4 @@
-- Corregido: las reuniones periódicas, como un 1:1 semanal, a veces no aparecían en la lista el mismo día.
-- La lista ahora muestra el tiempo restante de forma más sencilla: en horas, o en minutos si falta menos de una hora.
+- Primera reunión del día: dale a tu primera reunión un aviso más temprano para tener tiempo de prepararte por la mañana. Está en Ajustes > Horario de alarmas.
+- Las reuniones canceladas, y las que todos los demás han rechazado, siguen en la lista marcadas como Cancelada o Rechazada, pero ya no suenan.
 
 ¿Preguntas o comentarios? apps@feingold5.com

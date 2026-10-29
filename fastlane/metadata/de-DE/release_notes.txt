@@ -1,4 +1,4 @@
-- Behoben: Wiederkehrende Termine, etwa ein wöchentliches 1:1, fehlten am Tag selbst manchmal in der Liste.
-- Die Liste zeigt die verbleibende Zeit jetzt schlichter: in Stunden, unter einer Stunde in Minuten.
+- Erster Termin des Tages: Gib deinem ersten Termin einen früheren Hinweis, damit du morgens Zeit hast, dich fertig zu machen. Zu finden unter Einstellungen > Wecker-Zeiten.
+- Abgesagte Termine und Termine, die alle anderen abgelehnt haben, bleiben als „Abgesagt“ oder „Abgelehnt“ in der Liste, klingeln aber nicht mehr.
 
 Fragen oder Feedback? apps@feingold5.com

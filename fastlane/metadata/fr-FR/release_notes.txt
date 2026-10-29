@@ -1,4 +1,4 @@
-- Correction : les réunions récurrentes, comme un 1:1 hebdomadaire, pouvaient manquer dans la liste le jour même.
-- La liste affiche désormais le temps restant plus simplement : en heures, ou en minutes à moins d’une heure.
+- Première réunion de la journée : donnez à votre première réunion une alerte plus précoce, pour avoir le temps de vous préparer le matin. Dans Réglages > Horaires des alarmes.
+- Les réunions annulées, et celles que tous les autres ont refusées, restent dans la liste avec la mention Annulée ou Refusée, mais ne sonnent plus.
 
 Des questions ou des commentaires ? apps@feingold5.com

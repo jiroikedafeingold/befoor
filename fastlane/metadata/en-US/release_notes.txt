@@ -1,4 +1,4 @@
-- Fixed: repeating meetings, like a weekly 1:1, could be missing from the list on the day they happen.
-- The list now shows time left as a simple countdown: hours, or minutes when it is under an hour.
+- First meeting of the day: give your first meeting an earlier alert, so you have time to get ready in the morning. Find it in Settings > Alarm Timing.
+- Cancelled meetings, and meetings everyone else declined, stay in the list marked Cancelled or Declined, but no longer ring.
 
 Questions or feedback? apps@feingold5.com

@@ -1,4 +1,4 @@
-- Corretto: le riunioni ricorrenti, come un 1:1 settimanale, a volte mancavano dall’elenco il giorno stesso.
-- L’elenco ora mostra il tempo rimanente in modo più semplice: in ore, o in minuti quando manca meno di un’ora.
+- Prima riunione della giornata: dai alla tua prima riunione un avviso anticipato, per avere il tempo di prepararti la mattina. Si trova in Impostazioni > Orari delle sveglie.
+- Le riunioni annullate, e quelle che tutti gli altri hanno rifiutato, restano nell’elenco segnate come Annullata o Rifiutata, ma non suonano più.
 
 Domande o suggerimenti? apps@feingold5.com

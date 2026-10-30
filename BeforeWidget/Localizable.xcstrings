@@ -71,70 +71,6 @@
         }
       }
     },
-    "%lld attendees": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld Teilnehmer"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld asistentes"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld participants"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld partecipanti"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "参加者%lld人"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "참석자 %lld명"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld participantes"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Участников: %lld"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 位参与者"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 位參與者"
-          }
-        }
-      }
-    },
     "Coming Up": {
       "localizations": {
         "de": {
@@ -271,34 +207,22 @@
             "value": "Link geändert"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lien modifié"
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Enlace cambiado"
           }
         },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lien modifié"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Link cambiato"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Link alterado"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ссылка изменилась"
           }
         },
         "ja": {
@@ -311,6 +235,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "링크 변경됨"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link alterado"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ссылка изменилась"
           }
         },
         "zh-Hans": {
@@ -335,34 +271,22 @@
             "value": "Link entfernt"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lien supprimé"
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Enlace eliminado"
           }
         },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lien supprimé"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Link rimosso"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Link removido"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ссылка удалена"
           }
         },
         "ja": {
@@ -375,6 +299,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "링크 삭제됨"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link removido"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ссылка удалена"
           }
         },
         "zh-Hans": {
@@ -399,34 +335,22 @@
             "value": "Termin"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Réunion"
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Reunión"
           }
         },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réunion"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Riunione"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reunião"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Встреча"
           }
         },
         "ja": {
@@ -439,6 +363,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "회의"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reunião"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Встреча"
           }
         },
         "zh-Hans": {
@@ -721,34 +657,22 @@
             "value": "Klingeln"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sonner"
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Sonar"
           }
         },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sonner"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Suona"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tocar"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Звонить"
           }
         },
         "ja": {
@@ -761,6 +685,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "울리기"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tocar"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Звонить"
           }
         },
         "zh-Hans": {
@@ -979,34 +915,22 @@
             "value": "Überspringen"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ignorer"
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Omitir"
           }
         },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignorer"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Salta"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pular"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пропустить"
           }
         },
         "ja": {
@@ -1019,6 +943,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "건너뛰기"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pular"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пропустить"
           }
         },
         "zh-Hans": {
@@ -1045,34 +981,22 @@
             "value": "Termin überspringen"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ignorer la réunion"
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Omitir reunión"
           }
         },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignorer la réunion"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Salta riunione"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pular reunião"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пропустить встречу"
           }
         },
         "ja": {
@@ -1085,6 +1009,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "회의 건너뛰기"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pular reunião"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пропустить встречу"
           }
         },
         "zh-Hans": {
@@ -1111,34 +1047,22 @@
             "value": "Übersprungen"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ignorée"
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Omitida"
           }
         },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignorée"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Saltata"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pulada"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пропущена"
           }
         },
         "ja": {
@@ -1151,6 +1075,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "건너뜀"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pulada"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пропущена"
           }
         },
         "zh-Hans": {
@@ -1177,34 +1113,22 @@
             "value": "Beginn"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Début"
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Inicio"
           }
         },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Début"
+          }
+        },
         "it": {
           "stringUnit": {
             "state": "translated",
             "value": "Inizio"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Início"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Начало"
           }
         },
         "ja": {
@@ -1217,6 +1141,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "시작"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Início"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Начало"
           }
         },
         "zh-Hans": {
@@ -1493,6 +1429,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "即將開始的行程"
+          }
+        }
+      }
+    },
+    "With %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avec %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "参加者：%@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "참석자: %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Com %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Участники: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "参与者：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "參與者：%@"
           }
         }
       }

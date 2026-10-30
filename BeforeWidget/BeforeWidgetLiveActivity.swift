@@ -17,7 +17,7 @@ struct NextMeetingAttributes: ActivityAttributes {
         var calendarName: String?
         var calendarRGB: [Double]?
         var location: String?
-        var attendeeCount: Int
+        var participants: String?
         var nextTitle: String?
         var nextStartDate: Date?
         var joinURL: URL?
@@ -177,7 +177,7 @@ private struct CountdownText: View {
 /// The "quick information" rows shared by the expanded island and the Lock Screen.
 private struct MeetingDetailsView: View {
     let state: NextMeetingAttributes.ContentState
-    /// Attendee count and the following meeting; left out when space is short.
+    /// The following meeting; left out when space is short.
     var showExtras = true
     /// One item per line, for a narrow Dynamic Island.
     var stacked = false
@@ -192,8 +192,8 @@ private struct MeetingDetailsView: View {
                 Label(location, systemImage: "mappin.and.ellipse")
             }
 
-            if showExtras && state.attendeeCount > 0 {
-                Label("\(state.attendeeCount) attendees", systemImage: "person.2")
+            if let participants = state.participants {
+                Label("With \(participants)", systemImage: "person.2")
             }
 
             row {
@@ -358,7 +358,7 @@ private struct JoinButton: View {
         calendarName: "Work",
         calendarRGB: [0.2, 0.5, 0.9],
         location: "Room 4B",
-        attendeeCount: 4,
+        participants: "Abby Lee, Sam Ortiz +2",
         nextTitle: "Product Sync",
         nextStartDate: .now.addingTimeInterval(7200),
         joinURL: URL(string: "https://zoom.us/j/123456789"),

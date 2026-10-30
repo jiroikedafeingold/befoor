@@ -17,6 +17,7 @@ struct MeetingAlarmMetadata: AlarmMetadata {
     var joinURL: URL?
     var linkChange: String?
     var note: String?
+    var participants: String?
 }
 
 private extension AlarmAttributes<MeetingAlarmMetadata> {
@@ -173,23 +174,28 @@ private struct AlarmDetails: View {
     var body: some View {
         let layout = stacked ? AnyLayout(VStackLayout(alignment: .leading, spacing: 3))
                              : AnyLayout(HStackLayout(spacing: 10))
-        layout {
-            switch state.mode {
-            case .countdown(let countdown):
-                Label {
-                    Text("Rings at \(countdown.fireDate, style: .time)")
-                } icon: {
-                    Image(systemName: "alarm")
-                }
-            case .paused:
-                Label("Paused", systemImage: "pause")
-            default:
-                Label("Ringing", systemImage: "alarm.waves.left.and.right")
+        VStack(alignment: .leading, spacing: 3) {
+            if let participants = metadata?.participants {
+                Label("With \(participants)", systemImage: "person.2")
             }
-            if metadata?.linkChange != nil {
-                LinkChangeNotice(change: metadata?.linkChange)
-            } else if let location = metadata?.location {
-                Label(location, systemImage: "mappin.and.ellipse")
+            layout {
+                switch state.mode {
+                case .countdown(let countdown):
+                    Label {
+                        Text("Rings at \(countdown.fireDate, style: .time)")
+                    } icon: {
+                        Image(systemName: "alarm")
+                    }
+                case .paused:
+                    Label("Paused", systemImage: "pause")
+                default:
+                    Label("Ringing", systemImage: "alarm.waves.left.and.right")
+                }
+                if metadata?.linkChange != nil {
+                    LinkChangeNotice(change: metadata?.linkChange)
+                } else if let location = metadata?.location {
+                    Label(location, systemImage: "mappin.and.ellipse")
+                }
             }
         }
         .font(.caption)

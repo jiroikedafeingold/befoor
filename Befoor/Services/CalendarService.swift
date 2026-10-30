@@ -113,6 +113,25 @@ final class CalendarService: ObservableObject {
         return nil
     }
 
+    /// Who else is in the meeting, for its countdown: "Abby Lee, Sam Ortiz +2".
+    /// People only (not rooms), leaving out the person and anyone who declined;
+    /// nil when there's no one else.
+    func participants(for event: EKEvent) -> String? {
+        let names = (event.attendees ?? [])
+            .filter {
+                !$0.isCurrentUser && $0.participantType != .room && $0.participantType != .resource
+                    && $0.participantStatus != .declined
+            }
+            .compactMap { person -> String? in
+                if let name = person.name?.trimmingCharacters(in: .whitespaces), !name.isEmpty { return name }
+                let address = person.url.absoluteString.replacingOccurrences(of: "mailto:", with: "")
+                return address.isEmpty ? nil : address
+            }
+        guard !names.isEmpty else { return nil }
+        let shown = names.prefix(2).joined(separator: ", ")
+        return names.count > 2 ? "\(shown) +\(names.count - 2)" : shown
+    }
+
     /// The event's video-call link, from its URL field, location or notes.
     func joinURL(for event: EKEvent) -> URL? {
         func isVideoCall(_ url: URL) -> Bool {

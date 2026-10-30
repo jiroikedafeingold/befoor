@@ -192,6 +192,7 @@ final class AlarmScheduler: ObservableObject {
             let calName = events.first?.calendar?.title ?? String(localized: "Calendar")
             let location = events.compactMap(\.location).first { !$0.isEmpty }
             let joinURL = events.lazy.compactMap { self.calendar.joinURL(for: $0) }.first
+            let participants = events.lazy.compactMap { self.calendar.participants(for: $0) }.first
 
             let alerts = Self.alertsToSchedule(minutes: settings.alertMinutes(start: start, meetings: events.map {
                                                       (eventIdentifier: $0.eventIdentifier, title: $0.title ?? Self.untitled)
@@ -227,6 +228,7 @@ final class AlarmScheduler: ObservableObject {
                     joinURL:       joinURL,
                     linkChange:    linkChange,
                     note:          note,
+                    participants:  participants,
                     sound:         settings.selectedSound,
                     // Ringing during another meeting: vibrate first, sound after 15 s.
                     quiet:         Self.inAnotherMeeting(at: alert.date, start: start, events: notCancelled),

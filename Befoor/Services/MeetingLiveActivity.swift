@@ -26,7 +26,8 @@ struct NextMeetingAttributes: ActivityAttributes {
         /// sRGB components of the calendar color.
         var calendarRGB: [Double]?
         var location: String?
-        var attendeeCount: Int
+        /// Who else is in the meeting: "Abby Lee, Sam Ortiz +2".
+        var participants: String?
         var nextTitle: String?
         var nextStartDate: Date?
         /// Video-call link for the Join button.
@@ -381,7 +382,7 @@ final class MeetingLiveActivityManager {
             calendarName: calendar?.title,
             calendarRGB: Self.rgb(calendar?.cgColor),
             location: Self.trimmed(event?.location),
-            attendeeCount: event?.attendees?.count ?? 0,
+            participants: event.flatMap { Self.trimmed(calendarService.participants(for: $0)) },
             nextTitle: sameDayFollowing?.eventTitle,
             nextStartDate: sameDayFollowing?.eventStartDate,
             joinURL: meeting.joinURL,

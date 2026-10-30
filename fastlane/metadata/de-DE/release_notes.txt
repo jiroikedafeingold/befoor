@@ -1,4 +1,3 @@
-- Erster Termin des Tages: Gib deinem ersten Termin einen früheren Hinweis, damit du morgens Zeit hast, dich fertig zu machen. Zu finden unter Einstellungen > Wecker-Zeiten.
-- Abgesagte Termine und Termine, die alle anderen abgelehnt haben, bleiben als „Abgesagt“ oder „Abgelehnt“ in der Liste, klingeln aber nicht mehr.
+- Sieh, wer dabei ist: Der Countdown auf dem Sperrbildschirm und in der Dynamic Island zeigt jetzt die anderen Eingeladenen, etwa „Mit Abby Lee, Sam Ortiz +2“ – auch wenn der Termin eine Notiz hat.
 
 Fragen oder Feedback? apps@feingold5.com

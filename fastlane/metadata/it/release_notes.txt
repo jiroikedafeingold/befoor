@@ -1,4 +1,3 @@
-- Prima riunione della giornata: dai alla tua prima riunione un avviso anticipato, per avere il tempo di prepararti la mattina. Si trova in Impostazioni > Orari delle sveglie.
-- Le riunioni annullate, e quelle che tutti gli altri hanno rifiutato, restano nell’elenco segnate come Annullata o Rifiutata, ma non suonano più.
+- Vedi chi partecipa: il conto alla rovescia sulla schermata di blocco e nella Dynamic Island ora mostra le altre persone invitate, ad esempio «Con Abby Lee, Sam Ortiz +2», anche quando la riunione ha una nota.
 
 Domande o suggerimenti? apps@feingold5.com

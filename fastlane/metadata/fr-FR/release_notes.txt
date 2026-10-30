@@ -1,4 +1,3 @@
-- Première réunion de la journée : donnez à votre première réunion une alerte plus précoce, pour avoir le temps de vous préparer le matin. Dans Réglages > Horaires des alarmes.
-- Les réunions annulées, et celles que tous les autres ont refusées, restent dans la liste avec la mention Annulée ou Refusée, mais ne sonnent plus.
+- Voyez qui participe : le compte à rebours sur l’écran verrouillé et dans la Dynamic Island affiche désormais les autres invités, par exemple « Avec Abby Lee, Sam Ortiz +2 », même si la réunion a une note.
 
 Des questions ou des commentaires ? apps@feingold5.com

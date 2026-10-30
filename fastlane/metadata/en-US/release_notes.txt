@@ -1,4 +1,3 @@
-- First meeting of the day: give your first meeting an earlier alert, so you have time to get ready in the morning. Find it in Settings > Alarm Timing.
-- Cancelled meetings, and meetings everyone else declined, stay in the list marked Cancelled or Declined, but no longer ring.
+- See who's in the meeting: the countdown on your Lock Screen and in the Dynamic Island now lists the other people invited, like "With Abby Lee, Sam Ortiz +2", even when the meeting has a note.
 
 Questions or feedback? apps@feingold5.com

@@ -1,4 +1,3 @@
-- Primeira reunião do dia: dê à sua primeira reunião um alerta mais cedo, para ter tempo de se arrumar de manhã. Fica em Ajustes > Horários dos alarmes.
-- Reuniões canceladas, e as que todos os outros recusaram, continuam na lista marcadas como Cancelada ou Recusada, mas não tocam mais.
+- Veja quem vai participar: a contagem regressiva na Tela Bloqueada e na Dynamic Island agora mostra as outras pessoas convidadas, como “Com Abby Lee, Sam Ortiz +2”, mesmo quando a reunião tem uma nota.
 
 Dúvidas ou sugestões? apps@feingold5.com

@@ -425,8 +425,17 @@ enum LinkWatch {
 
     private static let log = Logger(subsystem: "com.befoor.app", category: "LinkWatch")
 
+    /// Keyed by the series' external identifier and start, not eventIdentifier:
+    /// an occurrence that gets edited on its own (detached) is given a new
+    /// eventIdentifier, and that edit is exactly when its link tends to go
+    /// missing, so the link seen before must still be found.
     static func key(_ event: EKEvent) -> String {
-        AppSettings.skipKey(eventIdentifier: event.eventIdentifier, start: event.startDate)
+        AppSettings.skipKey(eventIdentifier: seriesID(event), start: event.startDate)
+    }
+
+    /// Shared by every occurrence of a series, detached ones included.
+    static func seriesID(_ event: EKEvent) -> String {
+        event.calendarItemExternalIdentifier ?? event.eventIdentifier ?? ""
     }
 
     struct Result {
@@ -457,7 +466,7 @@ enum LinkWatch {
         // (detached) gets a new eventIdentifier but keeps the series' UID.
         var seriesLinks: [String: String] = [:]
         for event in events where event.hasRecurrenceRules || event.isDetached {
-            let series = event.calendarItemExternalIdentifier ?? event.eventIdentifier ?? ""
+            let series = seriesID(event)
             if let link = calendar.joinURL(for: event), seriesLinks[series] == nil {
                 seriesLinks[series] = link.absoluteString
             }
@@ -486,7 +495,7 @@ enum LinkWatch {
                 // series' link for an occurrence that never had its own.
                 if !old.isEmpty {
                     result.fallbackLinks[key] = URL(string: old)
-                } else if let series = seriesLinks[event.calendarItemExternalIdentifier ?? event.eventIdentifier ?? ""] {
+                } else if let series = seriesLinks[seriesID(event)] {
                     result.fallbackLinks[key] = URL(string: series)
                     if changes[key] == nil {
                         changes[key] = "removed"

@@ -1,4 +1,5 @@
 import Foundation
+import os
 import EventKit
 import BackgroundTasks
 import WidgetKit
@@ -142,7 +143,12 @@ final class AlarmScheduler: ObservableObject {
         }
         let firstOfDayStarts = Self.firstOfDayStarts(dayEvents.filter(rings))
         let notCancelled = filtered.filter { calendar.cancellation(for: $0) == nil }
-        let linkChanges = LinkWatch.update(events: filtered, calendar: calendar, notifications: notifications)
+        let linkWatch = LinkWatch.update(events: filtered, calendar: calendar, notifications: notifications)
+        let linkChanges = linkWatch.changes
+        // A meeting's own link, else the last one seen for it (see LinkWatch).
+        func joinURL(_ event: EKEvent) -> URL? {
+            calendar.joinURL(for: event) ?? linkWatch.fallbackLinks[LinkWatch.key(event)]
+        }
 
         // Meetings ring as AlarmKit alarms, which play through silent mode and
         // Focus. With Sound off, or if alarms aren't allowed, Befoor falls back to
@@ -174,7 +180,7 @@ final class AlarmScheduler: ObservableObject {
                     eventStartDate:         event.startDate,
                     eventTitle:             event.title ?? Self.untitled,
                     calendarIdentifier:     event.calendar?.calendarIdentifier ?? "",
-                    joinURL:                calendar.joinURL(for: event),
+                    joinURL:                joinURL(event),
                     linkChange:             linkChanges[LinkWatch.key(event)],
                     isSkipped:              settings.isSkipped(eventIdentifier: event.eventIdentifier, start: event.startDate),
                     note:                   settings.note(eventIdentifier: event.eventIdentifier, start: event.startDate),
@@ -191,7 +197,7 @@ final class AlarmScheduler: ObservableObject {
             let title = Self.combinedTitle(events.map { $0.title ?? Self.untitled })
             let calName = events.first?.calendar?.title ?? String(localized: "Calendar")
             let location = events.compactMap(\.location).first { !$0.isEmpty }
-            let joinURL = events.lazy.compactMap { self.calendar.joinURL(for: $0) }.first
+            let joinURL = events.lazy.compactMap { joinURL($0) }.first
             let participants = events.lazy.compactMap { self.calendar.participants(for: $0) }.first
 
             let alerts = Self.alertsToSchedule(minutes: settings.alertMinutes(start: start, meetings: events.map {
@@ -417,30 +423,81 @@ enum LinkWatch {
     /// Changes this close to the start also get a notification.
     private static let notifyWithin: TimeInterval = 2 * 3600
 
+    private static let log = Logger(subsystem: "com.befoor.app", category: "LinkWatch")
+
     static func key(_ event: EKEvent) -> String {
         AppSettings.skipKey(eventIdentifier: event.eventIdentifier, start: event.startDate)
     }
 
+    struct Result {
+        /// Event key → "removed" or "changed".
+        var changes: [String: String] = [:]
+        /// Event key → the link to join with for meetings whose own link is gone:
+        /// the one last seen on this occurrence, else the one its series uses.
+        var fallbackLinks: [String: URL] = [:]
+    }
+
     /// Compares each meeting's link with the last one seen and returns the
-    /// meetings whose link was removed or changed (event key → change).
+    /// meetings whose link was removed or changed, with a link to fall back on.
+    /// Dingly never writes to the calendar, so a removed link was removed by
+    /// the organizer, their tools, or the account's sync — the person still
+    /// needs to join, so the last known link is kept rather than forgotten.
     @MainActor
-    static func update(events: [EKEvent], calendar: CalendarService, notifications: NotificationService) -> [String: String] {
+    static func update(events: [EKEvent], calendar: CalendarService, notifications: NotificationService) -> Result {
         let defaults = UserDefaults.standard
         var links = defaults.dictionary(forKey: linksKey) as? [String: String] ?? [:]
         var changes = defaults.dictionary(forKey: changesKey) as? [String: String] ?? [:]
         var notified = Set(defaults.stringArray(forKey: notifiedKey) ?? [])
         let now = Date()
         var current = Set<String>()
+        var result = Result()
+
+        // Each repeating series' link, from whichever occurrences have one. Keyed
+        // by the external identifier: an occurrence that was edited on its own
+        // (detached) gets a new eventIdentifier but keeps the series' UID.
+        var seriesLinks: [String: String] = [:]
+        for event in events where event.hasRecurrenceRules || event.isDetached {
+            let series = event.calendarItemExternalIdentifier ?? event.eventIdentifier ?? ""
+            if let link = calendar.joinURL(for: event), seriesLinks[series] == nil {
+                seriesLinks[series] = link.absoluteString
+            }
+        }
 
         for event in events where event.endDate > now {
             let key = key(event)
             current.insert(key)
             let link = calendar.joinURL(for: event)?.absoluteString ?? ""
-            if let old = links[key], !old.isEmpty, old != link {
-                changes[key] = link.isEmpty ? "removed" : "changed"
-                notified.remove(key)          // a new change is worth a new notification
+            let old = links[key] ?? ""
+
+            if !old.isEmpty, old != link {
+                let change = link.isEmpty ? "removed" : "changed"
+                if changes[key] != change {
+                    changes[key] = change
+                    notified.remove(key)      // a new change is worth a new notification
+                    logChange(change, event: event, old: old, new: link, calendar: calendar)
+                }
+            } else if !link.isEmpty, link == old, changes[key] == "removed" {
+                changes[key] = nil            // the link came back
+                log.notice("link back on \(event.title ?? "", privacy: .public) at \(event.startDate, privacy: .public)")
             }
-            links[key] = link
+
+            if link.isEmpty {
+                // Keep the last link seen so Join still works; failing that, the
+                // series' link for an occurrence that never had its own.
+                if !old.isEmpty {
+                    result.fallbackLinks[key] = URL(string: old)
+                } else if let series = seriesLinks[event.calendarItemExternalIdentifier ?? event.eventIdentifier ?? ""] {
+                    result.fallbackLinks[key] = URL(string: series)
+                    if changes[key] == nil {
+                        changes[key] = "removed"
+                        logChange("removed (series has a link)", event: event, old: series, new: "", calendar: calendar)
+                    }
+                }
+            } else {
+                links[key] = link
+            }
+            if links[key] == nil { links[key] = "" }
+
             if let change = changes[key], !notified.contains(key),
                event.startDate.timeIntervalSince(now) < notifyWithin {
                 notifications.notifyLinkChange(
@@ -455,10 +512,26 @@ enum LinkWatch {
 
         // Forget meetings that are over or gone from the calendar.
         defaults.set(links.filter { current.contains($0.key) }, forKey: linksKey)
-        let kept = changes.filter { current.contains($0.key) }
-        defaults.set(kept, forKey: changesKey)
+        result.changes = changes.filter { current.contains($0.key) }
+        defaults.set(result.changes, forKey: changesKey)
         defaults.set(Array(notified.intersection(current)), forKey: notifiedKey)
-        return kept
+        return result
+    }
+
+    /// What the event looked like when its link changed, for the device log
+    /// (`log collect`, subsystem com.befoor.app, category LinkWatch).
+    private static func logChange(_ change: String, event: EKEvent, old: String, new: String, calendar: CalendarService) {
+        let source = event.calendar?.source?.sourceType.rawValue ?? -1
+        log.notice("""
+            link \(change, privacy: .public): \(event.title ?? "", privacy: .public) at \(event.startDate, privacy: .public) \
+            old=\(old, privacy: .public) new=\(new, privacy: .public) \
+            url=\(event.url?.absoluteString ?? "nil", privacy: .public) \
+            location=\(event.location ?? "nil", privacy: .public) \
+            notesLength=\(event.notes?.count ?? -1) \
+            detached=\(event.isDetached) recurring=\(event.hasRecurrenceRules) \
+            modified=\(event.lastModifiedDate?.description ?? "nil", privacy: .public) \
+            sourceType=\(source) calendar=\(event.calendar?.title ?? "", privacy: .public)
+            """)
     }
 }
 

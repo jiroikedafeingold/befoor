@@ -1,3 +1,3 @@
-- Sieh, wer dabei ist: Der Countdown auf dem Sperrbildschirm und in der Dynamic Island zeigt jetzt die anderen Eingeladenen, etwa „Mit Abby Lee, Sam Ortiz +2“ – auch wenn der Termin eine Notiz hat.
+Fehlerbehebung: Wurde ein wiederkehrender Termin kurz vor Beginn aktualisiert, kam die Aktualisierung manchmal ohne Videolink an und „Beitreten“ funktionierte nicht mehr. „Beitreten“ behält jetzt den bisherigen Link des Termins, und die Warnung „Videolink entfernt“ ist weg – es war nichts entfernt worden.
 
 Fragen oder Feedback? apps@feingold5.com

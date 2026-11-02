@@ -1,3 +1,3 @@
-- See who's in the meeting: the countdown on your Lock Screen and in the Dynamic Island now lists the other people invited, like "With Abby Lee, Sam Ortiz +2", even when the meeting has a note.
+Bug fix: when a repeating meeting was updated shortly before it started, the update sometimes arrived without its video link and Join stopped working. Join now keeps the meeting's earlier link, and the "Video link removed" warning is gone — nothing had been removed.
 
 Questions or feedback? apps@feingold5.com

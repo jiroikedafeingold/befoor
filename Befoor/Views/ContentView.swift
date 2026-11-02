@@ -503,7 +503,7 @@ private struct AlarmRow: View {
                 }
 
                 if let change = alarm.linkChange {
-                    Label(change == "removed" ? "Video link removed" : "Video link changed",
+                    Label(change == "removed" ? "Meeting changed, link missing" : "Video link changed",
                           systemImage: "exclamationmark.triangle.fill")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.orange)

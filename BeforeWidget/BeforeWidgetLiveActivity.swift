@@ -272,7 +272,7 @@ private struct LinkChangeNotice: View {
 
     var body: some View {
         if let change {
-            Label(change == "removed" ? "Link removed" : "Link changed",
+            Label(change == "removed" ? "Link missing" : "Link changed",
                   systemImage: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange)
         }

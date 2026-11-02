@@ -143,11 +143,10 @@ final class AlarmScheduler: ObservableObject {
         }
         let firstOfDayStarts = Self.firstOfDayStarts(dayEvents.filter(rings))
         let notCancelled = filtered.filter { calendar.cancellation(for: $0) == nil }
-        let linkWatch = LinkWatch.update(events: filtered, calendar: calendar, notifications: notifications)
-        let linkChanges = linkWatch.changes
+        let fallbackLinks = LinkWatch.update(events: filtered, calendar: calendar)
         // A meeting's own link, else the last one seen for it (see LinkWatch).
         func joinURL(_ event: EKEvent) -> URL? {
-            calendar.joinURL(for: event) ?? linkWatch.fallbackLinks[LinkWatch.key(event)]
+            calendar.joinURL(for: event) ?? fallbackLinks[LinkWatch.key(event)]
         }
 
         // Meetings ring as AlarmKit alarms, which play through silent mode and
@@ -181,7 +180,6 @@ final class AlarmScheduler: ObservableObject {
                     eventTitle:             event.title ?? Self.untitled,
                     calendarIdentifier:     event.calendar?.calendarIdentifier ?? "",
                     joinURL:                joinURL(event),
-                    linkChange:             linkChanges[LinkWatch.key(event)],
                     isSkipped:              settings.isSkipped(eventIdentifier: event.eventIdentifier, start: event.startDate),
                     note:                   settings.note(eventIdentifier: event.eventIdentifier, start: event.startDate),
                     firstOfDay:             firstOfDay ? true : nil,
@@ -190,7 +188,6 @@ final class AlarmScheduler: ObservableObject {
             }
             let events = all.filter(rings)
             guard !events.isEmpty else { continue }
-            let linkChange = events.lazy.compactMap { linkChanges[LinkWatch.key($0)] }.first
             let notes = events.compactMap { settings.note(eventIdentifier: $0.eventIdentifier, start: $0.startDate) }
             let note = notes.isEmpty ? nil : notes.joined(separator: " · ")
 
@@ -232,7 +229,6 @@ final class AlarmScheduler: ObservableObject {
                     calendarRGB:   MeetingLiveActivityManager.rgb(events.first?.calendar?.cgColor),
                     location:      location,
                     joinURL:       joinURL,
-                    linkChange:    linkChange,
                     note:          note,
                     participants:  participants,
                     sound:         settings.selectedSound,
@@ -409,19 +405,16 @@ final class AlarmScheduler: ObservableObject {
 
 // MARK: - Link changes
 
-/// Remembers each upcoming meeting's video-call link so a removed or changed
-/// link can be flagged: organizers sometimes re-send an invite at the last
-/// minute without it, and the alarm would otherwise point at the old call.
+/// Remembers each upcoming meeting's video-call link. A last-minute update to
+/// one occurrence of a repeating meeting arrives as its own record, often
+/// without the link (Google does this; seen in the device log 2026-11-02), so
+/// Join quietly keeps using the link seen before. Dingly never writes to the
+/// calendar, and nobody has to have removed anything, so it isn't flagged.
 enum LinkWatch {
     /// Event key → last link seen ("" for none).
     private static let linksKey = "bf_meetingLinks"
-    /// Event key → "removed" or "changed", kept until the meeting is over.
-    private static let changesKey = "bf_meetingLinkChanges"
-    /// Event keys whose change has already been notified.
-    private static let notifiedKey = "bf_meetingLinkNotified"
-
-    /// Changes this close to the start also get a notification.
-    private static let notifyWithin: TimeInterval = 2 * 3600
+    /// Pre-4.6.3 keys for flagged and notified changes; cleared once.
+    private static let legacyKeys = ["bf_meetingLinkChanges", "bf_meetingLinkNotified"]
 
     private static let log = Logger(subsystem: "com.befoor.app", category: "LinkWatch")
 
@@ -438,28 +431,17 @@ enum LinkWatch {
         event.calendarItemExternalIdentifier ?? event.eventIdentifier ?? ""
     }
 
-    struct Result {
-        /// Event key → "removed" or "changed".
-        var changes: [String: String] = [:]
-        /// Event key → the link to join with for meetings whose own link is gone:
-        /// the one last seen on this occurrence, else the one its series uses.
-        var fallbackLinks: [String: URL] = [:]
-    }
-
-    /// Compares each meeting's link with the last one seen and returns the
-    /// meetings whose link was removed or changed, with a link to fall back on.
-    /// Dingly never writes to the calendar, so a removed link was removed by
-    /// the organizer, their tools, or the account's sync — the person still
-    /// needs to join, so the last known link is kept rather than forgotten.
+    /// Remembers each meeting's link and returns, for meetings whose own link is
+    /// gone, the link to join with (event key → URL): the one last seen on this
+    /// occurrence, else the one its series uses.
     @MainActor
-    static func update(events: [EKEvent], calendar: CalendarService, notifications: NotificationService) -> Result {
+    static func update(events: [EKEvent], calendar: CalendarService) -> [String: URL] {
         let defaults = UserDefaults.standard
+        legacyKeys.forEach(defaults.removeObject(forKey:))
         var links = defaults.dictionary(forKey: linksKey) as? [String: String] ?? [:]
-        var changes = defaults.dictionary(forKey: changesKey) as? [String: String] ?? [:]
-        var notified = Set(defaults.stringArray(forKey: notifiedKey) ?? [])
         let now = Date()
         var current = Set<String>()
-        var result = Result()
+        var fallbackLinks: [String: URL] = [:]
 
         // Each repeating series' link, from whichever occurrences have one. Keyed
         // by the external identifier: an occurrence that was edited on its own
@@ -479,57 +461,32 @@ enum LinkWatch {
             let old = links[key] ?? ""
 
             if !old.isEmpty, old != link {
-                let change = link.isEmpty ? "removed" : "changed"
-                if changes[key] != change {
-                    changes[key] = change
-                    notified.remove(key)      // a new change is worth a new notification
-                    logChange(change, event: event, old: old, new: link, calendar: calendar)
-                }
-            } else if !link.isEmpty, link == old, changes[key] == "removed" {
-                changes[key] = nil            // the link came back
-                log.notice("link back on \(event.title ?? "", privacy: .public) at \(event.startDate, privacy: .public)")
+                logChange(link.isEmpty ? "missing" : "changed", event: event, old: old, new: link)
             }
 
             if link.isEmpty {
-                // Keep the last link seen so Join still works; failing that, the
+                // The last link seen, so Join still works; failing that, the
                 // series' link for an occurrence that never had its own.
                 if !old.isEmpty {
-                    result.fallbackLinks[key] = URL(string: old)
+                    fallbackLinks[key] = URL(string: old)
                 } else if let series = seriesLinks[seriesID(event)] {
-                    result.fallbackLinks[key] = URL(string: series)
-                    if changes[key] == nil {
-                        changes[key] = "removed"
-                        logChange("removed (series has a link)", event: event, old: series, new: "", calendar: calendar)
-                    }
+                    fallbackLinks[key] = URL(string: series)
+                    logChange("missing (series has a link)", event: event, old: series, new: "")
                 }
             } else {
                 links[key] = link
             }
             if links[key] == nil { links[key] = "" }
-
-            if let change = changes[key], !notified.contains(key),
-               event.startDate.timeIntervalSince(now) < notifyWithin {
-                notifications.notifyLinkChange(
-                    identifier: key,
-                    title: event.title ?? AlarmScheduler.untitled,
-                    start: event.startDate,
-                    removed: change == "removed"
-                )
-                notified.insert(key)
-            }
         }
 
         // Forget meetings that are over or gone from the calendar.
         defaults.set(links.filter { current.contains($0.key) }, forKey: linksKey)
-        result.changes = changes.filter { current.contains($0.key) }
-        defaults.set(result.changes, forKey: changesKey)
-        defaults.set(Array(notified.intersection(current)), forKey: notifiedKey)
-        return result
+        return fallbackLinks
     }
 
-    /// What the event looked like when its link changed, for the device log
-    /// (`log collect`, subsystem com.befoor.app, category LinkWatch).
-    private static func logChange(_ change: String, event: EKEvent, old: String, new: String, calendar: CalendarService) {
+    /// What the event looked like when its link went missing or changed, for the
+    /// device log (`log collect`, subsystem com.befoor.app, category LinkWatch).
+    private static func logChange(_ change: String, event: EKEvent, old: String, new: String) {
         let source = event.calendar?.source?.sourceType.rawValue ?? -1
         log.notice("""
             link \(change, privacy: .public): \(event.title ?? "", privacy: .public) at \(event.startDate, privacy: .public) \

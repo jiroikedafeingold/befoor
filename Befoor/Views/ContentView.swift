@@ -502,13 +502,6 @@ private struct AlarmRow: View {
                         .background(Color.yellow.opacity(0.35), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
                 }
 
-                if let change = alarm.linkChange {
-                    Label(change == "removed" ? "Meeting changed, link missing" : "Video link changed",
-                          systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.orange)
-                }
-
                 HStack(spacing: 6) {
                     Circle()
                         .fill(calendarColor)

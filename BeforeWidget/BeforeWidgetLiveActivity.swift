@@ -21,7 +21,6 @@ struct NextMeetingAttributes: ActivityAttributes {
         var nextTitle: String?
         var nextStartDate: Date?
         var joinURL: URL?
-        var linkChange: String?
         var note: String?
     }
 }
@@ -186,8 +185,6 @@ private struct MeetingDetailsView: View {
         let row = stacked ? AnyLayout(VStackLayout(alignment: .leading, spacing: 3))
                           : AnyLayout(HStackLayout(spacing: 10))
         VStack(alignment: .leading, spacing: 3) {
-            LinkChangeNotice(change: state.linkChange)
-
             if let location = state.location {
                 Label(location, systemImage: "mappin.and.ellipse")
             }
@@ -262,20 +259,6 @@ private struct LockScreenMeetingView: View {
             }
         }
         .padding(16)
-    }
-}
-
-/// Warns that the meeting's video-call link was removed or replaced since
-/// Befoor first saw it — check the invite before joining.
-private struct LinkChangeNotice: View {
-    let change: String?
-
-    var body: some View {
-        if let change {
-            Label(change == "removed" ? "Link missing" : "Link changed",
-                  systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
-        }
     }
 }
 

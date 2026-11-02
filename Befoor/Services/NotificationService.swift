@@ -105,27 +105,6 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     // MARK: Link changes
 
     /// Right away: a meeting's video-call link was removed or replaced.
-    func notifyLinkChange(identifier: String, title: String, start: Date, removed: Bool) {
-        let content = UNMutableNotificationContent()
-        // A missing link usually means the meeting was updated and the update
-        // came without it (not that anyone removed it); Join keeps the old link.
-        let time = start.formatted(date: .omitted, time: .shortened)
-        if removed {
-            content.title = String(localized: "Meeting changed")
-            content.body = String(localized: "\(title) at \(time) was updated and now has no video link. Join uses the link from before — check the invite.")
-        } else {
-            content.title = String(localized: "Video link changed")
-            content.body = String(localized: "\(title) at \(time). Check the invite before you join.")
-        }
-        content.sound = AppSettings.shared.soundEnabled ? .default : nil
-        content.interruptionLevel = .timeSensitive
-        let request = UNNotificationRequest(identifier: "befoor_link_" + identifier, content: content, trigger: nil)
-        let log = log
-        center.add(request) { error in
-            if let error { log.error("link-change notification failed: \(error, privacy: .public)") }
-        }
-    }
-
     // MARK: Test alert
 
     /// The test from Settings when alarms aren't in use: the notification a

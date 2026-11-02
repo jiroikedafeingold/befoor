@@ -32,8 +32,6 @@ struct NextMeetingAttributes: ActivityAttributes {
         var nextStartDate: Date?
         /// Video-call link for the Join button.
         var joinURL: URL?
-        /// "removed" or "changed" if the meeting's link changed.
-        var linkChange: String?
         /// The person's short note, shown highlighted at the top.
         var note: String?
     }
@@ -346,7 +344,6 @@ final class MeetingLiveActivityManager {
                 guard var merged = group.first else { return nil }
                 merged.eventTitle = AlarmScheduler.combinedTitle(group.map(\.eventTitle))
                 merged.joinURL = group.lazy.compactMap(\.joinURL).first
-                merged.linkChange = group.lazy.compactMap(\.linkChange).first
                 let notes = group.compactMap(\.note)
                 merged.note = notes.isEmpty ? nil : notes.joined(separator: " · ")
                 return merged
@@ -386,7 +383,6 @@ final class MeetingLiveActivityManager {
             nextTitle: sameDayFollowing?.eventTitle,
             nextStartDate: sameDayFollowing?.eventStartDate,
             joinURL: meeting.joinURL,
-            linkChange: meeting.linkChange,
             note: meeting.note
         )
         // Goes stale 10 minutes after the start, when it's due to be removed, so it

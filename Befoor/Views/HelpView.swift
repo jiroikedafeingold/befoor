@@ -127,12 +127,6 @@ struct HelpView: View {
                         detail: "When an alert comes while another meeting is still going, it vibrates first and only plays its sound after 15 seconds, so you can stop it quietly."
                     )
                     HelpRow(
-                        icon: "exclamationmark.triangle.fill",
-                        iconColor: .orange,
-                        title: "Video Link Warnings",
-                        detail: "If a meeting's Zoom, Meet or Teams link is removed or changed, Dingly flags it in the list and on the countdown, and sends a notification when the meeting is less than two hours away."
-                    )
-                    HelpRow(
                         icon: "pause.circle.fill",
                         iconColor: .orange,
                         title: "Pause for a Vacation",

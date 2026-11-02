@@ -15,7 +15,6 @@ struct MeetingAlarmMetadata: AlarmMetadata {
     /// sRGB components of the calendar color.
     var calendarRGB: [Double]?
     var joinURL: URL?
-    var linkChange: String?
     var note: String?
     var participants: String?
 }
@@ -191,9 +190,7 @@ private struct AlarmDetails: View {
                 default:
                     Label("Ringing", systemImage: "alarm.waves.left.and.right")
                 }
-                if metadata?.linkChange != nil {
-                    LinkChangeNotice(change: metadata?.linkChange)
-                } else if let location = metadata?.location {
+                if let location = metadata?.location {
                     Label(location, systemImage: "mappin.and.ellipse")
                 }
             }
@@ -242,20 +239,6 @@ private struct AlarmLockScreenView: View {
         .padding(16)
     }
 }
-/// Warns that the meeting's video-call link was removed or replaced since
-/// Befoor first saw it — check the invite before joining.
-private struct LinkChangeNotice: View {
-    let change: String?
-
-    var body: some View {
-        if let change {
-            Label(change == "removed" ? "Link missing" : "Link changed",
-                  systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
-        }
-    }
-}
-
 /// The person's note for the meeting, highlighted like a sticky note.
 private struct NoteBanner: View {
     let note: String

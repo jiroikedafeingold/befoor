@@ -543,9 +543,13 @@ private struct AlarmRow: View {
                         .foregroundStyle(.indigo)
                     }
                 }
+                // Next to a Join button the line can run short of room; shrink a
+                // little, then truncate, rather than wrapping each piece.
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             }
 
-            Spacer()
+            Spacer(minLength: 8)
 
             if let joinURL = alarm.joinURL, !isCancelled {
                 Link(destination: joinURL) {
@@ -555,6 +559,7 @@ private struct AlarmRow: View {
                 .buttonStyle(.bordered)
                 .controlSize(.small)
                 .tint(calendarColor)
+                .fixedSize()
             }
 
             Image(systemName: silenced ? "bell.slash" : "alarm.fill")

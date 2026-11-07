@@ -1,3 +1,3 @@
-Correctif : lorsqu’une réunion récurrente était mise à jour peu avant son début, la mise à jour arrivait parfois sans son lien vidéo et « Rejoindre » ne fonctionnait plus. « Rejoindre » conserve désormais le lien précédent de la réunion, et l’avertissement « Lien vidéo supprimé » disparaît : rien n’avait été supprimé.
+Correction : dans la liste des alarmes, une réunion avec sa propre première alerte et un bouton « Rejoindre » pouvait voir ses détails passer sur plusieurs lignes ou rendre la ligne trop haute. Les lignes sont de nouveau nettes.
 
 Des questions ou des commentaires ? apps@feingold5.com

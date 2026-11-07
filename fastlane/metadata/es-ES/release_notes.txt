@@ -1,3 +1,3 @@
-Corrección: cuando una reunión periódica se actualizaba poco antes de empezar, a veces la actualización llegaba sin su enlace de vídeo y «Unirse» dejaba de funcionar. «Unirse» ahora conserva el enlace anterior de la reunión, y el aviso «Enlace de vídeo eliminado» desaparece: no se había eliminado nada.
+Corregido: en la lista de alarmas, una reunión con su propio primer aviso y botón «Unirse» podía partir sus datos en varias líneas o hacer la fila demasiado alta. Las filas vuelven a verse bien.
 
 ¿Preguntas o comentarios? apps@feingold5.com

@@ -1,3 +1,3 @@
-Bug fix: when a repeating meeting was updated shortly before it started, the update sometimes arrived without its video link and Join stopped working. Join now keeps the meeting's earlier link, and the "Video link removed" warning is gone — nothing had been removed.
+Fixed: in the alarms list, a meeting with its own first-alert time and a Join button could wrap its details onto several lines or make the row too tall. Rows are tidy again.
 
 Questions or feedback? apps@feingold5.com

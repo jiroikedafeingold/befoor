@@ -1,3 +1,3 @@
-Fehlerbehebung: Wurde ein wiederkehrender Termin kurz vor Beginn aktualisiert, kam die Aktualisierung manchmal ohne Videolink an und „Beitreten“ funktionierte nicht mehr. „Beitreten“ behält jetzt den bisherigen Link des Termins, und die Warnung „Videolink entfernt“ ist weg – es war nichts entfernt worden.
+Behoben: In der Weckerliste konnte ein Termin mit eigener Hinweiszeit und „Beitreten“-Taste seine Angaben auf mehrere Zeilen umbrechen oder die Zeile zu hoch machen. Die Zeilen sind wieder ordentlich.
 
 Fragen oder Feedback? apps@feingold5.com

@@ -1,3 +1,3 @@
-Correção: quando uma reunião recorrente era atualizada pouco antes de começar, a atualização às vezes chegava sem o link de vídeo e o Entrar parava de funcionar. Agora o Entrar mantém o link anterior da reunião, e o aviso “Link de vídeo removido” foi retirado — nada tinha sido removido.
+Corrigido: na lista de alarmes, uma reunião com seu próprio primeiro alerta e botão Entrar podia quebrar os detalhes em várias linhas ou deixar a linha alta demais. As linhas voltaram a ficar arrumadas.
 
 Dúvidas ou sugestões? apps@feingold5.com

@@ -554,12 +554,16 @@ private struct AlarmRow: View {
             if let joinURL = alarm.joinURL, !isCancelled {
                 Link(destination: joinURL) {
                     Label("Join", systemImage: "video.fill")
+                        .labelStyle(.titleAndIcon)
                         .font(.caption.weight(.semibold))
+                        .lineLimit(1)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
                 .tint(calendarColor)
-                .fixedSize()
+                // Keeps its width next to a long details line (which truncates
+                // instead); height is left to the button style.
+                .fixedSize(horizontal: true, vertical: false)
             }
 
             Image(systemName: silenced ? "bell.slash" : "alarm.fill")
@@ -577,4 +581,21 @@ private struct AlarmRow: View {
 
 #Preview {
     ContentView()
+}
+
+#Preview("Rows") {
+    let start = Date().addingTimeInterval(17 * 3600)
+    List {
+        AlarmRow(alarm: TrackedAlarmModel(eventIdentifier: "a", notificationIdentifier: "a", eventStartDate: start,
+                                          eventTitle: "Tech team standup", calendarIdentifier: "",
+                                          joinURL: URL(string: "https://zoom.us/j/1")),
+                 isSkipped: false, firstAlert: 30)
+        AlarmRow(alarm: TrackedAlarmModel(eventIdentifier: "b", notificationIdentifier: "b", eventStartDate: start,
+                                          eventTitle: "Jiro/Landon 1:1", calendarIdentifier: "",
+                                          joinURL: URL(string: "https://zoom.us/j/2")),
+                 isSkipped: false)
+        AlarmRow(alarm: TrackedAlarmModel(eventIdentifier: "c", notificationIdentifier: "c", eventStartDate: start,
+                                          eventTitle: "D&D", calendarIdentifier: ""),
+                 isSkipped: false, firstAlert: 60)
+    }
 }
